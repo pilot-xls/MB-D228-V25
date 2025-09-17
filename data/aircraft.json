@@ -1,0 +1,44 @@
+{
+  "default": "CS-DVU",
+  "aircraft": {
+    "CS-DVU": {
+      "matricula": "CS-DVU",
+      "BEW": "3643",
+      "MZFW": "5540",
+      "MRW": "5730",
+      "MTOW": "5700",
+      "MLOW": "5700",
+      "consumo": "600",
+      "armPilotos": "4.21",
+      "armBEW": "7.7",
+      "armFuel": "7.936",
+      "armPayload": "8.7"
+    },
+    "CD-DVU9": {
+      "matricula": "CS-DVU9",
+      "BEW": "3643",
+      "MZFW": "5540",
+      "MRW": "5930",
+      "MTOW": "5900",
+      "MLOW": "5900",
+      "consumo": "600",
+      "armPilotos": "4.21",
+      "armBEW": "7.7",
+      "armFuel": "7.936",
+      "armPayload": "8.7"
+    },
+    "CS-ATH": {
+      "matricula": "CS-ATH",
+      "BEW": "3960",
+      "MZFW": "5400",
+      "MRW": "6430",
+      "MTOW": "6400",
+      "MLOW": "6100",
+      "consumo": "600",
+      "armPilotos": "4.21",
+      "armBEW": "7.7",
+      "armFuel": "7.936",
+      "armPayload": "8.7"
+    }
+  }
+}

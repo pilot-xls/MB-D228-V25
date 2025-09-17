@@ -1,0 +1,134 @@
+.section {
+    margin: 1rem;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.section h2 {
+    margin-top: 0;
+}
+
+.aircraft-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.aircraft-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    color: inherit;
+    padding: 0;
+}
+
+.btn {
+    background: #0057b8;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn.secondary {
+    background: #666;
+}
+
+.input-group {
+    margin-bottom: 0.75rem;
+}
+
+label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.aircraft-form {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f0f6ff;
+}
+
+.aircraft-form h3 {
+    margin-top: 0;
+}
+
+.aircraft-form h4 {
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+
+    /* permite scroll no overlay */
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 1rem;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+#toast {
+    visibility: hidden;
+    min-width: 200px;
+    margin-left: -100px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 10px;
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    bottom: 30px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.5s, visibility 0.5s;
+}
+
+#toast.show {
+    visibility: visible;
+    opacity: 1;
+}
+

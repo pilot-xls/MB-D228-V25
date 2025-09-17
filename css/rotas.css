@@ -1,0 +1,210 @@
+body {
+    background: #f9f9f9;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.btn {
+    display: block;
+    padding: 5px 15px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: auto;
+    width: 120px;
+}
+
+.btn-danger {
+    background: #dc3545;
+    width: 90px;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    display: inline;
+    width: 80px;
+}
+
+.rota-card {
+    background: #fff;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.rota-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.rota-card .actions {
+    margin-top: 0.5rem;
+}
+
+/* Modal fullscreen */
+#popup-editar-rota.modal {
+    display: none;
+
+    /* usar display:flex/none para testar */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+}
+
+.modal-content {
+    background: #fff;
+    width: 95%;
+    max-width: 500px;
+    border-radius: 8px;
+    padding: 1rem;
+    max-height: 90%;
+    overflow-y: auto;
+}
+
+.leg-card {
+    background: #f1f1f1;
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+    border-radius: 6px;
+    flex-direction: column;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+}
+
+.leg-card p {
+    margin: 4px 0;
+}
+
+div.rota-card .btn-edit-card {
+    width: 90px;
+}
+
+.btns-deff-legs {
+    height: 50px;
+    width: 79px;
+    font-size: 12px;
+    padding: 0px;
+}
+
+input {
+    width: 100px;
+    text-align: center;
+}
+
+#nomerota {
+    display: block;
+    text-align: center;
+}
+
+#nomerota input {
+    width: 100%;
+    margin: 0.5rem 0;
+    text-align: center;
+}
+
+#depfuel-leg-card {
+    width: 64px;
+}
+
+/* usar display:flex/none para testar */
+#popup-editar-payload.modal {
+    display: none;
+}
+
+div.modal-content .leg-card div.actions {
+    margin-top: 10px;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 30px;
+    gap: 0px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+#btns-editar-rota {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+}
+
+#popup-editar-payload.modal > div > h3 {
+    margin-top: 0;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+#popup-editar-payload > div table {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+div#popup-editar-payload.modal > div table #label-homens {
+    text-align: right;
+}
+
+div#popup-editar-payload.modal div table tbody #label-mulheres {
+    text-align: right;
+}
+
+div#popup-editar-payload.modal table #label-crianças {
+    text-align: right;
+}
+
+#popup-editar-payload.modal table #label-extra {
+    text-align: right;
+}
+
+div#popup-editar-payload.modal table #label-total {
+    text-align: right;
+}
+
+div#popup-editar-payload.modal div.actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+div#popup-editar-payload.modal div.actions button.btn.btn-secondary {
+    min-height: 50px;
+}
+
+#popup-editar-payload.modal #ppTotal {
+    text-align: left;
+}
+
+#popup-editar-payload #popup-btn-Guardar-payL {
+    min-height: 50px;
+}
+
+.linha-separador {
+    border-top: 1px solid #ccc;
+    margin: 20px 0;
+}
+
+.rota-leg {
+  display: block; /* por defeito visível */
+}
+
+.rota-leg.escondido {
+  display: none;
+}
