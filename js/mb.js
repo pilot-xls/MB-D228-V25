@@ -174,3 +174,15 @@ document.addEventListener("DOMContentLoaded", () => {
     inp.addEventListener("input", exec_calculo);
   });
 });
+
+// Fecha teclado ao clicar fora dos inputs
+document.addEventListener("touchstart", function (event) {
+  const isInput = event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA";
+  if (!isInput) {
+    const activeElement = document.activeElement;
+    if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+      activeElement.blur();
+    }
+  }
+});
+
