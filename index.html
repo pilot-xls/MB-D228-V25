@@ -7,19 +7,6 @@
         <link href="css/theme.css" rel="stylesheet">
         <link href="css/index.css" rel="stylesheet">
         <link href="css/menu.css" rel="stylesheet">
-
-        
-        <!-- PWA: Manifesto + Service Worker -->
-        <link rel="manifest" href="manifest.json">
-        <meta name="theme-color" content="#000000">
-        <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("./service-worker.js");
-        }
-        </script>
-        <!-- FIM PWA: Manifesto + Service Worker -->
-
-
     </head>
     <body>
         <header>
@@ -39,7 +26,7 @@
                             <a href="performance.html" style="display: flex;">Performance</a>
                         </li>
                         <li>
-                            <a href="calculadora.html" style="display: flex;">Calculadora</a>
+                            <a href="Calculadora.html" style="display: flex;">Calculadora</a>
                         </li>
                         <li>
                             <a href="settings.html" style="display: flex;">Settings</a>
@@ -57,7 +44,7 @@
             <table class="mb-table" style="border-radius: 15px; outline: 2px solid #000; width: calc(0 + 0px); margin: 5px 5px 20px;">
                 <thead>
                     <tr style="background-color: #a0dff4; outline: 1px solid #090808; border-top-right-radius: 15px; border-top-left-radius: 15px; border-color: #000000;">
-                        <th scope="col" style="text-align: center; line-height: 20px; font-size: calc(0 + 0px); border-right-style: dashed; border-right-width: 1px;">Item</th>
+                        <th scope="col" style="text-align: center; line-height: 20px; font-size: calc(0 + 0px); border-right-style: none;">Item</th>
                         <th scope="col" style="text-align: center; font-size: calc(0 + 0px);">Weight (kg)</th>
                         <th scope="col">Moment (kg&middot;m)</th>
                         <th scope="col">INFO</th>
@@ -75,7 +62,7 @@
                             <label for="pilots" style="text-align: center; line-height: 35px; font-size: calc(0 + 0px); width: calc(0px + 0px); min-width: calc(0 + 0px); max-width: calc(0 + 0px);">Pilotos</label>
                         </td>
                         <td style="text-align: center; font-size: calc(0 + 0px);">
-                            <input id="pilots" type="number" inputmode="decimal" step="any" value="150" style="text-align: center; font-size: calc(0 + 0px); width: 100%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            <input id="pilots" type="number" inputmode="decimal" step="any" value="150" style="text-align: center; font-size: calc(0 + 0px); resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted; width: 95%;">
                         </td>
                         <td id="momentPilots">0</td>
                         <td style="font-size: 12px;"></td>
@@ -85,7 +72,7 @@
                             <label for="manualPayload" style="text-align: center; line-height: 35px; font-size: calc(0 + 0px); width: calc(0px + 0px); min-width: calc(0 + 0px); max-width: calc(0 + 0px);">Payload</label>
                         </td>
                         <td style="text-align: center; font-size: calc(0 + 0px);">
-                            <input id="manualPayload" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 100%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            <input id="manualPayload" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 95%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
                         </td>
                         <td id="momentPayload">0</td>
                         <td style="font-size: 12px;"></td>
@@ -101,7 +88,7 @@
                             <label for="fuel">Fuel loading</label>
                         </td>
                         <td style="text-align: center; font-size: calc(0 + 0px);">
-                            <input id="fuel" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 100%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            <input id="fuel" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 95%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
                         </td>
                         <td id="momentFuel">0</td>
                         <td style="font-size: 12px;"></td>
@@ -117,7 +104,7 @@
                             <label for="fuelTaxi">Fuel taxi</label>
                         </td>
                         <td style="text-align: center; font-size: calc(0 + 0px);">
-                            <input id="fuelTaxi" type="number" inputmode="decimal" step="any" value="30" style="text-align: center; font-size: calc(0 + 0px); width: 100%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            <input id="fuelTaxi" type="number" inputmode="decimal" step="any" value="30" style="text-align: center; font-size: calc(0 + 0px); width: 95%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
                         </td>
                         <td id="momentTaxi">0</td>
                         <td style="font-size: 12px;"></td>
@@ -133,7 +120,7 @@
                             <label for="fuelDest" style="text-align: center; line-height: 20px; font-size: calc(0 + 0px); width: calc(0px + 0px); min-width: calc(0 + 0px); max-width: calc(0 + 0px);">Fuel to destination</label>
                         </td>
                         <td style="text-align: center; font-size: calc(0 + 0px);">
-                            <input id="fuelDest" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 100%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            <input id="fuelDest" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 95%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
                         </td>
                         <td id="momentDest">0</td>
                         <td style="font-size: 12px;"></td>
