@@ -154,7 +154,7 @@ async function exec_calculo() {
     const infoCell = row.querySelector("td:last-child");
     if (value > limit) {
       row.classList.add("limit-exceed");
-      if (infoCell) infoCell.innerHTML = `<span class="info-warning">MAX: ${limit} ${label}</span>`;
+      /*if (infoCell) infoCell.innerHTML = `<span class="info-warning">MAX: ${limit} ${label}</span>`;*/
     } else {
       row.classList.remove("limit-exceed");
       // não apagar infos normais
