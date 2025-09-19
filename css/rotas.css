@@ -202,9 +202,15 @@ div#popup-editar-payload.modal div.actions button.btn.btn-secondary {
 }
 
 .rota-leg {
-  display: block; /* por defeito visível */
+    display: block;
+
+    /* por defeito visível */
 }
 
 .rota-leg.escondido {
-  display: none;
+    display: none;
+}
+
+.row-inputleg input {
+    height: 20px;
 }
