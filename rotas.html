@@ -13,8 +13,7 @@
             <nav class="navbar">
                 <div style="display: flex; justify-content: space-between;">
                     <div class="logo" style="font-weight: bold; font-size: 32px;">D228</div>
-                    <button class="hamburger" onclick="document.querySelector('.menu').classList.toggle('active')">☰
-</button>
+                    <button class="hamburger" onclick="document.querySelector('.menu').classList.toggle('active')">☰</button>
                     <ul class="menu">
                         <li>
                             <a href="index.html">M&B</a>
@@ -26,7 +25,7 @@
                             <a href="performance.html">Performance</a>
                         </li>
                         <li>
-                            <a href="calculadora.html">Calculadora</a>
+                            <a href="Calculadora.html">Calculadora</a>
                         </li>
                         <li>
                             <a href="settings.html">Settings</a>
@@ -36,7 +35,7 @@
             </nav>
         </header>
         <h2>Gestão de Rotas</h2>
-        <button class="btn">+ Nova Rota</button>
+        <button class="btn" id="btn-nova-rota">+ Nova Rota</button>
         <!-- Lista de rotas -->
         <div class="rota-card" style="margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 30px; align-items: flex-start;">
@@ -46,65 +45,66 @@
                     <button class="toggleBtn" style="color: #000000; min-width: 40px; border-radius: 10px;">▲</button>
                 </div>
             </div>
+            <!-- Leg inicial -->
             <div class="rota-leg" style="border-width: 1px; border-radius: 20px; border-style: groove; padding: 5px; margin-top: 10px;">
                 <div style="display: flex; justify-content: space-between; margin-top: 13px;">
-                    <input style="font-weight: bold; width: 138px; border-width: 1px; border-style: ridge; border-radius: 10px;" placeholder="ex:CAT-PRM">
+                    <input class="leg-nome" style="font-weight: bold; width: 138px; border-width: 1px; border-style: ridge; border-radius: 10px;" placeholder="ex:CAT-PRM">
                     <div style="display: flex; align-items: center; gap: 21px;">
                         <button>MB</button>
                     </div>
                 </div>
                 <div style="margin-top: 10px;">
                     <div>
-                        <div style="display: flex; align-items: baseline; justify-content: space-between; border-top-width: 1px; border-top-style: dotted; padding-bottom: 12px;">
+                        <div class="row-inputleg" style="display: flex; align-items: flex-end; justify-content: space-between; border-top-width: 1px; border-top-style: dotted; padding-bottom: 12px;">
                             <p style="margin-bottom: 0;">Min Fuel O/B</p>
-                            <input id="min-fuel-input">
+                            <input class="min-fuel-input" placeholder="Lb" type="number">
                         </div>
                     </div>
                     <div>
-                        <div style="display: flex; align-items: baseline; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
+                        <div class="row-inputleg" style="display: flex; align-items: flex-end; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                             <p style="margin-bottom: 0;">Fuel O/B</p>
-                            <input id="fuel-ob-input">
+                            <input class="fuel-ob-input" placeholder="Lb" type="number">
                         </div>
-                        <p style="font-size: 12px; margin-bottom: 0px; margin-top: 0;" id="max-fuel-lb-kg-info">MAX: 1600lb / 800kg</p>
+                        <p class="max-fuel-lb-kg-info" style="font-size: 12px; margin-bottom: 0px; margin-top: 0;">MAX: 1600lb / 800kg</p>
                     </div>
                     <div>
-                        <div style="display: flex; align-items: baseline; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
+                        <div class="row-inputleg" style="display: flex; align-items: flex-end; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                             <p style="margin-bottom: 0;">Traffic Load</p>
-                            <input id="traffic-load-input">
+                            <input class="traffic-load-input" placeholder="Kg" type="number">
                         </div>
-                        <p style="font-size: 12px; margin-bottom: 0px; margin-top: 0;" id="max-traffic-load-info">MAX: 800kg</p>
+                        <p class="max-traffic-load-info" style="font-size: 12px; margin-bottom: 0px; margin-top: 0;">MAX: 800kg</p>
                     </div>
                     <div>
-                        <div style="display: flex; align-items: baseline; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
+                        <div class="row-inputleg" style="display: flex; align-items: flex-end; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                             <p style="margin-bottom: 0;">Trip fuel:</p>
-                            <input id="trip-fuel-input">
+                            <input class="trip-fuel-input" placeholder="Lb" type="number">
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; border-top-width: 1px; border-top-style: dotted; padding-top: 0px; margin-top: 12px;">
                         <p>Endurance:</p>
-                        <p id="endurance-info"></p>
+                        <p class="endurance-info"></p>
                     </div>
                     <div style="display: flex; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                         <p>ZFW:</p>
-                        <p id="zfw-info"></p>
+                        <p class="zfw-info"></p>
                     </div>
                     <div style="display: flex; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                         <p>Ramp weight:</p>
-                        <p id="ramp-weight-info"></p>
+                        <p class="ramp-weight-info"></p>
                     </div>
                     <div style="display: flex; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                         <p>TOW:</p>
-                        <p id="tow-info"></p>
+                        <p class="tow-info"></p>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
+                    <div style="display: flex; justify-content: space-between; border-top-width: 1px; border-top-style: dotted; border-bottom-width: 1px; border-bottom-style: dotted;">
                         <p>LW:</p>
-                        <p id="landing-weight-info"></p>
+                        <p class="landing-weight-info"></p>
                     </div>
                 </div>
-            </div>
-            <div style="display: flex; justify-content: center; gap: 15px; margin-top: 5px;">
-                <button class="menos-leg">- Leg</button>
-                <button class="mais-leg">+ Leg</button>
+                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 5px;">
+                    <button class="menos-leg">- Leg</button>
+                    <button class="mais-leg">+ Leg</button>
+                </div>
             </div>
         </div>
         <!-- Modal para edição -->
@@ -115,23 +115,28 @@
                     <input type="text" value="Lisboa - Porto">
                 </label>
                 <div class="leg-card">
-                    <label><b>Nome Leg:</b>
+                    <label>
+                        <b>Nome Leg:</b>
                         <input type="text" name="nome_leg" value="LPPT">
                     </label>
                     <br>
-                    <label><b>Departure Fuel:</b>
+                    <label>
+                        <b>Departure Fuel:</b>
                         <input type="number" name="dep_fuel" value="500" id="input-depfuel-leg-card">
                     </label>
                     <br>
-                    <label><b>Payload:</b>
+                    <label>
+                        <b>Payload:</b>
                         <input type="number" name="payload" value="300" id="input-payload-leg-card">
                     </label>
                     <br>
-                    <label><b>Trip Fuel:</b>
+                    <label>
+                        <b>Trip Fuel:</b>
                         <input type="number" name="trip_fuel" value="200">
                     </label>
                     <br>
-                    <label><b>Min Fuel:</b>
+                    <label>
+                        <b>Min Fuel:</b>
                         <input type="number" name="min_fuel" value="0">
                     </label>
                     <br>
@@ -150,7 +155,6 @@
         <!-- Popup secundário para Payload -->
         <div class="modal" id="popup-editar-payload">
             <div class="modal-content">
-                <!-- botão fechar -->
                 <h3>Editar Payload</h3>
                 <table>
                     <tr>
