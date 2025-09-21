@@ -220,7 +220,7 @@ document.addEventListener("input", e => {
 });
 
 // -------------------
-// Botão MB (guarda a leg selecionada no localStorage e vai para index.html)
+// Botão MB (guarda a leg selecionada no localStorage e vai para mb.html)
 // -------------------
 document.addEventListener("click", e => {
   if (e.target.tagName === "BUTTON" && e.target.textContent.trim() === "MB") {
@@ -234,7 +234,7 @@ document.addEventListener("click", e => {
     const legData = estadoRotas.rotas[rotaIndex].legs[legIndex];
 
     localStorage.setItem("mbLegSelecionada", JSON.stringify(legData));
-    window.location.href = "index.html";
+    window.location.href = "mb.html";
   }
 });
 

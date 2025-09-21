@@ -12,8 +12,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // preencher dados da leg selecionada
   const dados = JSON.parse(localStorage.getItem("mbLegSelecionada") || "null");
   if (dados) {
-    document.getElementById("nomeLeg").innerText = dados.nomeLeg;
-    document.getElementById("manualPayload").value = dados.trafficLoad;
+    document.getElementById("nomeLeg").innerText = dados.nome;
+    document.getElementById("manualPayload").value = dados.trafficLoad.total;
     document.getElementById("fuel").value = dados.fuelOB;
     document.getElementById("fuelDest").value = dados.tripFuel;
   }
@@ -175,14 +175,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Fecha teclado ao clicar fora dos inputs
-document.addEventListener("touchstart", function (event) {
-  const isInput = event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA";
-  if (!isInput) {
-    const activeElement = document.activeElement;
-    if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
-      activeElement.blur();
-    }
-  }
-});
 

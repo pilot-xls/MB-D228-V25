@@ -81,14 +81,14 @@
     font-size: 20px;
 
     /* aumenta o tamanho do texto */
-    //font-weight: bold;
-
+    /* font-weight: bold; */
     /* opcional, para mais destaque */
 }
 
 .menu {
-    //display: flex;
+    /* display: flex;
     //gap: 20px;
 
     /* distância horizontal entre os <li> */
 }
+ 

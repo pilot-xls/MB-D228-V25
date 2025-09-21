@@ -90,3 +90,4 @@ document.querySelectorAll("input").forEach(inp => {
     this.select();
   });
 });
+

@@ -1,0 +1,33 @@
+.mb-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+/*tbody e tr são elementos HTML, não classes.*/
+.mb-table tbody tr {
+  height: 45px;
+}
+
+body {
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
+}
+
+/* quando a linha excede, pinta a linha inteira */
+.limit-exceed {
+  background-color: #f69b9b !important; /* fundo vermelho claro */
+  color: #fff;                          /* texto branco por defeito */
+  font-weight: bold;
+}
+
+/* quando há .info-warning dentro de .limit-exceed, também fica branco */
+.limit-exceed .info-warning {
+  color: #fff;
+}
+
+/* quando não excede, .info-warning continua a ser vermelho */
+.info-warning {
+  color: red;
+  font-weight: bold;
+  font-size: 11px;
+}
+

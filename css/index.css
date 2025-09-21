@@ -1,33 +1,34 @@
-.mb-table {
-    width: 100%;
-    table-layout: fixed;
+.menu {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 400px;
+    margin: 50px auto;
 }
 
-/*tbody e tr são elementos HTML, não classes.*/
-.mb-table tbody tr {
-  height: 45px;
+button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #2b353f;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-body {
-    font-size: clamp(0.8rem, 1.5vw, 1rem);
+button:hover {
+    background: #151718;
 }
 
-/* quando a linha excede, pinta a linha inteira */
-.limit-exceed {
-  background-color: #f69b9b !important; /* fundo vermelho claro */
-  color: #fff;                          /* texto branco por defeito */
-  font-weight: bold;
+button svg {
+    width: 40px;
+    height: 60px;
+    margin-bottom: 8px;
+    fill: white;
 }
-
-/* quando há .info-warning dentro de .limit-exceed, também fica branco */
-.limit-exceed .info-warning {
-  color: #fff;
-}
-
-/* quando não excede, .info-warning continua a ser vermelho */
-.info-warning {
-  color: red;
-  font-weight: bold;
-  font-size: 11px;
-}
-
+ 
