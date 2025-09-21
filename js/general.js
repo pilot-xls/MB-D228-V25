@@ -72,8 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
 const paginas = [
   "index.html",
   "mb.html",
-  "performance.html",
   "rotas.html",
+  "performance.html",  
   "calculadora.html",
   "settings.html"
 ];

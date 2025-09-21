@@ -3,9 +3,9 @@
     table-layout: fixed;
 }
 
-/*tbody e tr são elementos HTML, não classes.*/
+/* tbody e tr são elementos HTML, não classes. */
 .mb-table tbody tr {
-  height: 45px;
+    height: 45px;
 }
 
 body {
@@ -14,20 +14,31 @@ body {
 
 /* quando a linha excede, pinta a linha inteira */
 .limit-exceed {
-  background-color: #f69b9b !important; /* fundo vermelho claro */
-  color: #fff;                          /* texto branco por defeito */
-  font-weight: bold;
+    background-color: #f69b9b !important;
+
+    /* fundo vermelho claro */
+    color: #fff;
+
+    /* texto branco por defeito */
+    font-weight: bold;
 }
 
 /* quando há .info-warning dentro de .limit-exceed, também fica branco */
 .limit-exceed .info-warning {
-  color: #fff;
+    color: #fff;
 }
 
 /* quando não excede, .info-warning continua a ser vermelho */
 .info-warning {
-  color: red;
-  font-weight: bold;
-  font-size: 11px;
+    color: red;
+    font-weight: bold;
+    font-size: 11px;
 }
 
+div img,
+div svg {
+    width: 100vw;
+
+    /* 100% da viewport width */
+    height: auto;
+}
