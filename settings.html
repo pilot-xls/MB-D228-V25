@@ -13,29 +13,7 @@
     </head>
     <body>
         <header>
-            <nav class="navbar">
-                <div style="display: flex; justify-content: space-between;">
-                    <div class="logo" style="font-weight: bold; font-size: 32px;">D228</div>
-                    <button class="hamburger" onclick="document.querySelector('.menu').classList.toggle('active')">☰</button>
-                    <ul class="menu">
-                        <li>
-                            <a href="index.html">M&B</a>
-                        </li>
-                        <li>
-                            <a href="rotas.html">Rotas</a>
-                        </li>
-                        <li>
-                            <a href="performance.html">Performance</a>
-                        </li>
-                        <li>
-                            <a href="calculadora.html">Calculadora</a>
-                        </li>
-                        <li>
-                            <a href="settings.html">Settings</a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+            <div id="header"></div>
         </header>
         <div style="display: flex; justify-content: center;">
             <div class="section">
@@ -90,7 +68,8 @@
         </div>
         <!-- Modal editar -->
         <div id="edit-modal" class="modal">
-            <div class="modal-content" id="edit-mzfw"><span id="close-edit" class="close">&times;</span>
+            <div class="modal-content" id="edit-mzfw">
+                <span id="close-edit" class="close">&times;</span>
                 <form id="edit-form" class="aircraft-form">
                     <h3>Editar avião</h3>
                     <div class="input-group">
@@ -145,7 +124,8 @@
         </div>
         <!-- Modal adicionar -->
         <div id="add-modal" class="modal">
-            <div class="modal-content" style="display: block;"><span id="close-add" class="close">&times;</span>
+            <div class="modal-content" style="display: block;">
+                <span id="close-add" class="close">&times;</span>
                 <form id="add-form" class="aircraft-form">
                     <h3>Novo avião</h3>
                     <div class="input-group">
@@ -185,6 +165,7 @@
             </div>
         </div>
         <div id="toast"></div>
+        <script src="js/general.js"></script>
         <script src="js/dataLoader.js"></script>
         <script src="js/settings.js"></script>
     </body>

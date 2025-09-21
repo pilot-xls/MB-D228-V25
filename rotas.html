@@ -10,29 +10,7 @@
     </head>
     <body>
         <header>
-            <nav class="navbar">
-                <div style="display: flex; justify-content: space-between;">
-                    <div class="logo" style="font-weight: bold; font-size: 32px;">D228</div>
-                    <button class="hamburger" onclick="document.querySelector('.menu').classList.toggle('active')">☰</button>
-                    <ul class="menu">
-                        <li>
-                            <a href="index.html">M&B</a>
-                        </li>
-                        <li>
-                            <a href="rotas.html">Rotas</a>
-                        </li>
-                        <li>
-                            <a href="performance.html">Performance</a>
-                        </li>
-                        <li>
-                            <a href="Calculadora.html">Calculadora</a>
-                        </li>
-                        <li>
-                            <a href="settings.html">Settings</a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+            <div id="header"></div>
         </header>
         <h2>Gestão de Rotas</h2>
         <button class="btn" id="btn-nova-rota">+ Nova Rota</button>
@@ -115,31 +93,21 @@
                     <input type="text" value="Lisboa - Porto">
                 </label>
                 <div class="leg-card">
-                    <label>
-                        <b>Nome Leg:</b>
+                    <label><b>Nome Leg:</b>
                         <input type="text" name="nome_leg" value="LPPT">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Departure Fuel:</b>
+                    </label><br>
+                    <label><b>Departure Fuel:</b>
                         <input type="number" name="dep_fuel" value="500" id="input-depfuel-leg-card">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Payload:</b>
+                    </label><br>
+                    <label><b>Payload:</b>
                         <input type="number" name="payload" value="300" id="input-payload-leg-card">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Trip Fuel:</b>
+                    </label><br>
+                    <label><b>Trip Fuel:</b>
                         <input type="number" name="trip_fuel" value="200">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Min Fuel:</b>
+                    </label><br>
+                    <label><b>Min Fuel:</b>
                         <input type="number" name="min_fuel" value="0">
-                    </label>
-                    <br>
+                    </label><br>
                     <div class="actions">
                         <button class="btn btn-secondary">Guardar</button>
                         <button class="btn btn-danger">Eliminar</button>
@@ -192,6 +160,7 @@
                 </div>
             </div>
         </div>
+        <script src="js/general.js"></script>
         <script src="js/dataLoader.js"></script>
         <script src="js/rotas.js"></script>
     </body>
