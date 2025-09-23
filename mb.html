@@ -13,12 +13,12 @@
             <div id="header"></div>             
         </header>         
         <div style="margin-right: 11px; display: flex; flex-direction: column;"> 
-            <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; margin-top: 10px;"> 
+            <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; margin-top: 10px; margin-left: 5px; margin-right: 5px;"> 
                 <h2 style="margin-bottom: 0px;">MASS&amp;BALANCE</h2> 
                 <p style="margin-top: 0px; margin-bottom: 0px;" id="ac-selected"></p> 
                 <p style="margin-top: 0px; margin-bottom: 0px;" id="nomeLeg"></p> 
             </div>             
-            <table class="mb-table" style="border-radius: 15px; outline: 2px solid #000; width: calc(0 + 0px); margin: 5px 5px 20px;"> 
+            <table class="mb-table" style="border-radius: 15px; outline: 2px solid #000; width: calc(0 + 0px); margin: 5px 5px 40px;"> 
                 <thead> 
                     <tr style="background-color: #a0dff4; outline: 1px solid #090808; border-top-right-radius: 15px; border-top-left-radius: 15px; border-color: #000000;"> 
                         <th scope="col" style="text-align: center; line-height: 20px; font-size: calc(0 + 0px); border-right-style: none;">Item</th> 
@@ -111,12 +111,14 @@
                 </tbody>                 
             </table>             
         </div>
-        <div style="position: relative; display: inline-block;">
-            <img src="img/serie212.png"/>
-            <svg width="400" height="300" style="position: absolute; top: 0; left: 0;">
-                <line x1="50" y1="60" x2="200" y2="150" stroke="red" stroke-width="2"/>
-                <line x1="100" y1="200" x2="300" y2="80" stroke="blue" stroke-width="2"/>
-            </svg>
+        <div id="loadsheet-img" style="position: relative; display: inline-block;">
+            <img src="img/serie212.png" style="width: 100%; height: auto;"/>
+            <svg id="cg-svg" viewBox="0 0 400 300" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+</svg>
+        </div>
+        <div style="display: flex; justify-content: space-around; align-items: flex-end; margin-top: 20px;">
+            <img src="img/sevenair.png" style="width: 200px;">
+            <button class="btn" style="width: 120px; height: 50px; font-weight: lighter; font-size: 18px;">Sign</button>
         </div>
         <script src="js/general.js"></script>         
         <script src="js/dataLoader.js"></script>         

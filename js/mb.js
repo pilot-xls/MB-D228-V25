@@ -111,7 +111,7 @@ async function exec_calculo() {
   const maxFuelKg = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
   const maxFuelLb = maxFuelKg * 2.20462;
 
-  const maxPayloadKg = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel);
+  const maxPayloadKg = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
   const maxPayloadLb = maxPayloadKg * 2.20462;
 
   // linha ZFW
@@ -135,7 +135,7 @@ async function exec_calculo() {
   if (payloadInfoCell) {
     payloadInfoCell.innerHTML = `
       ARM ${armPayload.toFixed(1)}<br>
-      MAX Fuel: ${maxFuelKg >= 0 ? maxFuelKg.toFixed(0) : 0} kg / ${maxFuelLb >= 0 ? maxFuelLb.toFixed(0) : 0} lb
+      MAX Fuel: ${maxFuelKg >= 0 ? maxFuelKg.toFixed(0) : 0} kg (${maxFuelLb >= 0 ? maxFuelLb.toFixed(0) : 0} lb)
     `;
   }
 
@@ -144,7 +144,7 @@ async function exec_calculo() {
   if (fuelInfoCell) {
     fuelInfoCell.innerHTML = `
       ARM ${armFuel.toFixed(3)}<br>
-      MAX Payload: ${maxPayloadKg >= 0 ? maxPayloadKg.toFixed(0) : 0} kg / ${maxPayloadLb >= 0 ? maxPayloadLb.toFixed(0) : 0} lb
+      MAX Payload: ${maxPayloadKg >= 0 ? maxPayloadKg.toFixed(0) : 0} kg (${maxPayloadLb >= 0 ? maxPayloadLb.toFixed(0) : 0} lb)
     `;
   }
 
@@ -165,6 +165,14 @@ async function exec_calculo() {
   checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
   checkLimit("takeoffRow", tow, parseFloat(ac.MTOW) || Infinity, "kg");
   checkLimit("landingRow", lw, parseFloat(ac.MLOW) || Infinity, "kg");
+
+    // -- Desenhar MAC% na imagem
+    desenharPontos([
+    { mac: macZfw,     peso: zfw, cor: "blue",   label: "ZFW" },
+    { mac: macTakeoff, peso: tow, cor: "green",  label: "TOW" },
+    { mac: macLanding, peso: lw,  cor: "orange", label: "LDG" }
+    ]);
+
 }
 
 // ligar cálculos
@@ -174,5 +182,104 @@ document.addEventListener("DOMContentLoaded", () => {
     inp.addEventListener("input", exec_calculo);
   });
 });
+
+// --------------------------------------
+// Fuções para desenhas MAC% na Imagem
+// --------------------------------------
+
+// --- Limites do envelope em píxeis dentro do viewBox 400x300 (ajusta com a tua imagem)
+// --- Tabela de limites (direto da tua folha)
+const tabelaLimites = [
+  { peso: 7000, xEsq: 33,  yEsq: -44, xDir: 356, yDir: -44 },
+  { peso: 6800, xEsq: 37,  yEsq: -25, xDir: 351, yDir: -25 },
+  { peso: 6600, xEsq: 41,  yEsq: -7,  xDir: 346, yDir: -7  },
+  { peso: 6400, xEsq: 46,  yEsq: 11,  xDir: 341, yDir: 11  },
+  { peso: 6200, xEsq: 50,  yEsq: 30,  xDir: 336, yDir: 30  },
+  { peso: 6000, xEsq: 54,  yEsq: 48,  xDir: 331, yDir: 48  },
+  { peso: 5800, xEsq: 59,  yEsq: 67,  xDir: 326, yDir: 67  },
+  { peso: 5600, xEsq: 63,  yEsq: 86,  xDir: 321, yDir: 86  },
+  { peso: 5400, xEsq: 67,  yEsq: 104, xDir: 316, yDir: 104 },
+  { peso: 5200, xEsq: 71,  yEsq: 122, xDir: 311, yDir: 122 },
+  { peso: 5000, xEsq: 76,  yEsq: 141, xDir: 306, yDir: 141 },
+  { peso: 4800, xEsq: 81,  yEsq: 160, xDir: 301, yDir: 160 },
+  { peso: 4600, xEsq: 85,  yEsq: 178, xDir: 296, yDir: 178 },
+  { peso: 4400, xEsq: 89,  yEsq: 197, xDir: 291, yDir: 197 },
+  { peso: 4200, xEsq: 93,  yEsq: 215, xDir: 286, yDir: 215 },
+  { peso: 4000, xEsq: 98,  yEsq: 233, xDir: 281, yDir: 233 },
+  { peso: 3800, xEsq: 102, yEsq: 252, xDir: 277, yDir: 252 },
+  { peso: 3600, xEsq: 106, yEsq: 271, xDir: 272, yDir: 271 },
+  { peso: 3400, xEsq: 111, yEsq: 289, xDir: 268, yDir: 289 },
+  { peso: 3200, xEsq: 115, yEsq: 308, xDir: 262, yDir: 308 },
+  { peso: 3000, xEsq: 119, yEsq: 326, xDir: 257, yDir: 326 }
+];
+
+// --- Interpolação linear entre dois pontos
+function interpola(p1, p2, peso) {
+  const t = (peso - p1.peso) / (p2.peso - p1.peso);
+  return {
+    xEsq: p1.xEsq + t * (p2.xEsq - p1.xEsq),
+    yEsq: p1.yEsq + t * (p2.yEsq - p1.yEsq),
+    xDir: p1.xDir + t * (p2.xDir - p1.xDir),
+    yDir: p1.yDir + t * (p2.yDir - p1.yDir)
+  };
+}
+
+// --- Encontrar limites para peso atual
+function limitesNoPeso(peso) {
+  for (let i = 0; i < tabelaLimites.length - 1; i++) {
+    const a = tabelaLimites[i];
+    const b = tabelaLimites[i+1];
+    if (peso <= a.peso && peso >= b.peso) {
+      return interpola(a, b, peso);
+    }
+  }
+  return null;
+}
+
+// --- Converter %MAC + peso em coordenadas
+function toCoords(mac, peso) {
+  const ref = limitesNoPeso(peso);
+  if (!ref) return {x:0, y:0};
+
+  const macMin = 16;
+  const macMax = 42;
+
+  const x = ref.xEsq + ((mac - macMin) / (macMax - macMin)) * (ref.xDir - ref.xEsq);
+  const y = ref.yEsq; // yEsq == yDir porque as linhas são horizontais
+  return {x, y};
+}
+
+
+// desenhar pontos e labels no SVG
+function desenharPontos(resultados) {
+  const svg = document.getElementById("cg-svg");
+
+  // limpa pontos/labels anteriores
+  svg.querySelectorAll(".ponto, .label").forEach(el => el.remove());
+
+  resultados.forEach(r => {
+    const {x, y} = toCoords(r.mac, r.peso);
+
+    // ponto
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", 5);
+    circle.setAttribute("fill", r.cor);
+    circle.classList.add("ponto");
+    svg.appendChild(circle);
+
+    // label (pequeno texto ao lado do ponto)
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", x + 8);
+    text.setAttribute("y", y - 8);
+    text.setAttribute("fill", r.cor);
+    text.setAttribute("font-size", "12px");
+    text.setAttribute("font-weight", "bold");
+    text.classList.add("label");
+    text.textContent = r.label;
+    svg.appendChild(text);
+  });
+}
 
 

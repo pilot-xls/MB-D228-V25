@@ -1,9 +1,16 @@
+/* Base: ecrãs muito pequenos (iPhone SE ~320px) */
+h1 {
+    font-size: 35px;
+    font-family: 'ADLaM Display', cursive;
+}
+
 .menu {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    max-width: 400px;
-    margin: 50px auto;
+    grid-template-columns: 1fr;
+
+    /* 1 coluna */
+    gap: 10px;
+    margin: 20px auto;
 }
 
 button {
@@ -11,24 +18,116 @@ button {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 15px;
+    padding: 8px;
     border: none;
     border-radius: 10px;
     background: #2b353f;
     color: white;
-    font-size: 16px;
+    font-size: 12px;
     cursor: pointer;
     transition: background 0.2s;
+    min-width: 90px;
+    min-height: 90px;
 }
 
 button:hover {
     background: #151718;
 }
 
-button svg {
-    width: 40px;
-    height: 60px;
+button img {
+    width: 28px;
+    height: 28px;
     margin-bottom: 8px;
-    fill: white;
 }
- 
+
+img {
+    width: 120px;
+}
+
+/* Telemóveis normais (>=361px) */
+@media (min-width: 361px) {
+    h1 {
+        font-size: 45px;
+        font-family: 'ADLaM Display', cursive;
+    }
+
+    .menu {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    button {
+        min-width: 120px;
+        min-height: 120px;
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    button img {
+        width: 35px;
+        height: 35px;
+    }
+
+    img {
+        width: 150px;
+    }
+}
+
+/* Tablets médios (>=601px) */
+@media (min-width: 601px) {
+    h1 {
+        font-size: 55px;
+        font-family: 'ADLaM Display', cursive;
+    }
+
+    .menu {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    button {
+        min-width: 180px;
+        min-height: 180px;
+        font-size: 16px;
+        padding: 15px;
+    }
+
+    button img {
+        width: 50px;
+        height: 50px;
+    }
+
+    img {
+        width: 200px;
+    }
+}
+
+/* Desktop / iPad grande (>=1025px) */
+@media (min-width: 1025px) {
+    h1 {
+        font-size: 65px;
+        font-family: 'ADLaM Display', cursive;
+    }
+
+    .menu {
+        grid-template-columns: repeat(3, 1fr);
+        margin: 50px auto;
+    }
+
+    button {
+        min-width: 220px;
+        min-height: 220px;
+        font-size: 18px;
+        padding: 18px;
+    }
+
+    button img {
+        width: 60px;
+        height: 60px;
+    }
+
+    img {
+        width: 250px;
+    }
+}
+

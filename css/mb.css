@@ -36,9 +36,23 @@ body {
 }
 
 div img,
-div svg {
+div svg {
     width: 100vw;
 
     /* 100% da viewport width */
     height: auto;
+}
+
+#loadsheet-img {
+    position: relative;
+    display: inline-block;
+}
+
+.btn {
+    background: #0057b8;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
 }
