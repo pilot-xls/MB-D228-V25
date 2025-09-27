@@ -1,4 +1,4 @@
-const CACHE_NAME = "mb-d228-cache-v3";
+const CACHE_NAME = "mb-d228-cache-v4";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
@@ -30,11 +30,23 @@ const FILES_TO_CACHE = [
   "./icons/icon-512.png"
 ];
 
-// instalar SW e guardar ficheiros em cache
+// instalar SW e guardar ficheiros em cache (contra erros)
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
+    caches.open(CACHE_NAME).then(async cache => {
+      await Promise.all(
+        FILES_TO_CACHE.map(file =>
+          fetch(file).then(resp => {
+            if (resp.ok) {
+              return cache.put(file, resp.clone());
+            } else {
+              console.warn("Falhou cache de", file, resp.status);
+            }
+          }).catch(err => {
+            console.warn("Erro ao buscar", file, err);
+          })
+        )
+      );
     })
   );
 });
@@ -43,11 +55,13 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.map(key => {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      }))
+      Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      )
     )
   );
 });
@@ -56,15 +70,14 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
-      // se tiver no cache -> devolve
       if (response) return response;
 
-      // se for navegação (sem estar em cache) -> tenta rede, se falhar devolve index.html
+      // navegação sem cache -> tenta rede, fallback index.html
       if (event.request.mode === "navigate") {
         return fetch(event.request).catch(() => caches.match("./index.html"));
       }
 
-      // fallback normal
+      // pedido normal
       return fetch(event.request);
     })
   );
