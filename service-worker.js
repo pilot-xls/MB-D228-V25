@@ -1,4 +1,4 @@
-const CACHE_NAME = "mb-d228-cache-v2";
+const CACHE_NAME = "mb-d228-cache-v3";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
@@ -30,7 +30,7 @@ const FILES_TO_CACHE = [
   "./icons/icon-512.png"
 ];
 
-// instalar SW e colocar ficheiros em cache
+// instalar SW e guardar ficheiros em cache
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -39,7 +39,7 @@ self.addEventListener("install", event => {
   );
 });
 
-// ativar SW e remover caches antigos
+// ativar SW e limpar caches antigos
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -52,22 +52,20 @@ self.addEventListener("activate", event => {
   );
 });
 
-// servir ficheiros do cache quando offline
+// servir ficheiros
 self.addEventListener("fetch", event => {
-  // para navegações diretas (sem ficheiro) -> devolve index.html
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      caches.match("./index.html").then(response => {
-        return response || fetch("./index.html");
-      })
-    );
-    return;
-  }
-
-  // para restantes pedidos (JS, CSS, JSON, imagens, etc.)
   event.respondWith(
     caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+      // se tiver no cache -> devolve
+      if (response) return response;
+
+      // se for navegação (sem estar em cache) -> tenta rede, se falhar devolve index.html
+      if (event.request.mode === "navigate") {
+        return fetch(event.request).catch(() => caches.match("./index.html"));
+      }
+
+      // fallback normal
+      return fetch(event.request);
     })
   );
 });
