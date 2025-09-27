@@ -72,13 +72,13 @@ self.addEventListener("fetch", event => {
     caches.match(event.request).then(response => {
       if (response) return response;
 
-      // navegação sem cache -> tenta rede, fallback index.html
-      if (event.request.mode === "navigate") {
-        return fetch(event.request).catch(() => caches.match("./index.html"));
-      }
-
-      // pedido normal
-      return fetch(event.request);
+      // fallback: tenta rede, se falhar e for navegação -> devolve index.html
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === "navigate") {
+          return caches.match("./index.html");
+        }
+      });
     })
   );
 });
+
