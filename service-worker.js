@@ -26,8 +26,8 @@ const FILES_TO_CACHE = [
   "./data/payload.json",
   "./data/rotas.json",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./img/icon-192.png",
+  "./img/icon-512.png"
 ];
 
 // instalar SW e guardar ficheiros em cache (contra erros)
