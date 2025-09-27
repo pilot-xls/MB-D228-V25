@@ -1,6 +1,9 @@
 .mb-table {
-    width: 100%;
+    width: calc(0 + 0px);
     table-layout: fixed;
+    border-radius: 15px;
+    outline: 2px solid #000;
+    margin: 5px 5px 40px;
 }
 
 /* tbody e tr são elementos HTML, não classes. */
@@ -55,4 +58,34 @@ div svg {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     cursor: pointer;
+}
+
+#mb-table {
+    display: flex;
+    flex-direction: column;
+    padding-right: 10px;
+}
+
+#mb-table #heading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#mb-table #heading h2 {
+    margin-bottom: 0px;
+}
+
+#mb-table #heading #ac-selected {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+#mb-table #heading #nomeLeg {
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
