@@ -19,15 +19,15 @@
                 <p id="nomeLeg"></p> 
             </div>             
             <table class="mb-table"> 
-                <thead style="border-top-left-radius: 16px;"> 
-                    <tr style="outline: 1px solid #090808; border-top-right-radius: 15px; border-top-left-radius: 15px; border-color: #000000; height: 30px;"> 
-                        <th scope="col" style="background-color: #2b353f; color: #ffffff; border-top-left-radius: 15px;">Item</th> 
-                        <th scope="col" style="background-color: #2b353f; color: #ffffff;">Weight (kg)</th> 
-                        <th scope="col" style="background-color: #2b353f; color: #ffffff;">Moment (kg&middot;m)</th> 
-                        <th scope="col" style="background-color: #2b353f; color: #ffffff; border-top-right-radius: 15px;">INFO</th> 
+                <thead> 
+                    <tr> 
+                        <th scope="col" id="thead-item">Item</th> 
+                        <th scope="col">Weight (kg)</th> 
+                        <th scope="col">Moment (kg&middot;m)</th> 
+                        <th scope="col" id="thead-info">INFO</th> 
                     </tr>                     
                 </thead>                 
-                <tbody style="text-align: center;"> 
+                <tbody> 
                     <tr style="border-bottom: 5px double #000000; border-top-width: 0px; border-left-width: 0px; border-right-width: 0px;"> 
                         <td style="text-align: center; font-size: calc(0 + 0px); width: calc(0 + 0px);">Basic weight</td> 
                         <td id="basicWeight" style="text-align: center; font-size: calc(0 + 0px); width: calc(0 + 0px);">0</td> 
@@ -65,7 +65,7 @@
                             <label for="fuel">Fuel loading</label>                             
                         </td>                         
                         <td style="text-align: center; font-size: calc(0 + 0px);"> 
-                            <input id="fuel" type="number" inputmode="decimal" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 95%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;"> 
+                            <input id="fuel" type="number" inputmode="decimal" step="any" value="0"> 
                         </td>                         
                         <td id="momentFuel">0</td> 
                         <td style="font-size: 12px; color: #ff0000;" id="Info-maxpayload"></td> 
@@ -112,13 +112,11 @@
             </table>             
         </div>
         <div id="loadsheet-img" style="position: relative; display: inline-block;">
-            <img src="img/serie212.png" style="width: 100%; height: auto;"/>
-            <svg id="cg-svg" viewBox="0 0 400 300" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
-</svg>
+            <img id="loadsheet-base" loading="lazy" alt="Envelope CG" style="width: 100%; height: auto;">
+            <svg id="cg-svg" viewBox="0 0 400 300" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></svg>
         </div>
         <div style="display: flex; justify-content: space-around; align-items: flex-end; margin-top: 40px; margin-bottom: 90px; border-top-width: 1px; border-top-style: inset; padding-top: 25px;">
-            <img src="img/sevenair.png" style="width: 200px;">
-            <button class="btn" style="width: 120px; height: 50px; font-weight: lighter; font-size: 18px;">Sign</button>
+            <img src="img/sevenair.png" loading="lazy" style="width: 200px;">
         </div>
         <script src="js/general.js"></script>         
         <script src="js/dataLoader.js"></script>         

@@ -4,6 +4,8 @@
     border-radius: 15px;
     outline: 2px solid #000;
     margin: 5px 5px 40px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
 }
 
 /* tbody e tr são elementos HTML, não classes. */
@@ -88,4 +90,44 @@ div svg {
 #mb-table #heading #nomeLeg {
     margin-top: 0px;
     margin-bottom: 0px;
+}
+
+.mb-table input {
+    text-align: center;
+    font-size: calc(0 + 0px);
+    width: 95%;
+    resize: horizontal;
+    height: 35px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-style: dotted;
+}
+
+thead {
+    border-top-left-radius: 16px;
+}
+
+thead tr {
+    outline: 1px solid #090808;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
+    border-color: #000000;
+    height: 30px;
+}
+
+thead #thead-item {
+    border-top-left-radius: 15px;
+}
+
+th {
+    background-color: #2b353f;
+    color: #ffffff;
+}
+
+thead #thead-info {
+    border-top-right-radius: 15px;
+}
+
+tbody {
+    text-align: center;
 }

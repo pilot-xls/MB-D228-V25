@@ -43,7 +43,7 @@ function populateSelect() {
   Object.keys(aircraftData).forEach(key => {
     const opt = document.createElement("option");
     opt.value = key;
-    opt.textContent = aircraftData[key].matricula;
+    opt.textContent = `${aircraftData[key].ID}`;
     select.appendChild(opt);
   });
 }
@@ -55,18 +55,23 @@ function updateTable(key) {
   if (!ac) return;
 
   tableBody.innerHTML = `
-    <tr><td>BEW</td><td>${ac.BEW || ""}</td></tr>
-    <tr><td>MZFW</td><td>${ac.MZFW || ""}</td></tr>
-    <tr><td>MRW</td><td>${ac.MRW || ""}</td></tr>
-    <tr><td>MTOW</td><td>${ac.MTOW || ""}</td></tr>
-    <tr><td>MLOW</td><td>${ac.MLOW || ""}</td></tr>
-    <tr><td>Consumo</td><td>${ac.consumo || ""}</td></tr>
-    <tr><td>Braço Pilotos</td><td>${ac.armPilotos || "-"}</td></tr>
-    <tr><td>Braço BEW</td><td>${ac.armBEW || "-"}</td></tr>
-    <tr><td>Braço Combustível</td><td>${ac.armFuel || "-"}</td></tr>
-    <tr><td>Braço Payload</td><td>${ac.armPayload || "-"}</td></tr>
-  `;
+  <tr><td>ID</td><td>${ac.ID || ""}</td></tr>
+  <tr><td>Série</td><td>${ac.Serie || ""}</td></tr>
+  <tr><td>BEW</td><td>${ac.BEW || ""}</td></tr>
+  <tr><td>MZFW</td><td>${ac.MZFW || ""}</td></tr>
+  <tr><td>MRW</td><td>${ac.MRW || ""}</td></tr>
+  <tr><td>MTOW</td><td>${ac.MTOW || ""}</td></tr>
+  <tr><td>MLOW</td><td>${ac.MLOW || ""}</td></tr>
+  <tr><td>Consumo (lb/h)</td><td>${ac.consumo || ""}</td></tr>
+  <tr><td>Braço BEW</td><td>${ac.armBEW || "-"}</td></tr>
+  <tr><td>Braço Pilotos</td><td>${ac.armPilotos || "-"}</td></tr>
+  <tr><td>Braço Combustível</td><td>${ac.armFuel || "-"}</td></tr>
+  <tr><td>Braço Payload</td><td>${ac.armPayload || "-"}</td></tr>
+`;
 
+
+  editForm["edit-id"].value = ac.ID || "";
+  editForm["edit-serie"].value = ac.Serie || "";
   editForm["edit-bew"].value = ac.BEW || "";
   editForm["edit-mzfw"].value = ac.MZFW || "";
   editForm["edit-mrw"].value = ac.MRW || "";
@@ -87,6 +92,8 @@ editForm.addEventListener("submit", e => {
   e.preventDefault();
   if (!currentAircraft) return;
   const ac = aircraftData[currentAircraft];
+  ac.ID = editForm["edit-id"].value;
+  ac.Serie = editForm["edit-serie"].value;
   ac.BEW = editForm["edit-bew"].value;
   ac.MZFW = editForm["edit-mzfw"].value;
   ac.MRW = editForm["edit-mrw"].value;
@@ -129,20 +136,21 @@ addForm.addEventListener("submit", e => {
   e.preventDefault();
   const id = addForm["add-id"].value.trim();
   if (!id) return;
-
-  aircraftData[id] = {
-    matricula: addForm["add-matricula"].value.trim(),
-    BEW: addForm["add-bew"].value,
-    MZFW: addForm["add-mzfw"].value,
-    MRW: addForm["add-mrw"].value,
-    MTOW: addForm["add-mtow"].value,
-    MLOW: addForm["add-mlow"].value,
-    consumo: addForm["add-consumo"].value,
-    armPilotos: 4.21,
-    armBEW: 7.7,
-    armFuel: 7.936,
-    armPayload: 8.7
-  };
+  
+  aircraftData[id] = {    
+        ID: addForm["add-id"].value.trim(),
+        Serie: addForm["add-serie"].value.trim(),
+        BEW: addForm["add-bew"].value.trim(),
+        MZFW: addForm["add-mzfw"].value.trim(),
+        MRW: addForm["add-mrw"].value.trim(),
+        MTOW: addForm["add-mtow"].value.trim(),
+        MLOW: addForm["add-mlow"].value.trim(),
+        consumo: addForm["add-consumo"].value.trim(),
+        armBEW: addForm["add-armBEW"].value.trim(),
+        armPilotos: addForm["add-armPilots"].value.trim(),
+        armFuel: addForm["add-armFuel"].value.trim(),
+        armPayload: addForm["add-armPayload"].value.trim()
+    };
 
   localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
   populateSelect();
@@ -160,13 +168,13 @@ document.getElementById("open-edit").addEventListener("click", () => {
 document.getElementById("close-edit").addEventListener("click", () => editModal.style.display = "none");
 document.getElementById("open-add").addEventListener("click", () => addModal.style.display = "block");
 document.getElementById("close-add").addEventListener("click", () => addModal.style.display = "none");
-
+//quando click fora do tela editar ou adicionar aviar fecha automatimance a tela
 window.addEventListener("click", e => {
   if (e.target === editModal) editModal.style.display = "none";
   if (e.target === addModal) addModal.style.display = "none";
 });
 
-// default
+// SET new default Aircraft
 defaultCheckbox.addEventListener("change", e => {
   if (e.target.checked && currentAircraft) {
     localStorage.setItem("defaultAircraft", currentAircraft);
@@ -175,7 +183,7 @@ defaultCheckbox.addEventListener("change", e => {
   }
 });
 
-// payload
+// payload save
 function savePayload() {
   const payloadDefaults = {
     man: manInput.value,
@@ -188,4 +196,39 @@ function savePayload() {
 document.getElementById("save-payload").addEventListener("click", savePayload);
 
 
+
+// Botão "Repor valores":
+// - Pede confirmação ao utilizador
+// - Limpa todos os dados guardados em localStorage (aviões, payload, rotas, default)
+// - Chama ensureSettingsData() para recarregar os valores de origem a partir dos ficheiros JSON
+// - Atualiza dropdown, tabela e inputs de payload com os valores repostos
+
+document.getElementById("reset-defaults").addEventListener("click", async () => {
+  if (!confirm("Queres mesmo repor todos os valores por defeito?")) return;
+
+  // limpar todos os dados de settings
+  localStorage.removeItem("aircraftData");
+  localStorage.removeItem("defaultAircraft");
+  localStorage.removeItem("payloadDefaults");
+  localStorage.removeItem("estadoRotas");
+
+  // recarregar defaults dos ficheiros JSON
+  const { aircraftData: acData, defaultId, payloadDefaults } = await ensureSettingsData();
+  aircraftData = acData;
+
+  // atualizar dropdown e tabela
+  populateSelect();
+  if (defaultId && aircraftData[defaultId]) {
+    updateTable(select.value = defaultId);
+  } else if (Object.keys(aircraftData).length > 0) {
+    updateTable(select.value = Object.keys(aircraftData)[0]);
+  }
+
+  // atualizar inputs de payload
+  manInput.value = payloadDefaults.man || "";
+  womanInput.value = payloadDefaults.woman || "";
+  childInput.value = payloadDefaults.child || "";
+
+  alert("Todos os dados foram repostos a partir dos ficheiros JSON.");
+});
 

@@ -16,13 +16,13 @@
             <div id="header"></div>
         </header>
         <div style="display: flex; justify-content: center;">
-            <div class="section">
-                <h2>Settings Aviões</h2>
+            <div class="section" style="min-width: 260px;">
+                <h2 style="text-align: center;">Settings Aviões</h2>
                 <div style="display: flex; margin-bottom: 20px; justify-content: space-around; align-items: baseline;">
                     <label for="aircraft-select">Selecionar avião:</label>
                     <select id="aircraft-select"></select>
                 </div>
-                <table class="settings-table">
+                <table class="settings-table" style="display: flex; flex-direction: column; align-items: center;">
                     <thead>
                         <tr>
                             <th style="text-align: left;">Parâmetro</th>
@@ -39,14 +39,14 @@
                     </label>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                    <button id="open-edit" class="btn">Editar</button>
-                    <button id="open-add" class="btn">Add Avião</button>
+                    <button id="open-edit" class="btn" style="min-width: 110px;">Editar</button>
+                    <button id="open-add" class="btn" style="min-width: 110px;">Add Avião</button>
                 </div>
             </div>
         </div>
         <div style="display: flex; justify-content: center; margin-top:20px;">
-            <div class="section">
-                <h2>Settings Payload</h2>
+            <div class="section" style="min-width: 260px;">
+                <h2 style="text-align: center;">Settings Payload</h2>
                 <div class="input-group" style="margin-bottom:10px;">
                     <label for="std-man">Peso Homem (kg)</label>
                     <input type="number" id="std-man" placeholder="ex: 86">
@@ -67,50 +67,59 @@
             </div>
         </div>
         <!-- Modal editar -->
+        <!-- EDITAR AVIÃO -->
         <div id="edit-modal" class="modal">
-            <div class="modal-content" id="edit-mzfw">
+            <div class="modal-content">
                 <span id="close-edit" class="close">&times;</span>
                 <form id="edit-form" class="aircraft-form">
                     <h3>Editar avião</h3>
                     <div class="input-group">
-                        <label for="edit-bew">BEW (kg)</label>
-                        <input type="text" id="edit-bew">
+                        <label for="edit-id">ID</label>
+                        <input type="text" id="edit-id" name="edit-id">
                     </div>
                     <div class="input-group">
-                        <label for="edit-zfw">ZFW (kg)</label>
-                        <input type="text" id="edit-mzfw">
+                        <label for="edit-serie">Série</label>
+                        <input type="text" id="edit-serie" name="edit-serie">
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-bew">BEW (kg)</label>
+                        <input type="text" id="edit-bew" name="edit-bew">
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-mzfw">MZFW (kg)</label>
+                        <input type="text" id="edit-mzfw" name="edit-mzfw">
                     </div>
                     <div class="input-group">
                         <label for="edit-mrw">MRW (kg)</label>
-                        <input type="text" id="edit-mrw">
+                        <input type="text" id="edit-mrw" name="edit-mrw">
                     </div>
                     <div class="input-group">
                         <label for="edit-mtow">MTOW (kg)</label>
-                        <input type="text" id="edit-mtow">
+                        <input type="text" id="edit-mtow" name="edit-mtow">
                     </div>
                     <div class="input-group">
                         <label for="edit-mlow">MLOW (kg)</label>
-                        <input type="text" id="edit-mlow">
+                        <input type="text" id="edit-mlow" name="edit-mlow">
                     </div>
                     <div class="input-group">
-                        <label for="edit-consumo">Consumo (L/h)</label>
-                        <input type="text" id="edit-consumo">
+                        <label for="edit-consumo">Consumo (lb/h)</label>
+                        <input type="text" id="edit-consumo" name="edit-consumo">
                     </div>
                     <div class="input-group">
-                        <label for="edit-consumo">Pilot seat arm (m)</label>
-                        <input type="text" id="edit-armPilots">
+                        <label for="edit-armBEW">BEW arm (m)</label>
+                        <input type="text" id="edit-armBEW" name="edit-armBEW">
                     </div>
                     <div class="input-group">
-                        <label for="edit-consumo">BEW arm (m)</label>
-                        <input type="text" id="edit-armBEW">
+                        <label for="edit-armPilots">Pilot seat arm (m)</label>
+                        <input type="text" id="edit-armPilots" name="edit-armPilots">
                     </div>
                     <div class="input-group">
-                        <label for="edit-consumo">Fuel arm (m)</label>
-                        <input type="text" id="edit-armFuel">
+                        <label for="edit-armFuel">Fuel arm (m)</label>
+                        <input type="text" id="edit-armFuel" name="edit-armFuel">
                     </div>
                     <div class="input-group">
-                        <label for="edit-consumo">Pilot seat arm (m)</label>
-                        <input type="text" id="edit-armPayload">
+                        <label for="edit-armPayload">Payload arm (m)</label>
+                        <input type="text" id="edit-armPayload" name="edit-armPayload">
                     </div>
                     <div style="display:flex; justify-content:space-between; gap:1rem; margin-top:1rem;">
                         <button type="submit" class="btn">Guardar alterações</button>
@@ -119,50 +128,58 @@
                 </form>
             </div>
         </div>
-        <div style="display: flex; justify-content: center;">
-            <button id="reset-defaults" class="btn secondary">Repor valores</button>
-        </div>
-        <!-- Modal adicionar -->
+        <!-- NOVO AVIÃO -->
         <div id="add-modal" class="modal">
-            <div class="modal-content" style="display: block;">
+            <div class="modal-content">
                 <span id="close-add" class="close">&times;</span>
                 <form id="add-form" class="aircraft-form">
                     <h3>Novo avião</h3>
                     <div class="input-group">
-                        <label for="add-id">ID (ex: CS-DVU)</label>
-                        <input type="text" id="add-id" required>
+                        <label for="add-id">ID</label>
+                        <input type="text" id="add-id" name="add-id" required placeholder="ex: CS-DVU">
                     </div>
                     <div class="input-group">
-                        <label for="add-matricula">Matrícula</label>
-                        <input type="text" id="add-matricula" required>
+                        <label for="add-serie">Série</label>
+                        <input type="text" id="add-serie" name="add-serie" required placeholder="ex: 212">
                     </div>
                     <div class="input-group">
                         <label for="add-bew">BEW (kg)</label>
-                        <input type="text" id="add-bew">
+                        <input type="text" id="add-bew" name="add-bew">
                     </div>
                     <div class="input-group">
-                        <label for="add-zfw">MZFW (kg)</label>
-                        <input type="text" id="add-mzfw">
+                        <label for="add-mzfw">MZFW (kg)</label>
+                        <input type="text" id="add-mzfw" name="add-mzfw">
                     </div>
                     <div class="input-group">
                         <label for="add-mrw">MRW (kg)</label>
-                        <input type="text" id="add-mrw">
+                        <input type="text" id="add-mrw" name="add-mrw">
                     </div>
                     <div class="input-group">
                         <label for="add-mtow">MTOW (kg)</label>
-                        <input type="text" id="add-mtow">
+                        <input type="text" id="add-mtow" name="add-mtow">
                     </div>
                     <div class="input-group">
                         <label for="add-mlow">MLOW (kg)</label>
-                        <input type="text" id="add-mlow">
+                        <input type="text" id="add-mlow" name="add-mlow">
                     </div>
                     <div class="input-group">
-                        <label for="add-consumo">Consumo (L/h)</label>
-                        <input type="text" id="add-consumo">
+                        <label for="add-consumo">Consumo (lb/h)</label>
+                        <input type="text" id="add-consumo" name="add-consumo" placeholder="ex: 600">
                     </div>
+                    <div class="input-group">
+                        <label for="add-armBEW">BEW arm (m)</label>
+                        <input type="text" id="add-armBEW" name="add-armBEW">
+                    </div>
+                    <!-- Campos standard não visíveis no "Novo avião" -->
+                    <input type="hidden" id="add-armPilots" name="add-armPilots" value="4.21">
+                    <input type="hidden" id="add-armFuel" name="add-armFuel" value="7.936">
+                    <input type="hidden" id="add-armPayload" name="add-armPayload" value="8.7">
                     <button type="submit" class="btn">Adicionar avião</button>
                 </form>
             </div>
+        </div>
+        <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+            <button id="reset-defaults" class="btn secondary">Repor valores</button>
         </div>
         <div id="toast"></div>
         <script src="js/general.js"></script>

@@ -20,15 +20,15 @@
         </div>
         <div style="display: flex; justify-content: center;">
             <section class="section">
-                <div class="calc-block" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border-width: 0px; border-style: ridge; padding: 10px; min-width: 205px;">
-                    <h2>Tempo (hh:mm:ss)</h2>
-                    <input type="text" id="tempo1" placeholder="01:30:45">
-                    <input type="text" id="tempo2" placeholder="00:45:15"><br>
-                    <div style="display: flex; gap: 20px;">
-                        <button onclick="subtrairTempos()">Subtrair</button>
-                        <button onclick="somarTempos()">Somar</button>
+                <div class="calc-block" style="display: flex; flex-direction: column; align-items: center; gap: 10px; border-width: 0; padding: 10px; min-width: 260px;">
+                    <h2 style="text-align: center;">Calculadora de Tempo</h2>
+                    <input type="text" id="display" placeholder="00:00" style="text-align:center; font-size:20px; width:120px;">
+                    <div style="display: flex; gap: 13px; margin-top: 15px;">
+                        <button onclick="resetCalc()" style="height: 30px; width: 55px; font-size: 17px; align-items: center; display: inline-flex; justify-content: center; font-weight: bold;">Reset</button>
+                        <button onclick="subtrair()" style="height: 30px; width: 55px; font-size: 25px; align-items: center; display: inline-flex; justify-content: center;">-</button>
+                        <button onclick="somar()" style="height: 30px; width: 55px; font-size: 25px; align-items: center; display: inline-flex; justify-content: center;">+</button>
                     </div>
-                    <p>Resultado: <span id="resultado-tempo">--:--:--</span></p>
+                    <p>Resultado: <span id="resultado">0:00</span></p>
                 </div>
             </section>
         </div>
@@ -36,7 +36,7 @@
         <!-- CONVERSÕES -->
         <div style="display: flex; justify-content: center; margin-top: 20px;">
             <section class="section">
-                <div class="calc-block" style="display: flex; justify-content: center; align-items: center; padding: 10px; min-width: 205px; flex-direction: column;">
+                <div class="calc-block" style="display: flex; justify-content: center; align-items: center; padding: 10px; min-width: 260px; flex-direction: column;">
                     <h2>Conversões</h2>
                     <div class="linha" style="margin-top: 10px; display: flex; flex-direction: column;">
                         <label style="font-weight: bold;">lb ↔ kg</label>

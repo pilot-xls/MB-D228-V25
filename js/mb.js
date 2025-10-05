@@ -7,7 +7,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     const aircraft = aircraftData[defaultId];
     document.getElementById("ac-selected").innerText = aircraft.matricula || defaultId;
     document.getElementById("basicWeight").innerText = aircraft.BEW || "0";
+    updateLoadsheetImage(aircraft);
   }
+
+//atualiza imagem de mass and Balance
+    function updateLoadsheetImage(ac) {
+        const imgEl = document.querySelector("#loadsheet-img img");
+        if (!imgEl || !ac) return;
+
+        // escolhe imagem pela série
+        switch (ac.Serie) {
+            case "200":
+            imgEl.setAttribute("src", "img/serie200.png");
+            break;
+            case "212":
+            imgEl.setAttribute("src", "img/serie212.png");
+            break;
+            default:
+            imgEl.setAttribute("src", "img/serieError.png"); 
+        }
+    }
 
   // preencher dados da leg selecionada
   const dados = JSON.parse(localStorage.getItem("mbLegSelecionada") || "null");
@@ -40,6 +59,7 @@ function formatNumber(num) {
 }
 
 // calcular tabela Mass & Balance
+// calcular tabela Mass & Balance
 async function exec_calculo() {
   const { aircraftData, defaultId } = await ensureSettingsData();
   if (!defaultId || !aircraftData[defaultId]) return;
@@ -58,7 +78,7 @@ async function exec_calculo() {
   const armPilots = parseFloat(ac.armPilotos) || 0;
   const armPayload = parseFloat(ac.armPayload) || 0;
   const armFuel = parseFloat(ac.armFuel) || 0;
-  
+
   // valores da formula CG%
   const MAC_ZERO = 7.26;
   const MAC_DIV = 2.042;
@@ -70,48 +90,57 @@ async function exec_calculo() {
   const momentFuel = fuel * armFuel;
   const momentTaxi = fuelTaxi * armFuel;
   const momentDest = fuelDest * armFuel;
-  
+
   // atualizar momentos
-  document.getElementById("basicMoment").innerText   = formatNumber(momentBasic);
-  document.getElementById("momentPilots").innerText  = formatNumber(momentPilots);
+  document.getElementById("basicMoment").innerText = formatNumber(momentBasic);
+  document.getElementById("momentPilots").innerText = formatNumber(momentPilots);
   document.getElementById("momentPayload").innerText = formatNumber(momentPayload);
-  document.getElementById("momentFuel").innerText    = formatNumber(momentFuel);
-  document.getElementById("momentTaxi").innerText    = formatNumber(momentTaxi);
-  document.getElementById("momentDest").innerText    = formatNumber(momentDest);
-  
+  document.getElementById("momentFuel").innerText = formatNumber(momentFuel);
+  document.getElementById("momentTaxi").innerText = formatNumber(momentTaxi);
+  document.getElementById("momentDest").innerText = formatNumber(momentDest);
+
   // pesos
   const zfw = basicWeight + pilots + payload;
   const rampWeight = zfw + fuel;
   const tow = rampWeight - fuelTaxi;
   const lw = tow - fuelDest;
 
-  document.getElementById("zfw").innerText         = zfw;
-  document.getElementById("rampWeight").innerText  = rampWeight;
+  document.getElementById("zfw").innerText = zfw;
+  document.getElementById("rampWeight").innerText = rampWeight;
   document.getElementById("takeoffWeight").innerText = tow;
   document.getElementById("landingWeight").innerText = lw;
 
   // momentos agregados
-  document.getElementById("momentZfw").innerText     = formatNumber(momentBasic + momentPilots + momentPayload);
-  document.getElementById("momentRamp").innerText    = formatNumber(momentBasic + momentPilots + momentPayload + momentFuel);
+  document.getElementById("momentZfw").innerText = formatNumber(momentBasic + momentPilots + momentPayload);
+  document.getElementById("momentRamp").innerText = formatNumber(momentBasic + momentPilots + momentPayload + momentFuel);
   document.getElementById("momentTakeoff").innerText = formatNumber(momentBasic + momentPilots + momentPayload + (fuel - fuelTaxi) * armFuel);
   document.getElementById("momentLanding").innerText = formatNumber(momentBasic + momentPilots + momentPayload + (fuel - fuelTaxi - fuelDest) * armFuel);
 
   // --- MACs ---
   const mZFW = momentBasic + momentPilots + momentPayload;
   const mRamp = momentBasic + momentPilots + momentPayload + momentFuel;
-  const mTO   = momentBasic + momentPilots + momentPayload + (fuel - fuelTaxi) * armFuel;
-  const mLDG  = momentBasic + momentPilots + momentPayload + (fuel - fuelTaxi - fuelDest) * armFuel;
+  const mTO = momentBasic + momentPilots + momentPayload + (fuel - fuelTaxi) * armFuel;
+  const mLDG = momentBasic + momentPilots + momentPayload + (fuel - fuelTaxi - fuelDest) * armFuel;
 
-  const macZfw     = ((mZFW / zfw - MAC_ZERO) / MAC_DIV) * 100;
-  const macRamp    = ((mRamp / rampWeight - MAC_ZERO) / MAC_DIV) * 100;
+  const macZfw = ((mZFW / zfw - MAC_ZERO) / MAC_DIV) * 100;
+  const macRamp = ((mRamp / rampWeight - MAC_ZERO) / MAC_DIV) * 100;
   const macTakeoff = ((mTO / tow - MAC_ZERO) / MAC_DIV) * 100;
   const macLanding = ((mLDG / lw - MAC_ZERO) / MAC_DIV) * 100;
 
   // --- Infos cruzadas Payload / Fuel ---
-  const maxFuelKg = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
+  // Max Fuel possível para o payload atual
+  const maxFuelByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
+  const maxFuelByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + payload) + fuelTaxi;
+  const maxFuelByMLW = (parseFloat(ac.MLW) || Infinity) - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
+  const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
   const maxFuelLb = maxFuelKg * 2.20462;
 
-  const maxPayloadKg = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
+  // Max Payload possível para o fuel atual
+  const maxPayloadByMZFW = (parseFloat(ac.MZFW) || Infinity) - (basicWeight + pilots);
+  const maxPayloadByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
+  const maxPayloadByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + fuel);
+  const maxPayloadByMLW = (parseFloat(ac.MLW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
+  const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW);
   const maxPayloadLb = maxPayloadKg * 2.20462;
 
   // linha ZFW
@@ -149,31 +178,39 @@ async function exec_calculo() {
   }
 
   // --- validações de limites ---
-  function checkLimit(rowId, value, limit, label = "") {
-    const row = document.getElementById(rowId);
-    const infoCell = row.querySelector("td:last-child");
+ function checkLimit(rowId, value, limit, label = "") {
+    const weightCell = document.getElementById(rowId);       // célula do peso
+    const row = weightCell.closest("tr");                    // linha completa
+    const infoCell = row.querySelector("td:last-child");     // célula info
     if (value > limit) {
-      row.classList.add("limit-exceed");
-      /*if (infoCell) infoCell.innerHTML = `<span class="info-warning">MAX: ${limit} ${label}</span>`;*/
+        row.classList.add("limit-exceed");
+        if (infoCell) {
+        infoCell.innerHTML += `<br><span class="info-warning">EXCEDE LIMITE (${limit} ${label})</span>`;
+        }
     } else {
-      row.classList.remove("limit-exceed");
-      // não apagar infos normais
+        row.classList.remove("limit-exceed");
     }
   }
 
   checkLimit("zfw", zfw, parseFloat(ac.MZFW) || Infinity, "kg");
   checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
   checkLimit("takeoffRow", tow, parseFloat(ac.MTOW) || Infinity, "kg");
-  checkLimit("landingRow", lw, parseFloat(ac.MLOW) || Infinity, "kg");
+  checkLimit("landingRow", lw, parseFloat(ac.MLW) || Infinity, "kg");
 
-    // -- Desenhar MAC% na imagem
-    desenharPontos([
-    { mac: macZfw,     peso: zfw, cor: "blue",   label: "ZFW" },
-    { mac: macTakeoff, peso: tow, cor: "green",  label: "TOW" },
-    { mac: macLanding, peso: lw,  cor: "orange", label: "LDG" }
-    ]);
+   // -- Desenhar MAC% na imagem
+   // se serieError.png nao vai desenhar
+    if (ac.Serie === "200" || ac.Serie === "212") {
+        setSerie(ac.Serie);
+        desenharPontos([
+            { mac: macZfw, peso: zfw, cor: "blue", label: "ZFW" },
+            { mac: macTakeoff, peso: tow, cor: "green", label: "TOW" },
+            { mac: macLanding, peso: lw, cor: "orange", label: "LDG" }
+        ]);
+    }
 
-}
+} //fim exec_calculo
+
+
 
 // ligar cálculos
 document.addEventListener("DOMContentLoaded", () => {
@@ -188,8 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // --------------------------------------
 
 // --- Limites do envelope em píxeis dentro do viewBox 400x300 (ajusta com a tua imagem)
-// --- Tabela de limites (direto da tua folha)
-const tabelaLimites = [
+
+// --- Limites Série 212
+const limites212 = [
   { peso: 7000, xEsq: 33,  yEsq: -44, xDir: 356, yDir: -44 },
   { peso: 6800, xEsq: 37,  yEsq: -25, xDir: 351, yDir: -25 },
   { peso: 6600, xEsq: 41,  yEsq: -7,  xDir: 346, yDir: -7  },
@@ -213,6 +251,38 @@ const tabelaLimites = [
   { peso: 3000, xEsq: 119, yEsq: 326, xDir: 257, yDir: 326 }
 ];
 
+// --- Limites Série 200
+const limites200 = [
+  { peso: 7000, xEsq: 31,  yEsq: -41, xDir: 348, yDir: -41 },
+  { peso: 6800, xEsq: 35,  yEsq: -23, xDir: 343, yDir: -23 },
+  { peso: 6600, xEsq: 39,  yEsq: -5,  xDir: 339, yDir: -4  },
+  { peso: 6400, xEsq: 44,  yEsq: 13,  xDir: 334, yDir: 13  },
+  { peso: 6200, xEsq: 48,  yEsq: 32,  xDir: 328, yDir: 31  },
+  { peso: 6000, xEsq: 52,  yEsq: 50,  xDir: 324, yDir: 50  },
+  { peso: 5800, xEsq: 57,  yEsq: 68,  xDir: 319, yDir: 67  },
+  { peso: 5600, xEsq: 61,  yEsq: 86,  xDir: 314, yDir: 85  },
+  { peso: 5400, xEsq: 65,  yEsq: 104, xDir: 310, yDir: 104 },
+  { peso: 5200, xEsq: 69,  yEsq: 122, xDir: 305, yDir: 122 },
+  { peso: 5000, xEsq: 74,  yEsq: 141, xDir: 300, yDir: 139 },
+  { peso: 4800, xEsq: 78,  yEsq: 159, xDir: 295, yDir: 159 },
+  { peso: 4600, xEsq: 82,  yEsq: 177, xDir: 290, yDir: 176 },
+  { peso: 4400, xEsq: 86,  yEsq: 195, xDir: 285, yDir: 195 },
+  { peso: 4200, xEsq: 91,  yEsq: 213, xDir: 280, yDir: 212 },
+  { peso: 4000, xEsq: 95,  yEsq: 231, xDir: 275, yDir: 230 },
+  { peso: 3800, xEsq: 99,  yEsq: 249, xDir: 271, yDir: 249 },
+  { peso: 3600, xEsq: 103, yEsq: 267, xDir: 265, yDir: 266 },
+  { peso: 3400, xEsq: 108, yEsq: 285, xDir: 261, yDir: 284 },
+  { peso: 3200, xEsq: 112, yEsq: 304, xDir: 255, yDir: 303 },
+  { peso: 3000, xEsq: 116, yEsq: 322, xDir: 251, yDir: 321 }
+];
+
+let tabelaAtiva = limites212; // default
+
+function setSerie(serie) {
+  if (serie === "212") tabelaAtiva = limites212;
+  if (serie === "200") tabelaAtiva = limites200;
+}
+
 // --- Interpolação linear entre dois pontos
 function interpola(p1, p2, peso) {
   const t = (peso - p1.peso) / (p2.peso - p1.peso);
@@ -226,9 +296,9 @@ function interpola(p1, p2, peso) {
 
 // --- Encontrar limites para peso atual
 function limitesNoPeso(peso) {
-  for (let i = 0; i < tabelaLimites.length - 1; i++) {
-    const a = tabelaLimites[i];
-    const b = tabelaLimites[i+1];
+  for (let i = 0; i < tabelaAtiva.length - 1; i++) {
+    const a = tabelaAtiva[i];
+    const b = tabelaAtiva[i+1];
     if (peso <= a.peso && peso >= b.peso) {
       return interpola(a, b, peso);
     }
