@@ -1,4 +1,4 @@
-const CACHE_NAME = "mb-d228-cache-v1";
+const CACHE_NAME = "mb-d228-cache-v2";
 const FILES_TO_CACHE = [
   "./",
   "./calculadora.html",
@@ -31,6 +31,8 @@ const FILES_TO_CACHE = [
   "./img/icon-512.png",
   "./img/performance.png",
   "./img/serie212.png",
+  "./img/serie200.png",
+  "./img/serieError.png",
   "./img/settings.png",
   "./img/sevenair.png",
   "./img/waypoint.png",
