@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("input").forEach(inp => {
     if (!inp.type || inp.type === "text") inp.type = "number";
     inp.setAttribute("inputmode", "decimal");
-    inp.setAttribute("pattern", "[0-9]*");
+    inp.setAttribute("pattern", "[0-9:.]*");
   });
 });
 
