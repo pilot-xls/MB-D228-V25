@@ -2,11 +2,12 @@
 // Força teclado numérico em todos os inputs
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("input").forEach(inp => {
-    if (!inp.type || inp.type === "text") inp.type = "number";
-    inp.setAttribute("inputmode", "decimal");
+    inp.type = "text";
+    inp.setAttribute("inputmode", "numeric");
     inp.setAttribute("pattern", "[0-9:.]*");
   });
 });
+
 
 // Fecha teclado ao clicar fora dos inputs
 document.addEventListener("touchstart", function (event) {
