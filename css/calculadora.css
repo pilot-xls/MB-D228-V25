@@ -1,7 +1,154 @@
+/* Definições globais e layout */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1rem;
+    max-width: 600px;
+
+    /* Limita a largura para ecrãs maiores */
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    color: var(--primary-color, #333);
+
+    /* Assume var --primary-color do theme.css */
+    margin: 1.5rem 0 1rem;
+    font-size: 2em;
+}
+
 .section {
-    margin: 1rem;
-    background: white;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    background: var(--card-bg, #ffffff);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color, #eee);
+}
+
+.block-title {
+    text-align: center;
+    font-size: 1.25em;
+    color: var(--text-color-dark, #333);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+/* --- CALCULADORA DE TEMPO --- */
+.time-calculator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.display-input {
+    width: 100%;
+    max-width: 300px;
+    font-size: 2.2em !important;
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 15px 10px;
+    border-radius: 10px;
+    border: 2px solid var(--primary-color, #007bff);
+    background-color: var(--input-bg, #f9f9f9);
+    color: var(--text-color-dark, #333);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-family: monospace;
+
+    /* Fonte monoespaçada para melhor alinhamento do tempo */
+}
+
+.keypad {
+    display: flex;
+
+    /* Flexbox para alinhar os botões */
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.time-calculator button {
+    flex-grow: 1;
+
+    /* Distribui o espaço uniformemente */
+    font-size: 1.5em;
+    height: 55px;
+    border: none;
     border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    font-weight: bold;
+}
+
+/* Estilos de Cor dos Botões */
+.operator-btn {
+    background-color: var(--operator-bg, #e8f0fe);
+    color: var(--primary-color, #007bff);
+}
+
+.equals-btn {
+    background-color: var(--primary-color, #007bff);
+    color: white;
+}
+
+.clear-btn {
+    background-color: var(--clear-bg, #f44336);
+    color: white;
+}
+
+.time-calculator button:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* --- CONVERSÕES --- */
+.calc-block {
+    width: 100%;
+}
+
+.conversion-line {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+
+    /* Label (1), Input 1 (1), Input 2 (1) */
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-light, #ddd);
+}
+
+.conversion-line:last-child {
+    border-bottom: none;
+}
+
+.conversion-line label {
+    font-weight: 600;
+    color: var(--primary-color, #007bff);
+    text-align: left;
+
+    /* Para evitar que as labels longas quebrem o layout */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversion-line input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 6px;
+    font-size: 1em;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.conversion-line input:focus {
+    border-color: var(--primary-color, #007bff);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }

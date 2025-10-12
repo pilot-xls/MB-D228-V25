@@ -1,78 +1,171 @@
-.section {
-    margin: 1rem;
-    background: white;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.section h2 {
-    margin-top: 0;
-}
-
-.aircraft-card {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.aircraft-card header {
+/* Layout Principal e Container */
+.settings-container {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    background: none;
-    color: inherit;
-    padding: 0;
+    padding: 1rem;
+    max-width: 550px;
+
+    /* Largura máxima para centralizar */
+    margin: 0 auto;
 }
 
-.btn {
-    background: #0057b8;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
+.section {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    background: var(--card-bg, #ffffff);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color, #eee);
 }
 
-.btn.secondary {
-    background: #666;
+.section-title {
+    text-align: center;
+    color: var(--primary-color, #007bff);
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5em;
+    font-weight: 700;
 }
 
+/* --- Estilos Comuns de Inputs e Botões --- */
 .input-group {
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 label {
     display: block;
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--text-color-dark, #333);
 }
 
-input {
+input,
+select {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 8px;
+    box-sizing: border-box;
+
+    /* Garante que padding e border não aumentam a largura */
+    font-size: 1em;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.aircraft-form {
+input:focus,
+select:focus {
+    border-color: var(--primary-color, #007bff);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn.primary {
+    background: var(--primary-color, #0057b8);
+    color: white;
+}
+
+.btn.secondary {
+    background: var(--secondary-color, #6c757d);
+    color: white;
+}
+
+.btn.danger {
+    background: var(--danger-color, #dc3545);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+/* Grupos de Botões e Alinhamentos */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.button-group .btn {
+    flex-grow: 1;
+}
+
+.button-center {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.full-width-btn {
+    width: 100%;
     margin-top: 1rem;
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #f0f6ff;
 }
 
-.aircraft-form h3 {
-    margin-top: 0;
+/* Seleção de Avião (Settings Aviões) */
+.aircraft-select-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
-.aircraft-form h4 {
-    margin-bottom: 0.5rem;
-    margin-top: 1rem;
+.aircraft-select-group label {
+    font-weight: normal;
+    margin-bottom: 0;
 }
 
+/* Tabela de Parâmetros */
+.settings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    font-size: 0.95em;
+}
+
+.settings-table th,
+.settings-table td {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+    text-align: left;
+}
+
+.settings-table th:first-child,
+.settings-table td:first-child {
+    font-weight: 600;
+    color: var(--text-color-medium, #555);
+}
+
+.settings-table thead th {
+    border-bottom: 2px solid var(--border-color, #ccc);
+    color: var(--text-color-dark, #333);
+}
+
+/* Checkbox Default */
+.checkbox-group {
+    margin-top: 15px;
+    font-size: 1em;
+    color: var(--text-color-medium, #555);
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+}
+
+/* --- Modals (Janelas Pop-up) --- */
 .modal {
     display: none;
     position: fixed;
@@ -81,55 +174,112 @@ input {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    padding-top: 50px;
 
-    /* permite scroll no overlay */
-    background-color: rgba(0,0,0,0.5);
+    /* Desce ligeiramente o modal */
+    overflow-y: auto;
 }
 
 .modal-content {
     background-color: #fff;
     margin: 10% auto;
-    padding: 1rem;
-    border: 1px solid #888;
+    padding: 2rem;
+    border: none;
     width: 90%;
-    max-width: 500px;
-    border-radius: 8px;
+    max-width: 550px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 .close {
-    color: #aaa;
-    float: right;
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 30px;
+    top: 10px;
+    right: 15px;
+    position: absolute;
+    line-height: 1;
+}
+
+.aircraft-form h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color, #007bff);
+}
+
+/* Layout dos Inputs dentro do Modal (Grid) */
+.form-grid {
+    display: grid;
+
+    /* 2 colunas para ecrãs maiores que 400px */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 450px) {
+    /* Numa largura pequena, volta a uma coluna */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.modal-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* --- ESTILO CORRIGIDO PARA O BOTÃO FECHAR (X) --- */
+.close {
+    position: absolute;
+
+    /* Essencial para o posicionamento no canto */
+    top: 15px;
+
+    /* Distância do topo */
+    right: 15px;
+
+    /* Distância da direita */
+    /* Melhoria Visual: */
+    color: var(--text-color-dark, #333);
+
+    /* Cor escura para contrastar */
+    font-size: 36px;
+
+    /* Aumenta o tamanho para fácil clique */
+    font-weight: 300;
+
+    /* Torna o 'x' mais fino */
     cursor: pointer;
+    line-height: 1;
+    padding: 0 5px;
+
+    /* Adiciona algum padding para a área de clique */
+    transition: color 0.2s;
 }
 
-.close:hover {
-    color: black;
+.close:hover,
+.close:focus {
+    color: var(--danger-color, #dc3545);
+
+    /* Muda a cor ao passar o rato (vermelho) */
+    text-decoration: none;
 }
 
-#toast {
-    visibility: hidden;
-    min-width: 200px;
-    margin-left: -100px;
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    border-radius: 4px;
-    padding: 10px;
-    position: fixed;
-    z-index: 1000;
-    left: 50%;
-    bottom: 30px;
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity 0.5s, visibility 0.5s;
+/* Garante que o modal-content tem o padding extra para não cobrir o X */
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 2rem;
+    padding-top: 4rem;
+
+    /* Aumenta o padding superior para o X caber */
+    border: none;
+    width: 90%;
+    max-width: 550px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+
+    /* Essencial para o 'position: absolute' do .close funcionar */
 }
-
-#toast.show {
-    visibility: visible;
-    opacity: 1;
-}
-
-

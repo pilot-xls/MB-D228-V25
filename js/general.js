@@ -1,13 +1,25 @@
-
-// Força teclado numérico em todos os inputs
+// Seleciona todo o conteúdo de qualquer INPUT ao focar
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll("input").forEach(inp => {
-    inp.type = "text";
-    inp.setAttribute("inputmode", "numeric");
-    inp.setAttribute("pattern", "[0-9:.]*");
-  });
+    // Seleciona todos os campos <input> na página
+    document.querySelectorAll("input").forEach(inp => {
+        // Adiciona um 'listener' para o evento 'focus' (quando o campo é ativado)
+        inp.addEventListener("focus", function() {
+            // Usa o método 'select()' para selecionar todo o texto
+            this.select();
+        });
+    });
 });
-
+// Força teclado numérico em todos os inputs (exceto a calculadora de tempo)
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("input").forEach(inp => {
+    // ADICIONAR ESTA CONDIÇÃO: Ignorar se o ID for 'timeInput'
+    if (inp.id !== 'timeInput') { 
+      if (!inp.type || inp.type === "text") inp.type = "number";
+      inp.setAttribute("inputmode", "decimal");
+      inp.setAttribute("pattern", "[0-9.]*");
+    }
+  });
+});
 
 // Fecha teclado ao clicar fora dos inputs
 document.addEventListener("touchstart", function (event) {
