@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('timeInput');
     const keypad = document.querySelector('.keypad'); 

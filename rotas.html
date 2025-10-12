@@ -43,14 +43,14 @@
                             <p style="margin-bottom: 0;">Fuel O/B</p>
                             <input class="fuel-ob-input" placeholder="Lb" type="number">
                         </div>
-                        <p class="max-fuel-lb-kg-info" style="font-size: 12px; margin-bottom: 0px; margin-top: 0;">MAX: 1600lb / 800kg</p>
+                        <p class="max-fuel-lb-kg-info" style="font-size: 12px; margin-bottom: 0px; margin-top: 0;" id="leg-max-fuel">MAX: 1600lb / 800kg</p>
                     </div>
                     <div>
                         <div class="row-inputleg" style="display: flex; align-items: flex-end; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
                             <p style="margin-bottom: 0;">Traffic Load</p>
                             <input class="traffic-load-input" placeholder="Kg" type="number">
                         </div>
-                        <p class="max-traffic-load-info" style="font-size: 12px; margin-bottom: 0px; margin-top: 0;">MAX: 800kg</p>
+                        <p class="max-traffic-load-info" style="font-size: 12px; margin-bottom: 0px; margin-top: 0;" id="leg-max-traffic-load">MAX: 800kg</p>
                     </div>
                     <div>
                         <div class="row-inputleg" style="display: flex; align-items: flex-end; justify-content: space-between; border-top-width: 1px; border-top-style: dotted;">
@@ -93,21 +93,31 @@
                     <input type="text" value="Lisboa - Porto">
                 </label>
                 <div class="leg-card">
-                    <label><b>Nome Leg:</b>
+                    <label>
+                        <b>Nome Leg:</b>
                         <input type="text" name="nome_leg" value="LPPT">
-                    </label><br>
-                    <label><b>Departure Fuel:</b>
+                    </label>
+                    <br>
+                    <label>
+                        <b>Departure Fuel:</b>
                         <input type="number" name="dep_fuel" value="500" id="input-depfuel-leg-card">
-                    </label><br>
-                    <label><b>Payload:</b>
+                    </label>
+                    <br>
+                    <label>
+                        <b>Payload:</b>
                         <input type="number" name="payload" value="300" id="input-payload-leg-card">
-                    </label><br>
-                    <label><b>Trip Fuel:</b>
+                    </label>
+                    <br>
+                    <label>
+                        <b>Trip Fuel:</b>
                         <input type="number" name="trip_fuel" value="200">
-                    </label><br>
-                    <label><b>Min Fuel:</b>
+                    </label>
+                    <br>
+                    <label>
+                        <b>Min Fuel:</b>
                         <input type="number" name="min_fuel" value="0">
-                    </label><br>
+                    </label>
+                    <br>
                     <div class="actions">
                         <button class="btn btn-secondary">Guardar</button>
                         <button class="btn btn-danger">Eliminar</button>

@@ -67,9 +67,13 @@ async function exec_calculo() {
 
   // inputs
   const pilots = parseFloat(document.getElementById("pilots").value) || 0;
+  localStorage.setItem("pilotsKg", pilots); //vai ser usado em rotas para determinar o ZFW
+
   const payload = parseFloat(document.getElementById("manualPayload").value) || 0;
   const fuel = parseFloat(document.getElementById("fuel").value) || 0;
   const fuelTaxi = parseFloat(document.getElementById("fuelTaxi").value) || 0;
+localStorage.setItem("fuelTaxiKg", fuelTaxi); //vai ser usado em rotas 
+
   const fuelDest = parseFloat(document.getElementById("fuelDest").value) || 0;
 
   // BEW e braços

@@ -1,66 +1,106 @@
 {
   "rotas": [
     {
-      "nome": "Rota Padrão 1",
+      "nome": "RVP951",
       "legs": [
         {
+          "nome": "BGC-VRL",
+          "minFuel": "800",
+          "fuelOB": "2000",
+          "tripFuel": "250"
+        },
+        {
+          "nome": "VRL-VSE",
+          "minFuel": "800",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-CAT",
+          "minFuel": "800",
+          "tripFuel": "500"
+        },
+        {
           "nome": "CAT-PRM",
-          "minFuel": "500",
-          "fuelOB": "1000",
-          "trafficLoad": {
-            "homens": 2,
-            "mulheres": 1,
-            "criancas": 0,
-            "extra": 0,
-            "total": 3
-          },
-          "tripFuel": "300",
-          "endurance": "",
-          "zfw": "",
-          "rampWeight": "",
-          "tow": "",
-          "landingWeight": ""
+          "minFuel": "800",
+          "tripFuel": "400"
         }
       ]
     },
     {
-      "nome": "Rota Padrão 2",
+      "nome": "RVP952",
       "legs": [
         {
-          "nome": "PRM-LIS",
-          "minFuel": "",
-          "fuelOB": "",
-          "trafficLoad": {
-            "homens": 0,
-            "mulheres": 0,
-            "criancas": 0,
-            "extra": 0,
-            "total": ""
-          },
-          "tripFuel": "",
-          "endurance": "",
-          "zfw": "",
-          "rampWeight": "",
-          "tow": "",
-          "landingWeight": ""
+          "nome": "PRM-CAT",
+          "minFuel": "800",
+          "fuelOB": "2000",
+          "tripFuel": "400"
         },
         {
-          "nome": "LIS-OPO",
-          "minFuel": "",
-          "fuelOB": "",
-          "trafficLoad": {
-            "homens": 0,
-            "mulheres": 0,
-            "criancas": 0,
-            "extra": 0,
-            "total": ""
-          },
-          "tripFuel": "",
-          "endurance": "",
-          "zfw": "",
-          "rampWeight": "",
-          "tow": "",
-          "landingWeight": ""
+          "nome": "CAT-VSE",
+          "minFuel": "800",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-VRL",
+          "minFuel": "800",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "VRL-BGC",
+          "minFuel": "800",
+          "tripFuel": "400"
+        }
+      ]
+    },
+    {
+      "nome": "RVP953",
+      "legs": [
+        {
+          "nome": "BGC-VRL",
+          "minFuel": "800",
+          "fuelOB": "2000",
+          "tripFuel": "250"
+        },
+        {
+          "nome": "VRL-VSE",
+          "minFuel": "800",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-CAT",
+          "minFuel": "800",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "CAT-PRM",
+          "minFuel": "800",
+          "tripFuel": "400"
+        }
+      ]
+    },
+    {
+      "nome": "RVP954",
+      "legs": [
+        {
+          "nome": "PRM-CAT",
+          "minFuel": "800",
+          "fuelOB": "2000",
+          "tripFuel": "400"
+        },
+        {
+          "nome": "CAT-VSE",
+          "minFuel": "800",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-VRL",
+          "minFuel": "800",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "VRL-BGC",
+          "minFuel": "800",
+          "tripFuel": "400"
         }
       ]
     }

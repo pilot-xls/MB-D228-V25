@@ -22,7 +22,7 @@
 
 .section-title {
     text-align: center;
-    color: var(--primary-color, #007bff);
+    color: var(--primary-color, #000000);
     margin: 0 0 1.5rem 0;
     font-size: 1.5em;
     font-weight: 700;
@@ -275,7 +275,7 @@ select:focus {
 
     /* Aumenta o padding superior para o X caber */
     border: none;
-    width: 90%;
+    width: 210px;
     max-width: 550px;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);

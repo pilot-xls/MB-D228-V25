@@ -203,6 +203,11 @@ document.getElementById("save-payload").addEventListener("click", savePayload);
 // - Chama ensureSettingsData() para recarregar os valores de origem a partir dos ficheiros JSON
 // - Atualiza dropdown, tabela e inputs de payload com os valores repostos
 
+
+
+
+
+
 document.getElementById("reset-defaults").addEventListener("click", async () => {
   if (!confirm("Queres mesmo repor todos os valores por defeito?")) return;
 
@@ -215,6 +220,13 @@ document.getElementById("reset-defaults").addEventListener("click", async () => 
   // recarregar defaults dos ficheiros JSON
   const { aircraftData: acData, defaultId, payloadDefaults } = await ensureSettingsData();
   aircraftData = acData;
+
+  // repor também as rotas default
+  localStorage.removeItem("rotasUserV1");
+const defaults = await fetch("data/rotas.json").then(r => r.json());
+const sane = { rotas: Array.isArray(defaults?.rotas) ? defaults.rotas : [] };
+localStorage.setItem("rotasUserV1", JSON.stringify(sane));
+
 
   // atualizar dropdown e tabela
   populateSelect();
@@ -231,4 +243,3 @@ document.getElementById("reset-defaults").addEventListener("click", async () => 
 
   alert("Todos os dados foram repostos a partir dos ficheiros JSON.");
 });
-

@@ -11,14 +11,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 // Força teclado numérico em todos os inputs (exceto a calculadora de tempo)
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll("input").forEach(inp => {
-    // ADICIONAR ESTA CONDIÇÃO: Ignorar se o ID for 'timeInput'
-    if (inp.id !== 'timeInput') { 
-      if (!inp.type || inp.type === "text") inp.type = "number";
-      inp.setAttribute("inputmode", "decimal");
-      inp.setAttribute("pattern", "[0-9.]*");
-    }
-  });
+    document.querySelectorAll("input").forEach(inp => {
+     // ADICIONAR ESTA CONDIÇÃO: Ignorar se o ID for 'timeInput'
+ if (
+        inp.id !== 'timeInput' &&
+        inp.id !== 'edit-id' &&
+        inp.id !== 'add-id' &&
+        !inp.id.startsWith('edit-arm') && 
+    !inp.id.startsWith('add-arm') 
+    ) {
+    if (!inp.type || inp.type === "text") inp.type = "number";
+    inp.setAttribute("inputmode", "decimal");
+    inp.setAttribute("pattern", "[0-9.]*");
+    }
+
+    });
 });
 
 // Fecha teclado ao clicar fora dos inputs
@@ -31,29 +38,61 @@ document.addEventListener("touchstart", function (event) {
     }
   }
 });
+//Forçar a janela a rolar e centrar o input ativo logo acima do teclado virtual.
+document.addEventListener('DOMContentLoaded', () => {
+    // Atraso necessário para dar tempo ao teclado virtual para abrir e estabilizar
+    const SCROLL_DELAY = 300; 
+    
+    // Seleciona todos os campos de entrada (input, select, textarea)
+    const inputFields = document.querySelectorAll('input, select, textarea');
 
+    inputFields.forEach(input => {
+        input.addEventListener('focus', function() {
+            const currentInput = this;
 
+            // Usa um atraso para permitir que o teclado virtual abra
+            setTimeout(() => {
+                // Calcula a posição do topo do input em relação ao topo da página
+                const inputTop = currentInput.getBoundingClientRect().top;
+                
+                // Ponto ideal de rolagem: a posição atual do scroll + a posição do input 
+                // menos uma margem de segurança (e.g., 50px)
+                const scrollTarget = window.scrollY + inputTop - 50; 
+
+                // Força a janela a rolar suavemente até à posição desejada
+                window.scrollTo({
+                    top: scrollTarget,
+                    behavior: 'smooth'
+                });
+            }, SCROLL_DELAY);
+        });
+    });
+    
+});
 
 // Fecha o menu sempre que se clica ou toca fora do botão hamburger e do próprio menu
 document.addEventListener('DOMContentLoaded', () => {
   const menu = document.querySelector('.menu');
   const hamburger = document.querySelector('.hamburger');
 
+  if (!menu || !hamburger) return; // <-- evita erro se não existir menu na página
+
   // abre/fecha ao clicar no botão
   hamburger.addEventListener('click', (e) => {
-    e.stopPropagation(); // evita fechar logo
+    e.stopPropagation();
     menu.classList.toggle('active');
   });
 
   // fecha ao clicar fora do menu
   document.addEventListener('click', (e) => {
-    if (menu.classList.contains('active') && 
-        !menu.contains(e.target) && 
+    if (menu.classList.contains('active') &&
+        !menu.contains(e.target) &&
         !hamburger.contains(e.target)) {
       menu.classList.remove('active');
     }
   });
 });
+
 
 // Carrega o ficheiro header.html em todas as páginas e ativa a lógica de abrir/fechar o menu
 document.addEventListener('DOMContentLoaded', () => {
