@@ -4,7 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("input").forEach(inp => {
         // Adiciona um 'listener' para o evento 'focus' (quando o campo é ativado)
         inp.addEventListener("focus", function() {
-            // Usa o método 'select()' para selecionar todo o texto
+        // Ignorar a calculadora de tempo
+        if (this.id === "timeInput") return;
             this.select();
         });
     });

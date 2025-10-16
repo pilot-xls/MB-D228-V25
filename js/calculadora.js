@@ -1,10 +1,10 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('timeInput');
-    const keypad = document.querySelector('.keypad'); 
-    
+    const keypad = document.querySelector('.keypad');
+
     // Variáveis de estado
-    let storedTime = null; 
+    let storedTime = null;
     let operator = null;
 
     // --- Funções de Formatação e Conversão ---
@@ -16,20 +16,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatInputTime = (timeString) => {
         // 1. Remove tudo o que não seja dígito.
         let digits = timeString.replace(/[^\d]/g, '');
-        
+
         // 2. Remove zeros à esquerda em excesso (ex: "00150" torna-se "150").
         // A menos que o valor seja zero, deve ser limpo.
         digits = digits.replace(/^0+/, '');
-        
+
         if (digits.length === 0) {
             return '00:00';
         }
-        
+
         // 3. Os últimos dois dígitos são sempre os minutos
         const minutes = digits.slice(-2).padStart(2, '0');
-        
+
         // 4. O resto dos dígitos são as horas
-        const hours = digits.slice(0, -2); 
+        const hours = digits.slice(0, -2);
 
         // Se só houver 1 ou 2 dígitos, a hora é 0.
         if (hours.length === 0) {
@@ -44,16 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     const timeToMinutes = (timeString) => {
         // Usa a função de formatação para garantir que está no formato correto antes de calcular
-        const formattedTime = formatInputTime(timeString); 
+        const formattedTime = formatInputTime(timeString);
         const parts = formattedTime.split(':');
-        
+
         if (parts.length !== 2) return NaN;
-        
+
         const hours = parseInt(parts[0], 10);
         const minutes = parseInt(parts[1], 10);
-        
+
         if (isNaN(hours) || isNaN(minutes)) return NaN;
-        
+
         return (hours * 60) + minutes;
     };
 
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const totalHours = Math.floor(absMinutes / 60);
         const displayMinutes = absMinutes % 60;
-        
+
         const pad = (num) => String(num).padStart(2, '0');
 
         return `${sign}${totalHours}:${pad(displayMinutes)}`;
@@ -77,39 +77,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Lógica de Manipulação de Botões (+, -, =, C) ---
 
     const handleButtonClick = (value) => {
-        // Obtém o valor atual do input (que está sempre formatado)
+        // Formata antes de qualquer operação
+        input.value = formatInputTime(input.value);
+
         const currentValue = input.value;
-        
-        // 1. Operadores (+ ou -)
+
         if (value === '+' || value === '-') {
-            // Só avança se o valor atual não for a representação de zero ou vazio
             if (currentValue && currentValue !== '00:00') {
-                
-                // Converte o valor atual para minutos
                 const currentMinutes = timeToMinutes(currentValue);
 
-                // Se já houver um cálculo pendente, executa-o (cálculo em cadeia)
                 if (storedTime !== null && operator !== null) {
-                    executeCalculation(currentMinutes); // O resultado é o novo storedTime
+                    executeCalculation(currentMinutes);
                 } else {
-                    // Armazena a primeira hora convertida
                     storedTime = currentMinutes;
                 }
-                
+
                 operator = value;
-                input.value = '00:00'; // Limpa o display para a próxima hora
-                // Força o foco no input
-                input.focus(); 
+                input.value = '00:00';
+                input.focus();
             }
-        }
-        
-        // 2. Igual (=)
-        else if (value === '=') {
+        } else if (value === '=') {
             executeCalculation();
-        }
-        
-        // 3. Limpar (C)
-        else if (value === 'C') {
+        } else if (value === 'C') {
             input.value = '00:00';
             storedTime = null;
             operator = null;
@@ -123,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Se o segundo tempo não for fornecido, usa a entrada atual
         const secondTimeMinutes = secondMinutes !== null ? secondMinutes : timeToMinutes(input.value);
 
-        if (isNaN(secondTimeMinutes)) return; 
+        if (isNaN(secondTimeMinutes)) return;
 
         let resultMinutes;
 
@@ -135,32 +124,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Prepara para a próxima operação (o resultado torna-se o storedTime)
         storedTime = resultMinutes;
-        operator = null; 
+        operator = null;
         input.value = minutesToTime(resultMinutes);
     };
 
     // --- LIGAÇÃO DE EVENTOS ---
-    
+
     // Adicionar event listener aos botões (+, -, =, C)
     keypad.addEventListener('click', (event) => {
         if (event.target.tagName === 'BUTTON') {
             handleButtonClick(event.target.textContent);
         }
     });
-    
+
     // Adicionar event listener para formatar a hora enquanto o utilizador digita
     input.addEventListener('input', (event) => {
         const rawValue = event.target.value;
-        
+
         // Apenas dígitos, garantindo que o valor seja limpo
-        const cleanDigits = rawValue.replace(/[^\d]/g, ''); 
-        
+        const cleanDigits = rawValue.replace(/[^\d]/g, '');
+
         // Formatamos o valor limpo
         const formatted = formatInputTime(cleanDigits);
-        
+
         // Atualiza o campo com a hora formatada
         if (event.target.value !== formatted) {
-            event.target.value = formatted; 
+            event.target.value = formatted;
         }
     });
 
@@ -175,103 +164,103 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-    function lbToKg() {
+function lbToKg() {
 
-        const lb = parseFloat(document.getElementById("lb").value) || 0;
+    const lb = parseFloat(document.getElementById("lb").value) || 0;
 
-        document.getElementById("kg").value = (lb * 0.453592).toFixed(1);
+    document.getElementById("kg").value = (lb * 0.453592).toFixed(1);
 
-    }
-
-    function kgToLb() {
-
-        const kg = parseFloat(document.getElementById("kg").value) || 0;
-
-        document.getElementById("lb").value = (kg / 0.453592).toFixed(1);
-
-    }
-
-    // ... e todas as outras funções de conversão...
-
-    function usgToL() {
-
-        const usg = parseFloat(document.getElementById("usg").value) || 0;
-
-        document.getElementById("l").value = (usg * 3.78541).toFixed(1);
-
-    }
-
-    function lToUsg() {
-
-        const l = parseFloat(document.getElementById("l").value) || 0;
-
-        document.getElementById("usg").value = (l / 3.78541).toFixed(1);
-
-    }
-
-
-
-    function ftToM() {
-
-        const ft = parseFloat(document.getElementById("ft").value) || 0;
-
-        document.getElementById("m").value = (ft * 0.3048).toFixed(1);
-
-    }
-
-    function mToFt() {
-
-        const m = parseFloat(document.getElementById("m").value) || 0;
-
-        document.getElementById("ft").value = (m / 0.3048).toFixed(1);
-
-    }
-
-
-
-    function nmToKm() {
-
-        const nm = parseFloat(document.getElementById("nm").value) || 0;
-
-        document.getElementById("km").value = (nm * 1.852).toFixed(2);
-
-    }
-
-    function kmToNm() {
-
-        const km = parseFloat(document.getElementById("km").value) || 0;
-
-        document.getElementById("nm").value = (km / 1.852).toFixed(2);
-
-    }
-
-
-
-    function ktToKmh() {
-
-        const kt = parseFloat(document.getElementById("kt").value) || 0;
-
-        document.getElementById("kmh").value = (kt * 1.852).toFixed(1);
-
-    }
-
-    function kmhToKt() {
-
-        const kmh = parseFloat(document.getElementById("kmh").value) || 0;
-
-        document.getElementById("kt").value = (kmh / 1.852).toFixed(1);
-
-    }
-
-// --- Conversão entre litros (L) e libras (lb) ---
-function lToLb() {
-  const l = parseFloat(document.getElementById("Lts").value) || 0;
-  // 1 litro ≈ 1.6 libras (valor médio para combustível de aviação)
-  document.getElementById("Lbs").value = (l * 1.6).toFixed(1);
 }
 
-function lbToL() {
-  const lb = parseFloat(document.getElementById("Lbs").value) || 0;
-  document.getElementById("Lts").value = (lb / 1.6).toFixed(1);
+function kgToLb() {
+
+    const kg = parseFloat(document.getElementById("kg").value) || 0;
+
+    document.getElementById("lb").value = (kg / 0.453592).toFixed(1);
+
+}
+
+// ... e todas as outras funções de conversão...
+
+function usgToL() {
+
+    const usg = parseFloat(document.getElementById("usg").value) || 0;
+
+    document.getElementById("l").value = (usg * 3.78541).toFixed(1);
+
+}
+
+function lToUsg() {
+
+    const l = parseFloat(document.getElementById("l").value) || 0;
+
+    document.getElementById("usg").value = (l / 3.78541).toFixed(1);
+
+}
+
+
+
+function ftToM() {
+
+    const ft = parseFloat(document.getElementById("ft").value) || 0;
+
+    document.getElementById("m").value = (ft * 0.3048).toFixed(1);
+
+}
+
+function mToFt() {
+
+    const m = parseFloat(document.getElementById("m").value) || 0;
+
+    document.getElementById("ft").value = (m / 0.3048).toFixed(1);
+
+}
+
+
+
+function nmToKm() {
+
+    const nm = parseFloat(document.getElementById("nm").value) || 0;
+
+    document.getElementById("km").value = (nm * 1.852).toFixed(2);
+
+}
+
+function kmToNm() {
+
+    const km = parseFloat(document.getElementById("km").value) || 0;
+
+    document.getElementById("nm").value = (km / 1.852).toFixed(2);
+
+}
+
+
+
+function ktToKmh() {
+
+    const kt = parseFloat(document.getElementById("kt").value) || 0;
+
+    document.getElementById("kmh").value = (kt * 1.852).toFixed(1);
+
+}
+
+function kmhToKt() {
+
+    const kmh = parseFloat(document.getElementById("kmh").value) || 0;
+
+    document.getElementById("kt").value = (kmh / 1.852).toFixed(1);
+
+}
+
+// --- Conversão entre litros (L) e libras (lb) ---
+// L ↔ lb (Jet A-1)
+function lToLbA1() {
+    const l = parseFloat(document.getElementById("Lts").value) || 0;
+    document.getElementById("lbA1").value = (l * 1.76).toFixed(1);
+}
+
+function lbA1ToL() {
+    const lb = parseFloat(document.getElementById("lbA1").value) || 0;
+    document.getElementById("Lts").value = (lb / 1.76).toFixed(1);
 }
 

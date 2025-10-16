@@ -153,3 +153,8 @@ h1 {
     outline: none;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
+
+#timeInput {
+  caret-color: transparent;     /* esconde o cursor */
+  user-select: none;            /* impede seleção de texto */
+}
