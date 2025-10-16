@@ -11,20 +11,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+// Ao carregar a página, força teclado numérico nos inputs apropriados
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll("input").forEach(inp => {
-    if (
-      inp.id !== 'timeInput' &&
-      inp.id !== 'edit-id' &&
-      inp.id !== 'add-id' &&
-      !inp.id.startsWith('edit-arm') &&
-      !inp.id.startsWith('add-arm') &&
-      !inp.hasAttribute('inputmode')
-    ) {
-      if (!inp.type || inp.type === "text") inp.type = "number";
-      inp.setAttribute("inputmode", "numeric"); // <— corrigido
-    }
-  });
+
+    // Seleciona todos os <input> existentes na página
+    const inputs = document.querySelectorAll("input");
+
+    inputs.forEach(input => {
+
+        // Ignorar campos específicos (não queremos mudar estes)
+        const ignorar = (
+            input.id === "timeInput" ||
+            input.id.startsWith("edit-") ||
+            input.id.startsWith("add-")
+        );
+
+        // Só aplica alterações se:
+        //  - não estiver na lista de ignorados
+        //  - ainda não tiver um inputmode definido
+        if (!ignorar && !input.hasAttribute("inputmode")) {
+
+            // Se o campo ainda for texto, converte para número
+            if (!input.type || input.type === "text") {
+                input.type = "number";
+            }
+
+            // Força teclado numérico (decimal) e padrão de dígitos
+            input.setAttribute("inputmode", "decimal");
+            input.setAttribute("pattern", "[0-9.]*");
+        }
+    });
+});
 });
 
 
