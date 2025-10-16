@@ -96,6 +96,7 @@ select:focus {
     justify-content: space-between;
     gap: 1rem;
     margin-top: 1.5rem;
+    flex-direction: column;
 }
 
 .button-group .btn {
@@ -168,6 +169,8 @@ select:focus {
 /* --- Modals (Janelas Pop-up) --- */
 .modal {
     display: none;
+
+    /* none */
     position: fixed;
     z-index: 1000;
     left: 0;

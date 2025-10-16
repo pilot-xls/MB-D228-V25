@@ -131,11 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LIGAÇÃO DE EVENTOS ---
 
     // Adicionar event listener aos botões (+, -, =, C)
-    keypad.addEventListener('click', (event) => {
-        if (event.target.tagName === 'BUTTON') {
-            handleButtonClick(event.target.textContent);
-        }
+    ['click', 'touchstart'].forEach(evt => {
+        keypad.addEventListener(evt, (event) => {
+            if (event.target.tagName === 'BUTTON') {
+                event.preventDefault();   // evita clique duplicado
+                input.blur();             // fecha o teclado virtual
+                handleButtonClick(event.target.textContent);
+            }
+        });
     });
+
 
     // Adicionar event listener para formatar a hora enquanto o utilizador digita
     input.addEventListener('input', (event) => {
