@@ -271,7 +271,8 @@ function criarLegHTML(leg) {
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;padding-bottom:12px;">
         <p style="margin-bottom:0;">Min Fuel O/B</p>
-        <input class="min-fuel-input" placeholder="Lb" type="number" value="${leg?.minFuel ?? ""}">
+        <input class="min-fuel-input" placeholder="Lb" type="number" inputmode="numeric"
+       pattern="[0-9]*" value="${leg?.minFuel ?? ""}">
       </div>
 
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
@@ -279,7 +280,8 @@ function criarLegHTML(leg) {
         <p style="margin-bottom:0;">Fuel O/B</p>
         <input class="fuel-ob-input"
                placeholder="${leg?.nextSuggestedFuel || 'Lb'}"
-               type="number"
+               type="number" inputmode="numeric"
+       pattern="[0-9]*"
                value="${leg?.fuelOB ?? ''}">
       </div>
 <p id="leg-max-fuel" style="font-size:12px;color:#555;margin:0;">${leg?.maxFuelInfo || ""}</p>
@@ -287,14 +289,16 @@ function criarLegHTML(leg) {
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;">
         <p style="margin-bottom:0;">Traffic Load</p>
-        <input class="traffic-load-input" placeholder="Kg" type="number" value="${leg?.trafficLoad?.total ?? ""}">
+        <input class="traffic-load-input" placeholder="Kg" type="number" inputmode="numeric"
+       pattern="[0-9]*" value="${leg?.trafficLoad?.total ?? ""}">
       </div>
 <p id="leg-max-traffic-load" style="font-size:12px;color:#555;margin:0;">${leg?.maxPayloadInfo || ""}</p>
 
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;">
         <p style="margin-bottom:0;">Trip fuel:</p>
-        <input class="trip-fuel-input" placeholder="Lb" type="number" value="${leg?.tripFuel ?? ""}">
+        <input class="trip-fuel-input" placeholder="Lb" type="number" inputmode="numeric"
+       pattern="[0-9]*" value="${leg?.tripFuel ?? ""}">
       </div>
 
       <div style="display:flex;justify-content:space-between;border-top-width:1px;border-top-style:dotted;
@@ -331,7 +335,6 @@ function criarLegHTML(leg) {
     </div>
   </div>`;
 }
-
 
 
 
