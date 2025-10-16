@@ -9,23 +9,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
-// Força teclado numérico em todos os inputs (exceto a calculadora de tempo)
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("input").forEach(inp => {
-     // ADICIONAR ESTA CONDIÇÃO: Ignorar se o ID for 'timeInput'
- if (
-        inp.id !== 'timeInput' &&
-        inp.id !== 'edit-id' &&
-        inp.id !== 'add-id' &&
-        !inp.id.startsWith('edit-arm') && 
-    !inp.id.startsWith('add-arm') 
-    ) {
-    if (!inp.type || inp.type === "text") inp.type = "number";
-    inp.setAttribute("inputmode", "decimal");
-    inp.setAttribute("pattern", "[0-9.]*");
-    }
 
-    });
+// Ao carregar a página, força teclado numérico nos inputs apropriados
+document.addEventListener("DOMContentLoaded", () => {
+
+  // Seleciona todos os <input> existentes na página
+  const inputs = document.querySelectorAll("input");
+
+  inputs.forEach(input => {
+
+    // Ignorar campos específicos (não queremos mudar estes)
+    const ignorar = (
+      input.id === "timeInput" ||
+      input.id === "edit-id" ||
+      input.id === "add-id" ||
+      input.id.startsWith("edit-arm") ||
+      input.id.startsWith("add-arm")
+    );
+
+    // Só aplica alterações se:
+    //  - não estiver na lista de ignorados
+    //  - ainda não tiver um inputmode definido
+    if (!ignorar && !input.hasAttribute("inputmode")) {
+
+      // Se o campo ainda for texto, converte para número
+      if (!input.type || input.type === "text") {
+        input.type = "number";
+      }
+
+      // Força teclado numérico (decimal) e padrão de dígitos
+      input.setAttribute("inputmode", "decimal");
+      input.setAttribute("pattern", "[0-9.]*");
+    }
+  });
 });
 
 // Fecha teclado ao clicar fora dos inputs

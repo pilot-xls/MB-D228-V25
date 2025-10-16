@@ -23,49 +23,49 @@ const AIRCRAFT_ACTIVE_KEY = "aircraftActive"; // avião ativo definido em settin
 
 // Limites e defaults de negócio (ajusta conforme necessário)
 const LIMITS = {
-  maxFuelLb: 1600,
-  maxTrafficKg: 800
+    maxFuelLb: 0,
+    maxTrafficKg: 0
 };
 
 // ==========================
 // 1) UTILITÁRIOS DE I/O
 // ==========================
 async function loadJSON(path) {
-  // Tenta usar fetch direto. Caso falhe, lança erro controlado.
-  const res = await fetch(path, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Falha a carregar ${path}: ${res.status}`);
-  return res.json();
+    // Tenta usar fetch direto. Caso falhe, lança erro controlado.
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Falha a carregar ${path}: ${res.status}`);
+    return res.json();
 }
 
 function lsGet(key, fallback = null) {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-  catch { return fallback; }
+    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+    catch { return fallback; }
 }
 
 function lsSet(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(value));
 }
 
 // ==========================
 // 2) MODELOS DE DADOS
 // ==========================
 function novaLegData() {
-  return {
-    nome: "",
-    minFuel: "",
-    fuelOB: "",
-    trafficLoad: { homens: 0, mulheres: 0, criancas: 0, extra: 0, total: "" },
-    tripFuel: "",
-    endurance: "",
-    zfw: "",
-    rampWeight: "",
-    tow: "",
-    landingWeight: ""
-  };
+    return {
+        nome: "",
+        minFuel: "",
+        fuelOB: "",
+        trafficLoad: { homens: 0, mulheres: 0, criancas: 0, extra: 0, total: "" },
+        tripFuel: "",
+        endurance: "",
+        zfw: "",
+        rampWeight: "",
+        tow: "",
+        landingWeight: ""
+    };
 }
 
 function cloneDeep(obj) {
-  return JSON.parse(JSON.stringify(obj));
+    return JSON.parse(JSON.stringify(obj));
 }
 
 // ==========================
@@ -73,44 +73,54 @@ function cloneDeep(obj) {
 // ==========================
 async function ensureUserRotasState() {
   let rotasUser = lsGet(ROTAS_USER_KEY);
-  if (rotasUser && Array.isArray(rotasUser?.rotas)) return rotasUser; // já existe
+  if (rotasUser && Array.isArray(rotasUser?.rotas)) {
+    // garantir que todas têm id
+    rotasUser.rotas.forEach(r => { if (!r.id) r.id = crypto.randomUUID(); });
+    lsSet(ROTAS_USER_KEY, rotasUser);
+    return rotasUser;
+  }
 
   // Caso não exista, carregar defaults e guardar cópia no localStorage
   const defaults = await loadJSON("data/rotas.json");
-  // Sanitizar estrutura mínima
-  const sane = { rotas: Array.isArray(defaults?.rotas) ? defaults.rotas : [] };
+  const sane = {
+    rotas: (Array.isArray(defaults?.rotas) ? defaults.rotas : []).map(r => ({
+      ...r,
+      id: r.id || crypto.randomUUID()
+    }))
+  };
   lsSet(ROTAS_USER_KEY, sane);
   return sane;
 }
 
+
 function getAircraftActiveSync() {
-  // Lê o avião ativo guardado pelo settings.js
-  const aircraft = lsGet(AIRCRAFT_ACTIVE_KEY);
-  return aircraft || null; // pode ser null na primeira vez
+    // Lê o avião ativo guardado pelo settings.js
+    const aircraft = lsGet(AIRCRAFT_ACTIVE_KEY);
+    return aircraft || null; // pode ser null na primeira vez
 }
 
 async function getAircraftActive() {
-  const activeId = lsGet(AIRCRAFT_ACTIVE_KEY) || localStorage.getItem("defaultAircraft");
-  const data = await loadJSON("data/aircraft.json");
+    const activeId = lsGet(AIRCRAFT_ACTIVE_KEY) || localStorage.getItem("defaultAircraft");
+    const data = await loadJSON("data/aircraft.json");
 
-  // Se a estrutura for { default, aircraft: {..map..} }
-  if (data && data.aircraft && !Array.isArray(data.aircraft)) {
-    if (activeId && data.aircraft[activeId]) return data.aircraft[activeId];
-    if (data.default && data.aircraft[data.default]) return data.aircraft[data.default];
-    const firstKey = Object.keys(data.aircraft)[0];
-    return data.aircraft[firstKey] || null;
-  }
-
-  // Se for array
-  if (Array.isArray(data)) {
-    if (activeId) {
-      const found = data.find(a => a.ID === activeId);
-      if (found) return found;
+    // Se a estrutura for { default, aircraft: {..map..} }
+    if (data && data.aircraft && !Array.isArray(data.aircraft)) {
+        if (activeId && data.aircraft[activeId]) return data.aircraft[activeId];
+        if (data.default && data.aircraft[data.default]) return data.aircraft[data.default];
+        const firstKey = Object.keys(data.aircraft)[0];
+        return data.aircraft[firstKey] || null;
     }
-    return data[0] || null;
-  }
 
-  return null;
+    // Se for array
+    if (Array.isArray(data)) {
+        if (activeId) {
+            const found = data.find(a => a.ID === activeId);
+            if (found) return found;
+        }
+        return data[0] || null;
+    }
+
+    return null;
 }
 
 
@@ -122,117 +132,123 @@ async function getAircraftActive() {
  * Atualiza o objeto leg in-place e devolve-o.
  */
 function computeLegDerived(leg, prevLeg, aircraft) {
-  if (!leg || !aircraft) return leg;
+    if (!leg || !aircraft) return leg;
 
-  const toNum = v => Number(String(v ?? "").replace(",", "."));
-  const lbToKg = 0.45359237;
+    const toNum = v => Number(String(v ?? "").replace(",", "."));
+    const lbToKg = 0.45359237;
 
-  // --- Dados base ---
-  const consumoHoraLb = toNum(aircraft.consumo) || 0;
-  const pesoVazioKg = toNum(aircraft.BEW) || 0;
-  const payloadKg = toNum(leg?.trafficLoad?.total) || 0;
-  const tripFuelLb = toNum(leg?.tripFuel) || 0;
-  let fuelOBLb = toNum(leg?.fuelOB) || 0;
+    // --- Dados base ---
+    const consumoHoraLb = toNum(aircraft.consumo) || 0;
+    const pesoVazioKg = toNum(aircraft.BEW) || 0;
+    const payloadKg = toNum(leg?.trafficLoad?.total) || 0;
+    const tripFuelLb = toNum(leg?.tripFuel) || 0;
+    let fuelOBLb = toNum(leg?.fuelOB) || 0;
 
-  // --- Herdar fuel O/B da leg anterior ---
-  if (!fuelOBLb && prevLeg) {
-    const prevFuelLanding = toNum(prevLeg?.landingFuelLb);
-    if (prevFuelLanding > 0) fuelOBLb = prevFuelLanding;
-  }
+    // --- Herdar fuel O/B da leg anterior ---
+    if (!fuelOBLb && prevLeg) {
+        const prevFuelLanding = toNum(prevLeg?.landingFuelLb);
+        if (prevFuelLanding > 0) fuelOBLb = prevFuelLanding;
+    }
 
-  // --- Endurance (hh:mm) ---
-  const endurance = fuelOBLb / consumoHoraLb;
-  const horas = Math.floor(endurance);
-  const minutos = Math.round((endurance - horas) * 60);
-  leg.endurance = `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
+    // --- Endurance (hh:mm) ---
+    const endurance = fuelOBLb / consumoHoraLb;
+    const horas = Math.floor(endurance);
+    const minutos = Math.round((endurance - horas) * 60);
+    leg.endurance = `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 
-  // --- ZFW, Ramp, TOW, Landing ---
-  const pilotsKg = Number(localStorage.getItem("pilotsKg")) || 0;
-  const zfwKg = pesoVazioKg + pilotsKg + payloadKg;
-  leg.zfw = zfwKg > 0 ? `${Math.round(zfwKg)} kg` : "";
+    // --- ZFW, Ramp, TOW, Landing ---
+    const pilotsKg = Number(localStorage.getItem("pilotsKg")) || 0;
+    const zfwKg = pesoVazioKg + pilotsKg + payloadKg;
+    leg.zfw = zfwKg > 0 ? `${Math.round(zfwKg)} kg` : "";
 
-  const rampKg = zfwKg + fuelOBLb * lbToKg;
-  leg.rampWeight = rampKg > 0 ? `${Math.round(rampKg)} kg` : "";
+    const rampKg = zfwKg + fuelOBLb * lbToKg;
+    leg.rampWeight = rampKg > 0 ? `${Math.round(rampKg)} kg` : "";
 
-  const fuelTaxiKg = Number(localStorage.getItem("fuelTaxiKg")) || 0;
-  const towKg = rampKg - fuelTaxiKg;
-  leg.tow = isFinite(towKg) ? `${Math.round(Math.max(towKg, 0))} kg` : "";
+    const fuelTaxiKg = Number(localStorage.getItem("fuelTaxiKg")) || 0;
+    const towKg = rampKg - fuelTaxiKg;
+    leg.tow = isFinite(towKg) ? `${Math.round(Math.max(towKg, 0))} kg` : "";
 
-  const landingKg = towKg - tripFuelLb * lbToKg;
-  leg.landingWeight = isFinite(landingKg) ? `${Math.round(Math.max(landingKg, 0))} kg` : "";
+    const landingKg = towKg - tripFuelLb * lbToKg;
+    leg.landingWeight = isFinite(landingKg) ? `${Math.round(Math.max(landingKg, 0))} kg` : "";
 
-  // --- Landing fuel (para encadeamento) ---
-  const landingFuelLb = Math.max(fuelOBLb - tripFuelLb, 0);
-  leg.landingFuelLb = landingFuelLb;
-  if (prevLeg && typeof prevLeg === "object" && prevLeg.landingFuelLb !== undefined) {
-    prevLeg.nextSuggestedFuel = `${Math.round(prevLeg.landingFuelLb)} lb`;
-  }
+    // --- Landing fuel (para encadeamento) ---
+    const landingFuelLb = Math.max(fuelOBLb - tripFuelLb, 0);
+    leg.landingFuelLb = landingFuelLb;
+    if (prevLeg && typeof prevLeg === "object" && prevLeg.landingFuelLb !== undefined) {
+        prevLeg.nextSuggestedFuel = `${Math.round(prevLeg.landingFuelLb)} lb`;
+    }
 
-  // --- Cálculos de máximos dinâmicos ---
-  const MRW = toNum(aircraft.MRW) || 0;
-  const MTOW = toNum(aircraft.MTOW) || 0;
-  const MZFW = toNum(aircraft.MZFW) || 0;
-  const MLW = toNum(aircraft.MLW || aircraft.MLOW) || 0;
+    // --- Cálculos de máximos dinâmicos ---
+    const MRW = toNum(aircraft.MRW) || 0;
+    const MTOW = toNum(aircraft.MTOW) || 0;
+    const MZFW = toNum(aircraft.MZFW) || 0;
+    const MLW = toNum(aircraft.MLW || aircraft.MLOW) || 0;
 
-  // Max Fuel possível (sem exceder MRW, MTOW ou MLW)
-  const maxFuelByMRW = MRW - zfwKg;
-  const maxFuelByMTOW = MTOW - zfwKg + fuelTaxiKg;
-  const maxFuelByMLW = MLW - zfwKg + fuelTaxiKg + tripFuelLb * lbToKg;
-  const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
-  const maxFuelLb = Math.round(maxFuelKg / lbToKg);
+    // Max Fuel possível (sem exceder MRW, MTOW ou MLW)
+    const maxFuelByMRW = MRW - zfwKg;
+    const maxFuelByMTOW = MTOW - zfwKg + fuelTaxiKg;
+    const maxFuelByMLW = MLW - zfwKg + fuelTaxiKg + tripFuelLb * lbToKg;
+    const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
+    const maxFuelLb = Math.round(maxFuelKg / lbToKg);
 
-leg.maxFuelInfo = maxFuelLb > 0 
-  ? `Max: ${Math.round(maxFuelLb)} lb (${Math.round(maxFuelLb * 0.45359237)} kg)` 
-  : "Max:";
-
-
-  // Max Payload possível (sem exceder MZFW, MTOW ou MRW)
-  const maxPayloadByMZFW = MZFW - (pesoVazioKg + pilotsKg);
-  const maxPayloadByMTOW = MTOW - (pesoVazioKg + pilotsKg + fuelOBLb * lbToKg - fuelTaxiKg);
-  const maxPayloadByMRW = MRW - (pesoVazioKg + pilotsKg + fuelOBLb * lbToKg);
-  const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW);
-
-  leg.maxPayloadInfo = maxPayloadKg > 0
-  ? `Max: ${Math.round(maxPayloadKg / 0.45359237)} lb (${Math.round(maxPayloadKg)} kg)`
-  : "Max:";
+    if (maxFuelLb > 0) {
+        leg.maxFuelInfo = `Max: ${Math.round(maxFuelLb)} lb (${Math.round(maxFuelLb * 0.45359237)} kg)`;
+    } else {
+        leg.maxFuelInfo = "Max: 0 Lb (0 Kg)";
+    }
 
 
-  // --- Limites e cor de alerta ---
-  const mtow = Number(aircraft.MTOW) || Infinity;
-  const mrw = Number(aircraft.MRW) || Infinity;
-  const mzfw = Number(aircraft.MZFW) || Infinity;
-  const mlw = Number(aircraft.MLOW || aircraft.MLW) || Infinity;
+    // Max Payload possível (sem exceder MZFW, MTOW ou MRW)
+    const maxPayloadByMZFW = MZFW - (pesoVazioKg + pilotsKg);
+    const maxPayloadByMTOW = MTOW - (pesoVazioKg + pilotsKg + fuelOBLb * lbToKg - fuelTaxiKg);
+    const maxPayloadByMRW = MRW - (pesoVazioKg + pilotsKg + fuelOBLb * lbToKg);
+    const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW);
 
-  leg.limitColors = {
-    zfw: zfwKg > mzfw ? "red" : "black",
-    ramp: rampKg > mrw ? "red" : "black",
-    tow: towKg > mtow ? "red" : "black",
-    ldg: landingKg > mlw ? "red" : "black"
-  };
+    if (maxPayloadKg > 0) {
+        leg.maxPayloadInfo = `Max: ${Math.round(maxPayloadKg)} kg`;
+    } else {
+        leg.maxPayloadInfo = "Max: 0 kg";
+    }
 
-  return leg;
+
+
+    // --- Limites e cor de alerta ---
+    const mtow = Number(aircraft.MTOW) || Infinity;
+    const mrw = Number(aircraft.MRW) || Infinity;
+    const mzfw = Number(aircraft.MZFW) || Infinity;
+    const mlw = Number(aircraft.MLOW || aircraft.MLW) || Infinity;
+
+    leg.limitColors = {
+        zfw: Math.round(zfwKg) > mzfw ? "red" : "black",
+        ramp: Math.round(rampKg) > mrw ? "red" : "black",
+        tow: Math.round(towKg) > mtow ? "red" : "black",
+        ldg: Math.round(landingKg) > mlw ? "red" : "black"
+    };
+
+
+    return leg;
 }
 
 
 
 // Recalcula todas as legs de uma rota, encadeando dependências
 function recomputeRoute(rota, aircraft) {
-  if (!rota || !Array.isArray(rota.legs)) return;
-  let prev = null;
+    if (!rota || !Array.isArray(rota.legs)) return;
+    let prev = null;
 
-  rota.legs.forEach((leg, i) => {
-    computeLegDerived(leg, prev, aircraft);
+    rota.legs.forEach((leg, i) => {
+        computeLegDerived(leg, prev, aircraft);
 
-    // se existir uma leg anterior e esta leg não tiver Fuel O/B definido
-    if (prev && (!leg.fuelOB || leg.fuelOB === "")) {
-      const prevLanding = Number(prev.landingFuelLb) || 0;
-      if (prevLanding > 0) {
-        leg.nextSuggestedFuel = `${Math.round(prevLanding)} lb`;
-      }
-    }
+        // se existir uma leg anterior e esta leg não tiver Fuel O/B definido
+        if (prev && (!leg.fuelOB || leg.fuelOB === "")) {
+            const prevLanding = Number(prev.landingFuelLb) || 0;
+            if (prevLanding > 0) {
+                leg.nextSuggestedFuel = `${Math.round(prevLanding)} lb`;
+            }
+        }
 
-    prev = leg;
-  });
+        prev = leg;
+    });
 }
 
 
@@ -240,10 +256,8 @@ function recomputeRoute(rota, aircraft) {
 // 5) RENDERIZAÇÃO
 // ==========================
 function criarLegHTML(leg) {
-  const maxFuelInfo = `MAX: ${LIMITS.maxFuelLb}lb / ${Math.round(LIMITS.maxFuelLb * 0.45359237)}kg`;
-  const maxTrafficInfo = `MAX: ${LIMITS.maxTrafficKg}kg`;
 
-  return `
+    return `
   <div class="rota-leg" style="border-width:1px;border-radius:20px;border-style:groove;padding:5px;margin-top:10px;display:none;">
     <div style="display:flex;justify-content:space-between;margin-top:13px;">
       <input class="leg-nome" style="font-weight:bold;width:138px;border-width:1px;border-style:ridge;border-radius:10px;"
@@ -322,7 +336,7 @@ function criarLegHTML(leg) {
 
 
 function criarRotaCardHTML(rota) {
-  return `
+    return `
   <div class="rota-card" data-id="${rota?.id || ""}" draggable="true" style="margin:20px auto;max-width:500px;">
     <div style="display:flex;justify-content:space-between;margin-bottom:30px;align-items:flex-start;">
       <input class="nome-rota" value="${rota?.nome ?? ""}" style="font-weight:bold;font-size:20px;border:none;outline:none;background:transparent;width:70%;text-align:left;">
@@ -337,214 +351,230 @@ function criarRotaCardHTML(rota) {
 
 
 function renderRotas(rootEl, estado) {
-  // Limpa render atual
-  rootEl.querySelectorAll(".rota-card").forEach(el => el.remove());
+    // Limpa render atual
+    rootEl.querySelectorAll(".rota-card").forEach(el => el.remove());
 
-  estado.rotas.forEach((rota) => {
-    // Card da rota
-    const rotaWrapper = document.createElement("div");
-    rotaWrapper.innerHTML = criarRotaCardHTML(rota);
-    const rotaCard = rotaWrapper.firstElementChild;
+    estado.rotas.forEach((rota) => {
+        // Card da rota
+        const rotaWrapper = document.createElement("div");
+        rotaWrapper.innerHTML = criarRotaCardHTML(rota);
+        const rotaCard = rotaWrapper.firstElementChild;
 
-    // Legs
-    (rota.legs || []).forEach(leg => {
-      rotaCard.insertAdjacentHTML("beforeend", criarLegHTML(leg));
+        // Legs
+        (rota.legs || []).forEach(leg => {
+            rotaCard.insertAdjacentHTML("beforeend", criarLegHTML(leg));
+        });
+
+        rootEl.appendChild(rotaCard);
     });
-
-    rootEl.appendChild(rotaCard);
-  });
 }
 
 function closeAllRoutes(container) {
-  container.querySelectorAll(".rota-card").forEach(card => {
-    const btn = card.querySelector(".toggleBtn");
-    const legs = card.querySelectorAll(".rota-leg");
-    legs.forEach(div => div.style.display = "none");
-    if (btn) btn.textContent = "▼";
-  });
+    container.querySelectorAll(".rota-card").forEach(card => {
+        const btn = card.querySelector(".toggleBtn");
+        const legs = card.querySelectorAll(".rota-leg");
+        legs.forEach(div => div.style.display = "none");
+        if (btn) btn.textContent = "▼";
+    });
 }
 
 // ==========================
 // 6) ESTADO & EVENTOS
 // ==========================
 function guardarEstadoRotas(estado) {
-  if (!estado || !Array.isArray(estado.rotas)) return;
-  if (estado.rotas.length === 0) return; // evita apagar defaults
-  lsSet(ROTAS_USER_KEY, estado);
+    if (!estado || !Array.isArray(estado.rotas)) return;
+    if (estado.rotas.length === 0) return; // evita apagar defaults
+    lsSet(ROTAS_USER_KEY, estado);
 }
 
 
 function attachEvents(container, estado, aircraft) {
- 
-  // Toggle mostrar/esconder legs de uma rota (fecha as outras automaticamente e faz scroll para o topo)
+
+    // Toggle mostrar/esconder legs de uma rota (fecha as outras automaticamente e faz scroll para o topo)
     container.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("toggleBtn")) return;
+        if (!e.target.classList.contains("toggleBtn")) return;
 
-    const rotaCard = e.target.closest(".rota-card");
-    const legs = rotaCard?.querySelectorAll(".rota-leg") || [];
-    if (!legs.length) return;
+        const rotaCard = e.target.closest(".rota-card");
+        const legs = rotaCard?.querySelectorAll(".rota-leg") || [];
+        if (!legs.length) return;
 
-    const esconder = legs[0].style.display !== "none";
+        const esconder = legs[0].style.display !== "none";
 
-    // Fecha todas as rotas antes de abrir a selecionada
-    container.querySelectorAll(".rota-card").forEach(card => {
-        card.querySelectorAll(".rota-leg").forEach(leg => leg.style.display = "none");
-        const btn = card.querySelector(".toggleBtn");
-        if (btn) btn.textContent = "▼";
+        // Fecha todas as rotas antes de abrir a selecionada
+        container.querySelectorAll(".rota-card").forEach(card => {
+            card.querySelectorAll(".rota-leg").forEach(leg => leg.style.display = "none");
+            const btn = card.querySelector(".toggleBtn");
+            if (btn) btn.textContent = "▼";
+        });
+
+        // Se a rota estava aberta, fecha e sai
+        if (esconder) return;
+
+        // Abre a rota selecionada
+        legs.forEach(div => div.style.display = "block");
+        e.target.textContent = "▲";
+
+        // Scroll suave até ao topo da rota aberta
+        rotaCard.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
-    // Se a rota estava aberta, fecha e sai
-    if (esconder) return;
 
-    // Abre a rota selecionada
-    legs.forEach(div => div.style.display = "block");
-    e.target.textContent = "▲";
 
-    // Scroll suave até ao topo da rota aberta
-    rotaCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Adicionar/remover legs
+    container.addEventListener("click", (e) => {
+        if (!(e.target.classList.contains("mais-leg") || e.target.classList.contains("menos-leg"))) return;
+
+        const rotaCard = e.target.closest(".rota-card");
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const rota = estado.rotas[rotaIndex];
+        const legAtual = e.target.closest(".rota-leg");
+        const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legAtual);
+
+        // === Adicionar leg ===
+        if (e.target.classList.contains("mais-leg")) {
+            rota.legs.splice(legIndex + 1, 0, novaLegData());
+        }
+
+        // === Remover leg ===
+        if (e.target.classList.contains("menos-leg") && rota.legs.length > 1) {
+            rota.legs.splice(legIndex, 1);
+        }
+
+        recomputeRoute(rota, aircraft);
+        guardarEstadoRotas(estado);
+        renderRotas(container, estado);
+
+        // Reabrir automaticamente a mesma rota após render
+        const novaRotaCard = container.querySelectorAll(".rota-card")[rotaIndex];
+        if (novaRotaCard) {
+            novaRotaCard.querySelectorAll(".rota-leg").forEach(div => {
+                div.style.display = "block";
+            });
+            const toggleBtn = novaRotaCard.querySelector(".toggleBtn");
+            if (toggleBtn) toggleBtn.textContent = "▲";
+        }
+    });
+
+
+    // Apagar rota inteira (com confirmação)
+    container.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("del-rota")) return;
+
+        const rotaCard = e.target.closest(".rota-card");
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const nomeRota = estado.rotas[rotaIndex]?.nome || "esta rota";
+
+        // Pergunta de confirmação
+        const confirmar = confirm(`⚠️ A rota "${nomeRota}" será eliminada permanentemente.`);
+
+        if (!confirmar) return; // cancela se o utilizador clicar em "Cancelar"
+
+        // Executa eliminação
+        estado.rotas.splice(rotaIndex, 1);
+        guardarEstadoRotas(estado);
+        renderRotas(container, estado);
+        closeAllRoutes(container);
+    });
+
+    // Guardar inputs e recalcular + sincronizar TODAS as legs visíveis da rota
+    container.addEventListener("input", (e) => {
+        const rotaCard = e.target.closest(".rota-card");
+        const legEl = e.target.closest(".rota-leg");
+        if (!rotaCard || !legEl) return;
+
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
+        const rotaData = estado.rotas[rotaIndex];
+        const legData = rotaData.legs[legIndex];
+
+        if (e.target.classList.contains("leg-nome")) legData.nome = e.target.value;
+        if (e.target.classList.contains("min-fuel-input")) legData.minFuel = e.target.value;
+        if (e.target.classList.contains("fuel-ob-input")) legData.fuelOB = e.target.value;
+        if (e.target.classList.contains("trip-fuel-input")) legData.tripFuel = e.target.value;
+        if (e.target.classList.contains("traffic-load-input")) {
+            const total = Number(e.target.value) || 0;
+            legData.trafficLoad = { ...(legData.trafficLoad || {}), total };
+        }
+
+        // Recalcular a rota completa
+        recomputeRoute(rotaData, aircraft);
+        guardarEstadoRotas(estado);
+
+
+        // Atualizar DOM da rota
+        const legEls = rotaCard.querySelectorAll(".rota-leg");
+        rotaData.legs.forEach((ldata, i) => {
+            const el = legEls[i];
+            if (!el) return;
+
+            // Atualizar textos
+            el.querySelector(".endurance-info").textContent = ldata.endurance || "";
+            el.querySelector(".zfw-info").textContent = ldata.zfw || "";
+            el.querySelector(".ramp-weight-info").textContent = ldata.rampWeight || "";
+            el.querySelector(".tow-info").textContent = ldata.tow || "";
+            el.querySelector(".landing-weight-info").textContent = ldata.landingWeight || "";
+
+            // Atualizar cores automaticamente conforme limites
+            el.querySelector(".zfw-info").style.color = ldata.limitColors?.zfw || "black";
+            el.querySelector(".ramp-weight-info").style.color = ldata.limitColors?.ramp || "black";
+            el.querySelector(".tow-info").style.color = ldata.limitColors?.tow || "black";
+            el.querySelector(".landing-weight-info").style.color = ldata.limitColors?.ldg || "black";
+
+            // Atualizar placeholder da próxima leg se estiver vazia
+            if (rotaData.legs[i + 1] && !rotaData.legs[i + 1].fuelOB) {
+                const nextEl = legEls[i + 1]?.querySelector(".fuel-ob-input");
+                if (nextEl) nextEl.placeholder = `${Math.round(ldata.landingFuelLb)} lb`;
+            }
+
+            // Atualizar infos de máximos
+            const maxFuelEl = el.querySelector("#leg-max-fuel");
+            const maxPayloadEl = el.querySelector("#leg-max-traffic-load");
+            if (maxFuelEl) maxFuelEl.textContent = ldata.maxFuelInfo || "";
+            if (maxPayloadEl) maxPayloadEl.textContent = ldata.maxPayloadInfo || "";
+
+        });
+
     });
 
 
 
-  // Adicionar/remover legs
-container.addEventListener("click", (e) => {
-  if (!(e.target.classList.contains("mais-leg") || e.target.classList.contains("menos-leg"))) return;
+    // Botão MB
+    container.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("btn-mb")) return;
 
-  const rotaCard = e.target.closest(".rota-card");
-  const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
-  const rota = estado.rotas[rotaIndex];
-  const legAtual = e.target.closest(".rota-leg");
-  const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legAtual);
+        const rotaCard = e.target.closest(".rota-card");
+        const legEl = e.target.closest(".rota-leg");
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
+        const legData = estado.rotas[rotaIndex].legs[legIndex];
 
-  // === Adicionar leg ===
-  if (e.target.classList.contains("mais-leg")) {
-    rota.legs.splice(legIndex + 1, 0, novaLegData());
-  }
+        const lbToKg = 0.45359237;
+        const legDataKg = structuredClone(legData);
 
-  // === Remover leg ===
-  if (e.target.classList.contains("menos-leg") && rota.legs.length > 1) {
-    rota.legs.splice(legIndex, 1);
-  }
+        if (!legDataKg.trafficLoad) legDataKg.trafficLoad = {};
+        legDataKg.trafficLoad.total = Number(legData.trafficLoad?.total || 0);
 
-  recomputeRoute(rota, aircraft);
-  guardarEstadoRotas(estado);
-  renderRotas(container, estado);
+        // converter campos em kg
+        ["minFuel", "fuelOB", "tripFuel"].forEach((campo) => {
+            if (legDataKg[campo]) {
+                legDataKg[campo] = Math.round(Number(legDataKg[campo]) * lbToKg);
+            }
+        });
 
-  // Reabrir automaticamente a mesma rota após render
-  const novaRotaCard = container.querySelectorAll(".rota-card")[rotaIndex];
-  if (novaRotaCard) {
-    novaRotaCard.querySelectorAll(".rota-leg").forEach(div => {
-      div.style.display = "block";
+        localStorage.setItem("mbLegSelecionada", JSON.stringify(legDataKg));
+        window.location.href = "mb.html";
     });
-    const toggleBtn = novaRotaCard.querySelector(".toggleBtn");
-    if (toggleBtn) toggleBtn.textContent = "▲";
-  }
-});
-
-
-  // Apagar rota inteira
-  container.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("del-rota")) return;
-    const rotaCard = e.target.closest(".rota-card");
-    const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
-    estado.rotas.splice(rotaIndex, 1);
-    guardarEstadoRotas(estado);
-    renderRotas(container, estado);
-    closeAllRoutes(container);
-  });
-
-  // Guardar inputs e recalcular + sincronizar TODAS as legs visíveis da rota
-container.addEventListener("input", (e) => {
-  const rotaCard = e.target.closest(".rota-card");
-  const legEl = e.target.closest(".rota-leg");
-  if (!rotaCard || !legEl) return;
-
-  const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
-  const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
-  const rotaData = estado.rotas[rotaIndex];
-  const legData = rotaData.legs[legIndex];
-
-  if (e.target.classList.contains("leg-nome")) legData.nome = e.target.value;
-  if (e.target.classList.contains("min-fuel-input")) legData.minFuel = e.target.value;
-  if (e.target.classList.contains("fuel-ob-input")) legData.fuelOB = e.target.value;
-  if (e.target.classList.contains("trip-fuel-input")) legData.tripFuel = e.target.value;
-  if (e.target.classList.contains("traffic-load-input")) {
-    const total = Number(e.target.value) || 0;
-    legData.trafficLoad = { ...(legData.trafficLoad || {}), total };
-  }
-
-  // Recalcular a rota completa
-  recomputeRoute(rotaData, aircraft);
-  guardarEstadoRotas(estado);
-
-  
-  // Atualizar DOM da rota
-const legEls = rotaCard.querySelectorAll(".rota-leg");
-rotaData.legs.forEach((ldata, i) => {
-  const el = legEls[i];
-  if (!el) return;
-
-  // Atualizar textos
-  el.querySelector(".endurance-info").textContent = ldata.endurance || "";
-  el.querySelector(".zfw-info").textContent = ldata.zfw || "";
-  el.querySelector(".ramp-weight-info").textContent = ldata.rampWeight || "";
-  el.querySelector(".tow-info").textContent = ldata.tow || "";
-  el.querySelector(".landing-weight-info").textContent = ldata.landingWeight || "";
-
-  // Atualizar cores automaticamente conforme limites
-  el.querySelector(".zfw-info").style.color = ldata.limitColors?.zfw || "black";
-  el.querySelector(".ramp-weight-info").style.color = ldata.limitColors?.ramp || "black";
-  el.querySelector(".tow-info").style.color = ldata.limitColors?.tow || "black";
-  el.querySelector(".landing-weight-info").style.color = ldata.limitColors?.ldg || "black";
-
-  // Atualizar placeholder da próxima leg se estiver vazia
-  if (rotaData.legs[i + 1] && !rotaData.legs[i + 1].fuelOB) {
-    const nextEl = legEls[i + 1]?.querySelector(".fuel-ob-input");
-    if (nextEl) nextEl.placeholder = `${Math.round(ldata.landingFuelLb)} lb`;
-  }
-});
-
-});
 
 
 
-// Botão MB
-container.addEventListener("click", (e) => {
-  if (!e.target.classList.contains("btn-mb")) return;
-
-  const rotaCard = e.target.closest(".rota-card");
-  const legEl = e.target.closest(".rota-leg");
-  const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
-  const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
-  const legData = estado.rotas[rotaIndex].legs[legIndex];
-
-  const lbToKg = 0.45359237;
-  const legDataKg = structuredClone(legData);
-
-  if (!legDataKg.trafficLoad) legDataKg.trafficLoad = {};
-  legDataKg.trafficLoad.total = Number(legData.trafficLoad?.total || 0);
-
-  // converter campos em kg
-  ["minFuel", "fuelOB", "tripFuel"].forEach((campo) => {
-    if (legDataKg[campo]) {
-      legDataKg[campo] = Math.round(Number(legDataKg[campo]) * lbToKg);
-    }
-  });
-
-  localStorage.setItem("mbLegSelecionada", JSON.stringify(legDataKg));
-  window.location.href = "mb.html";
-});
-
-
-
-  // UX: selecionar input ao focar, fechar teclado
-  document.addEventListener("focusin", ev => { if (ev.target.tagName === "INPUT") ev.target.select(); });
-  document.addEventListener("touchstart", event => {
-    if (!(event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")) {
-      const active = document.activeElement;
-      if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) active.blur();
-    }
-  });
+    // UX: selecionar input ao focar, fechar teclado
+    document.addEventListener("focusin", ev => { if (ev.target.tagName === "INPUT") ev.target.select(); });
+    document.addEventListener("touchstart", event => {
+        if (!(event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")) {
+            const active = document.activeElement;
+            if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) active.blur();
+        }
+    });
 
     // ==========================
     // Reordenar rotas por arrastar e largar
@@ -552,43 +582,77 @@ container.addEventListener("click", (e) => {
     let draggingCard = null;
 
     container.addEventListener("dragstart", (e) => {
-    const card = e.target.closest(".rota-card");
-    if (!card) return;
-    draggingCard = card;
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", "");
-    card.style.opacity = "0.5";
+        const card = e.target.closest(".rota-card");
+        if (!card) return;
+        draggingCard = card;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", "");
+        card.style.opacity = "0.5";
     });
 
     container.addEventListener("dragend", () => {
-    if (draggingCard) draggingCard.style.opacity = "1";
-    draggingCard = null;
+        if (draggingCard) draggingCard.style.opacity = "1";
+        draggingCard = null;
     });
 
     container.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    const targetCard = e.target.closest(".rota-card");
-    if (!targetCard || targetCard === draggingCard) return;
-    const rect = targetCard.getBoundingClientRect();
-    const offset = e.clientY - rect.top;
-    const middle = rect.height / 2;
+        e.preventDefault();
+        const targetCard = e.target.closest(".rota-card");
+        if (!targetCard || targetCard === draggingCard) return;
+        const rect = targetCard.getBoundingClientRect();
+        const offset = e.clientY - rect.top;
+        const middle = rect.height / 2;
 
-    if (offset > middle) {
-        targetCard.after(draggingCard);
-    } else {
-        targetCard.before(draggingCard);
-    }
+        if (offset > middle) {
+            targetCard.after(draggingCard);
+        } else {
+            targetCard.before(draggingCard);
+        }
     });
 
     container.addEventListener("drop", () => {
-  const novasRotas = [...container.querySelectorAll(".rota-card")].map(card => {
-    const id = card.dataset.id;
-    return estado.rotas.find(r => r.id === id);
-  }).filter(Boolean);
+        const novasRotas = [...container.querySelectorAll(".rota-card")].map(card => {
+            const id = card.dataset.id;
+            return estado.rotas.find(r => r.id === id);
+        }).filter(Boolean);
 
-  estado.rotas = novasRotas;
-  guardarEstadoRotas(estado);
-});
+        estado.rotas = novasRotas;
+        guardarEstadoRotas(estado);
+    });
+
+      
+    // ==========================
+    // Guardar rota e leg abertas
+    // ==========================
+    container.addEventListener("click", (e) => {
+    // Quando abres uma rota (toggle)
+    if (e.target.classList.contains("toggleBtn")) {
+        const rotaCard = e.target.closest(".rota-card");
+        const rotaId = rotaCard?.dataset.id;
+        const aberta = e.target.textContent === "▲";
+        if (aberta && rotaId) {
+        localStorage.setItem("rotaAbertaId", rotaId);
+        localStorage.removeItem("legAbertaIndex");
+        } else {
+        localStorage.removeItem("rotaAbertaId");
+        localStorage.removeItem("legAbertaIndex");
+        }
+    }
+
+    // Quando clicas dentro de uma leg
+    if (e.target.closest(".rota-leg")) {
+        const rotaCard = e.target.closest(".rota-card");
+        const rotaId = rotaCard?.dataset.id;
+        const legEl = e.target.closest(".rota-leg");
+        const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
+        if (rotaId) {
+        localStorage.setItem("rotaAbertaId", rotaId);
+        localStorage.setItem("legAbertaIndex", legIndex);
+        }
+    }
+    });
+
+
 
 }
 
@@ -599,53 +663,76 @@ container.addEventListener("click", (e) => {
 // esse código deve também limpar o estado das rotas do utilizador para voltar às defaults.
 // Exemplo de função utilitária que podes chamar a partir do settings.js:
 window.reporRotasParaOrigem = async function reporRotasParaOrigem() {
-  localStorage.removeItem(ROTAS_USER_KEY);
-  const defaults = await loadJSON("data/rotas.json");
-  const sane = { rotas: Array.isArray(defaults?.rotas) ? defaults.rotas : [] };
-  lsSet(ROTAS_USER_KEY, sane);
+    localStorage.removeItem(ROTAS_USER_KEY);
+    const defaults = await loadJSON("data/rotas.json");
+    const sane = { rotas: Array.isArray(defaults?.rotas) ? defaults.rotas : [] };
+    lsSet(ROTAS_USER_KEY, sane);
 };
 
 // ==========================
 // 8) BOOTSTRAP DA PÁGINA ROTAS
 // ==========================
 (async function initRotasPage() {
-  // Apenas corre em rotas.html
-  const isRotas = document.location.pathname.endsWith("/rotas.html") || document.title.includes("Rotas");
-  if (!isRotas) return;
+    // Apenas corre em rotas.html
+    const isRotas = document.location.pathname.endsWith("/rotas.html") || document.title.includes("Rotas");
+    if (!isRotas) return;
 
-  const container = document.body; // usa o body como root para simplicidade
+    const container = document.body; // usa o body como root para simplicidade
 
-  // Carregar estado do utilizador e avião ativo
-  const [estado, aircraft] = await Promise.all([
-    ensureUserRotasState(),
-    getAircraftActive()
-  ]);
+    // Carregar estado do utilizador e avião ativo
+    const [estado, aircraft] = await Promise.all([
+        ensureUserRotasState(),
+        getAircraftActive()
+    ]);
 
-  // Recalcular todas as rotas com o avião ativo
-  (estado.rotas || []).forEach(rota => recomputeRoute(rota, aircraft));
-  guardarEstadoRotas(estado);
+    // Recalcular todas as rotas com o avião ativo
+    (estado.rotas || []).forEach(rota => recomputeRoute(rota, aircraft));
+    guardarEstadoRotas(estado);
 
-  // Renderizar e garantir que arrancam recolhidas
-  renderRotas(container, estado);
-  closeAllRoutes(container);
+    // Renderizar e garantir que arrancam recolhidas
+    renderRotas(container, estado);
+    closeAllRoutes(container);
 
-  // Anexar eventos
-  attachEvents(container, estado, aircraft);
+    // ==========================
+    // Restaurar última rota/leg aberta
+    // ==========================
+    const rotaAbertaId = localStorage.getItem("rotaAbertaId");
+    const legAbertaIndex = Number(localStorage.getItem("legAbertaIndex"));
 
-  // Botão "+ Nova Rota" se existir
-  const btnNova = document.getElementById("btn-nova-rota");
-  
-  if (btnNova) {
-    btnNova.addEventListener("click", () => {
-      const nomeRota = prompt("Qual é o nome da nova rota?");
-      if (!nomeRota) return;
-      const nova = { id: crypto.randomUUID(), nome: nomeRota, legs: [novaLegData()] };
+    if (rotaAbertaId) {
+    const rotaCard = container.querySelector(`.rota-card[data-id="${rotaAbertaId}"]`);
+    if (rotaCard) {
+        const legs = rotaCard.querySelectorAll(".rota-leg");
+        legs.forEach(div => div.style.display = "block");
 
-      estado.rotas.push(nova);
-      recomputeRoute(nova, aircraft);
-      guardarEstadoRotas(estado);
-      renderRotas(container, estado);
-      closeAllRoutes(container);
-    });
-  }
+        const toggleBtn = rotaCard.querySelector(".toggleBtn");
+        if (toggleBtn) toggleBtn.textContent = "▲";
+
+        if (!Number.isNaN(legAbertaIndex) && legs[legAbertaIndex]) {
+        legs[legAbertaIndex].scrollIntoView({ behavior: "auto", block: "center" });
+        }
+    }
+    }
+
+
+
+    // Anexar eventos
+    attachEvents(container, estado, aircraft);
+
+    // Botão "+ Nova Rota" se existir
+    const btnNova = document.getElementById("btn-nova-rota");
+
+    if (btnNova) {
+        btnNova.addEventListener("click", () => {
+            const nomeRota = prompt("Qual é o nome da nova rota?");
+            if (!nomeRota) return;
+            const nova = { id: crypto.randomUUID(), nome: nomeRota, legs: [novaLegData()] };
+
+            estado.rotas.push(nova);
+            recomputeRoute(nova, aircraft);
+            guardarEstadoRotas(estado);
+            renderRotas(container, estado);
+            closeAllRoutes(container);
+        });
+    }
 })();

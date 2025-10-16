@@ -164,10 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // NOVO BLOCO: Selecionar o conteúdo ao focar
-    input.addEventListener('focus', function() {
+    // Selecionar o conteúdo ao focar
+
+    /*input.addEventListener('focus', function() {
         this.select();
-    });
+    });*/
 
     // Inicializa o display
     input.value = '00:00';
@@ -261,3 +262,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById("kt").value = (kmh / 1.852).toFixed(1);
 
     }
+
+// --- Conversão entre litros (L) e libras (lb) ---
+function lToLb() {
+  const l = parseFloat(document.getElementById("Lts").value) || 0;
+  // 1 litro ≈ 1.6 libras (valor médio para combustível de aviação)
+  document.getElementById("Lbs").value = (l * 1.6).toFixed(1);
+}
+
+function lbToL() {
+  const lb = parseFloat(document.getElementById("Lbs").value) || 0;
+  document.getElementById("Lts").value = (lb / 1.6).toFixed(1);
+}
+
