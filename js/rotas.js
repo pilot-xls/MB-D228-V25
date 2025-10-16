@@ -72,24 +72,24 @@ function cloneDeep(obj) {
 // 3) INICIALIZAÇÃO DE ESTADO
 // ==========================
 async function ensureUserRotasState() {
-  let rotasUser = lsGet(ROTAS_USER_KEY);
-  if (rotasUser && Array.isArray(rotasUser?.rotas)) {
-    // garantir que todas têm id
-    rotasUser.rotas.forEach(r => { if (!r.id) r.id = crypto.randomUUID(); });
-    lsSet(ROTAS_USER_KEY, rotasUser);
-    return rotasUser;
-  }
+    let rotasUser = lsGet(ROTAS_USER_KEY);
+    if (rotasUser && Array.isArray(rotasUser?.rotas)) {
+        // garantir que todas têm id
+        rotasUser.rotas.forEach(r => { if (!r.id) r.id = crypto.randomUUID(); });
+        lsSet(ROTAS_USER_KEY, rotasUser);
+        return rotasUser;
+    }
 
-  // Caso não exista, carregar defaults e guardar cópia no localStorage
-  const defaults = await loadJSON("data/rotas.json");
-  const sane = {
-    rotas: (Array.isArray(defaults?.rotas) ? defaults.rotas : []).map(r => ({
-      ...r,
-      id: r.id || crypto.randomUUID()
-    }))
-  };
-  lsSet(ROTAS_USER_KEY, sane);
-  return sane;
+    // Caso não exista, carregar defaults e guardar cópia no localStorage
+    const defaults = await loadJSON("data/rotas.json");
+    const sane = {
+        rotas: (Array.isArray(defaults?.rotas) ? defaults.rotas : []).map(r => ({
+            ...r,
+            id: r.id || crypto.randomUUID()
+        }))
+    };
+    lsSet(ROTAS_USER_KEY, sane);
+    return sane;
 }
 
 
@@ -335,6 +335,7 @@ function criarLegHTML(leg) {
     </div>
   </div>`;
 }
+
 
 
 
@@ -623,36 +624,36 @@ function attachEvents(container, estado, aircraft) {
         guardarEstadoRotas(estado);
     });
 
-      
+
     // ==========================
     // Guardar rota e leg abertas
     // ==========================
     container.addEventListener("click", (e) => {
-    // Quando abres uma rota (toggle)
-    if (e.target.classList.contains("toggleBtn")) {
-        const rotaCard = e.target.closest(".rota-card");
-        const rotaId = rotaCard?.dataset.id;
-        const aberta = e.target.textContent === "▲";
-        if (aberta && rotaId) {
-        localStorage.setItem("rotaAbertaId", rotaId);
-        localStorage.removeItem("legAbertaIndex");
-        } else {
-        localStorage.removeItem("rotaAbertaId");
-        localStorage.removeItem("legAbertaIndex");
+        // Quando abres uma rota (toggle)
+        if (e.target.classList.contains("toggleBtn")) {
+            const rotaCard = e.target.closest(".rota-card");
+            const rotaId = rotaCard?.dataset.id;
+            const aberta = e.target.textContent === "▲";
+            if (aberta && rotaId) {
+                localStorage.setItem("rotaAbertaId", rotaId);
+                localStorage.removeItem("legAbertaIndex");
+            } else {
+                localStorage.removeItem("rotaAbertaId");
+                localStorage.removeItem("legAbertaIndex");
+            }
         }
-    }
 
-    // Quando clicas dentro de uma leg
-    if (e.target.closest(".rota-leg")) {
-        const rotaCard = e.target.closest(".rota-card");
-        const rotaId = rotaCard?.dataset.id;
-        const legEl = e.target.closest(".rota-leg");
-        const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
-        if (rotaId) {
-        localStorage.setItem("rotaAbertaId", rotaId);
-        localStorage.setItem("legAbertaIndex", legIndex);
+        // Quando clicas dentro de uma leg
+        if (e.target.closest(".rota-leg")) {
+            const rotaCard = e.target.closest(".rota-card");
+            const rotaId = rotaCard?.dataset.id;
+            const legEl = e.target.closest(".rota-leg");
+            const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
+            if (rotaId) {
+                localStorage.setItem("rotaAbertaId", rotaId);
+                localStorage.setItem("legAbertaIndex", legIndex);
+            }
         }
-    }
     });
 
 
@@ -703,18 +704,18 @@ window.reporRotasParaOrigem = async function reporRotasParaOrigem() {
     const legAbertaIndex = Number(localStorage.getItem("legAbertaIndex"));
 
     if (rotaAbertaId) {
-    const rotaCard = container.querySelector(`.rota-card[data-id="${rotaAbertaId}"]`);
-    if (rotaCard) {
-        const legs = rotaCard.querySelectorAll(".rota-leg");
-        legs.forEach(div => div.style.display = "block");
+        const rotaCard = container.querySelector(`.rota-card[data-id="${rotaAbertaId}"]`);
+        if (rotaCard) {
+            const legs = rotaCard.querySelectorAll(".rota-leg");
+            legs.forEach(div => div.style.display = "block");
 
-        const toggleBtn = rotaCard.querySelector(".toggleBtn");
-        if (toggleBtn) toggleBtn.textContent = "▲";
+            const toggleBtn = rotaCard.querySelector(".toggleBtn");
+            if (toggleBtn) toggleBtn.textContent = "▲";
 
-        if (!Number.isNaN(legAbertaIndex) && legs[legAbertaIndex]) {
-        legs[legAbertaIndex].scrollIntoView({ behavior: "auto", block: "center" });
+            if (!Number.isNaN(legAbertaIndex) && legs[legAbertaIndex]) {
+                legs[legAbertaIndex].scrollIntoView({ behavior: "auto", block: "center" });
+            }
         }
-    }
     }
 
 
