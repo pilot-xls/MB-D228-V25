@@ -15,13 +15,35 @@
         <main class="container">
             <section class="section calculator-block">
                 <div class="time-calculator">
-                    <h3 class="block-title">Calculadora de Tempo</h3>
-                    <input id="timeInput" type="tel" placeholder="00:00" class="display-input" value="00:00"/>
-                    <div class="keypad">
-                        <button class="operator-btn">+</button>
-                        <button class="operator-btn">-</button>
-                        <button class="clear-btn">C</button>
-                        <button id="equals" class="equals-btn">=</button>
+                    <h3 class="block-title">Calculadora de Horas</h3>
+                    <div>
+                        <div style="display: flex; justify-content: center;">
+                            <input id="timeInput" type="text" class="display-input" value="0" readonly style="font-size: 45px; text-align: center;">
+                        </div>
+                        <div class="keypadCLC">
+                            <div class="rowCLC">
+                                <button class="buttonCLC">7</button>
+                                <button class="buttonCLC">8</button>
+                                <button class="buttonCLC">9</button>
+                                <button class="buttonCLC operatorCLC">+</button>
+                            </div>
+                            <div class="rowCLC">
+                                <button class="buttonCLC">4</button>
+                                <button class="buttonCLC">5</button>
+                                <button class="buttonCLC">6</button>
+                                <button class="buttonCLC operatorCLC">-</button>
+                            </div>
+                            <div class="rowCLC">
+                                <button class="buttonCLC">1</button>
+                                <button class="buttonCLC">2</button>
+                                <button class="buttonCLC">3</button>
+                                <button class="buttonCLC clearCLC">C</button>
+                            </div>
+                            <div class="rowCLC">
+                                <button class="buttonCLC">0</button>
+                                <button class="buttonCLC equalsCLC">=</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

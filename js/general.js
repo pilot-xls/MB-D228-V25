@@ -11,38 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// Ao carregar a página, força teclado numérico nos inputs apropriados
-/*
-document.addEventListener("DOMContentLoaded", () => {
-
-    // Seleciona todos os <input> existentes na página
-    const inputs = document.querySelectorAll("input");
-
-    inputs.forEach(input => {
-
-        // Ignorar campos específicos (não queremos mudar estes)
-        const ignorar = (
-            input.id === "timeInput" ||
-            input.id.startsWith("edit-") ||
-            input.id.startsWith("add-")
-        );
-
-        // Só aplica alterações se:
-        //  - não estiver na lista de ignorados
-        //  - ainda não tiver um inputmode definido
-        if (!ignorar && !input.hasAttribute("inputmode")) {
-
-            // Se o campo ainda for texto, converte para número
-            if (!input.type || input.type === "text") {
-                input.type = "number";
-            }
-
-            // Força teclado numérico (decimal) e padrão de dígitos
-            input.setAttribute("inputmode", "decimal");
-            input.setAttribute("pattern", "[0-9.]*");
-        }
-    });
-});*/
 
 // Fecha teclado ao clicar fora dos inputs
 document.addEventListener("touchstart", function (event) {
@@ -61,6 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Seleciona todos os campos de entrada (input, select, textarea)
     const inputFields = document.querySelectorAll('input, select, textarea');
+
+     // Função para detetar se é dispositivo móvel
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (!isMobile) return; // Sai logo se for desktop
 
     inputFields.forEach(input => {
         input.addEventListener('focus', function () {

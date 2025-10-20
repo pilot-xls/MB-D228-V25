@@ -1,172 +1,102 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('timeInput');
-    const keypad = document.querySelector('.keypad');
+    const display = document.getElementById('timeInput');
+    const buttons = document.querySelectorAll('.buttonCLC');
 
-    // Variáveis de estado
-    let storedTime = null;
-    let operator = null;
+    let current = '';       // sequência de dígitos introduzidos
+    let stored = null;      // valor em minutos da 1ª parte
+    let operator = null;    // + ou -
+    let justCalculated = false; // flag para saber se acabou de carregar em "="
 
-    // --- Funções de Formatação e Conversão ---
+    // --- Funções auxiliares ---
 
-    /**
-     * Limpa a string de entrada e formata-a como H+:MM
-     * Ex: "150" -> "01:50", "4000020" -> "40000:20"
-     */
-    const formatInputTime = (timeString) => {
-        // 1. Remove tudo o que não seja dígito.
-        let digits = timeString.replace(/[^\d]/g, '');
-
-        // 2. Remove zeros à esquerda em excesso (ex: "00150" torna-se "150").
-        // A menos que o valor seja zero, deve ser limpo.
-        digits = digits.replace(/^0+/, '');
-
-        if (digits.length === 0) {
-            return '00:00';
-        }
-
-        // 3. Os últimos dois dígitos são sempre os minutos
+    // Formata string de dígitos como HH:MM
+    const formatTime = (digits) => {
+        digits = digits.replace(/[^\d]/g, '').replace(/^0+/, '');
+        if (digits.length === 0) return '00:00';
         const minutes = digits.slice(-2).padStart(2, '0');
-
-        // 4. O resto dos dígitos são as horas
-        const hours = digits.slice(0, -2);
-
-        // Se só houver 1 ou 2 dígitos, a hora é 0.
-        if (hours.length === 0) {
-            return `00:${minutes}`;
-        }
-
-        return `${hours}:${minutes}`;
+        const hours = digits.slice(0, -2) || '0';
+        return `${hours.padStart(2, '0')}:${minutes}`;
     };
 
-    /**
-     * Converte HH:MM (ou H+:MM) para minutos totais.
-     */
-    const timeToMinutes = (timeString) => {
-        // Usa a função de formatação para garantir que está no formato correto antes de calcular
-        const formattedTime = formatInputTime(timeString);
-        const parts = formattedTime.split(':');
-
-        if (parts.length !== 2) return NaN;
-
-        const hours = parseInt(parts[0], 10);
-        const minutes = parseInt(parts[1], 10);
-
-        if (isNaN(hours) || isNaN(minutes)) return NaN;
-
-        return (hours * 60) + minutes;
+    // Converte HH:MM → minutos
+    const timeToMinutes = (time) => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
     };
 
-    /**
-     * Converte minutos totais para HH:MM (com suporte a horas grandes).
-     */
-    const minutesToTime = (totalMinutes) => {
-        if (isNaN(totalMinutes)) return 'Erro';
-
-        const sign = totalMinutes < 0 ? '-' : '';
-        const absMinutes = Math.abs(totalMinutes);
-
-        const totalHours = Math.floor(absMinutes / 60);
-        const displayMinutes = absMinutes % 60;
-
-        const pad = (num) => String(num).padStart(2, '0');
-
-        return `${sign}${totalHours}:${pad(displayMinutes)}`;
+    // Converte minutos → HH:MM (suporta negativos e horas grandes)
+    const minutesToTime = (min) => {
+        const sign = min < 0 ? '-' : '';
+        const abs = Math.abs(min);
+        const h = Math.floor(abs / 60);
+        const m = abs % 60;
+        return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     };
 
-    // --- Lógica de Manipulação de Botões (+, -, =, C) ---
-
-    const handleButtonClick = (value) => {
-        // Formata antes de qualquer operação
-        input.value = formatInputTime(input.value);
-
-        const currentValue = input.value;
-
-        if (value === '+' || value === '-') {
-            if (currentValue && currentValue !== '00:00') {
-                const currentMinutes = timeToMinutes(currentValue);
-
-                if (storedTime !== null && operator !== null) {
-                    executeCalculation(currentMinutes);
-                } else {
-                    storedTime = currentMinutes;
-                }
-
-                operator = value;
-                input.value = '00:00';
-                input.focus();
-            }
-        } else if (value === '=') {
-            executeCalculation();
-        } else if (value === 'C') {
-            input.value = '00:00';
-            storedTime = null;
-            operator = null;
-        }
+    const updateDisplay = () => {
+        display.value = formatTime(current);
     };
 
-    // Função para executar o cálculo final
-    const executeCalculation = (secondMinutes = null) => {
-        if (storedTime === null || operator === null) return;
-
-        // Se o segundo tempo não for fornecido, usa a entrada atual
-        const secondTimeMinutes = secondMinutes !== null ? secondMinutes : timeToMinutes(input.value);
-
-        if (isNaN(secondTimeMinutes)) return;
-
-        let resultMinutes;
-
-        if (operator === '+') {
-            resultMinutes = storedTime + secondTimeMinutes;
-        } else if (operator === '-') {
-            resultMinutes = storedTime - secondTimeMinutes;
-        }
-
-        // Prepara para a próxima operação (o resultado torna-se o storedTime)
-        storedTime = resultMinutes;
+    const calculate = () => {
+        if (stored === null || operator === null) return;
+        const second = timeToMinutes(formatTime(current || '0'));
+        let result = 0;
+        if (operator === '+') result = stored + second;
+        if (operator === '-') result = stored - second;
+        current = minutesToTime(result).replace(':', '');
+        stored = null;
         operator = null;
-        input.value = minutesToTime(resultMinutes);
+        justCalculated = true; // marca que acabou cálculo
+        updateDisplay();
     };
 
-    // --- LIGAÇÃO DE EVENTOS ---
+    // --- Eventos de clique ---
 
-    // Adicionar event listener aos botões (+, -, =, C)
-    ['click', 'touchstart'].forEach(evt => {
-        keypad.addEventListener(evt, (event) => {
-            if (event.target.tagName === 'BUTTON') {
-                event.preventDefault();   // evita clique duplicado
-                input.blur();             // fecha o teclado virtual
-                handleButtonClick(event.target.textContent);
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const value = btn.textContent;
+
+            if (/^\d$/.test(value)) {
+                // se acabou de calcular, limpar e começar novo número
+                if (justCalculated) {
+                    current = '';
+                    justCalculated = false;
+                }
+                current += value;
+                updateDisplay();
+            }
+            else if (value === 'C') {
+                current = '';
+                stored = null;
+                operator = null;
+                justCalculated = false;
+                updateDisplay();
+            }
+            else if (value === '+' || value === '-') {
+                if (current === '' && stored === null) return;
+                const currentMinutes = timeToMinutes(formatTime(current));
+                if (stored !== null && operator !== null) {
+                    stored = operator === '+'
+                        ? stored + currentMinutes
+                        : stored - currentMinutes;
+                } else {
+                    stored = currentMinutes;
+                }
+                operator = value;
+                current = '';
+                justCalculated = false;
+                updateDisplay();
+            }
+            else if (value === '=') {
+                calculate();
             }
         });
     });
 
-
-    // Adicionar event listener para formatar a hora enquanto o utilizador digita
-    input.addEventListener('input', (event) => {
-        const rawValue = event.target.value;
-
-        // Apenas dígitos, garantindo que o valor seja limpo
-        const cleanDigits = rawValue.replace(/[^\d]/g, '');
-
-        // Formatamos o valor limpo
-        const formatted = formatInputTime(cleanDigits);
-
-        // Atualiza o campo com a hora formatada
-        if (event.target.value !== formatted) {
-            event.target.value = formatted;
-        }
-    });
-
-    // Selecionar o conteúdo ao focar
-
-    /*input.addEventListener('focus', function() {
-        this.select();
-    });*/
-
-    // Inicializa o display
-    input.value = '00:00';
+    updateDisplay();
 });
+
 
 
 function lbToKg() {
