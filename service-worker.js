@@ -1,4 +1,4 @@
-const CACHE_NAME = "mb-d228-cache-v8";
+const CACHE_NAME = "mb-d228-cache-v1";
 const FILES_TO_CACHE = [
   "./",
   "./calculadora.html",
