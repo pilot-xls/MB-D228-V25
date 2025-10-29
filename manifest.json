@@ -1,6 +1,6 @@
 {
-  "name": "Navigation Sevenair",
-  "short_name": "NAV7",
+  "name": "Sevenair NavOne",
+  "short_name": "NavOne",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
