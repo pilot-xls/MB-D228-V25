@@ -1,6 +1,6 @@
 {
-  "name": "M&B D228",
-  "short_name": "M&B",
+  "name": "Navigation Sevenair",
+  "short_name": "NAV7",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
