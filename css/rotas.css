@@ -201,3 +201,18 @@ input {
 .text-warn {
     color: #d00;
 }
+
+div.rota-card button {
+    min-height: 30px;
+}
+
+div.rota-card input.nome-rota {
+    font-weight: bold;
+    font-size: 20px;
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 70%;
+    text-align: left;
+    min-height: 30px;
+}
