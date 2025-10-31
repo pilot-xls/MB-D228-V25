@@ -1,4 +1,6 @@
-const CACHE_NAME = "mb-d228-cache-v1"; // ↑ muda só quando alterares a LISTA
+// service-worker.js
+const CACHE_NAME = "mb-d228-cache-v2"; // Sobe SEMPRE que mexeres no FILES_TO_CACHE
+
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
@@ -9,6 +11,7 @@ const FILES_TO_CACHE = [
   "./performance.html",
   "./fdr.html",
   "./header.html",
+
   // CSS
   "./css/index.css",
   "./css/rotas.css",
@@ -20,6 +23,7 @@ const FILES_TO_CACHE = [
   "./css/normalize.css",
   "./css/style.css",
   "./css/theme.css",
+
   // JS
   "./js/general.js",
   "./js/dataLoader.js",
@@ -27,10 +31,12 @@ const FILES_TO_CACHE = [
   "./js/mb.js",
   "./js/settings.js",
   "./js/calculadora.js",
+
   // DATA
   "./data/aircraft.json",
   "./data/payload.json",
   "./data/rotas.json",
+
   // IMAGENS / ICONES
   "./img/sevenair.png",
   "./img/performance.png",
@@ -39,13 +45,14 @@ const FILES_TO_CACHE = [
   "./img/settings.png",
   "./img/calculator.png",
   "./img/waypoint.png",
-  "./img/weather.png",
+  "./img/weather.png",     
   "./img/serie200.png",
   "./img/serie212.png",
   "./img/serieError.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  // MANIFESTO
+
+  // MANIFESTO / SW
   "./manifest.json",
   "./service-worker.js"
 ];
@@ -72,11 +79,11 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// 2) ACTIVATE – apagar caches velhos + limpar entradas que já não estão em FILES_TO_CACHE
+// 2) ACTIVATE – apaga caches velhos e também entradas que já não estão na lista
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      // apaga caches com nome antigo
+      // apagar caches com nome antigo
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
@@ -86,10 +93,11 @@ self.addEventListener("activate", (event) => {
         })
       );
 
-      // limpa ficheiros que já não estão na lista
+      // limpar ficheiros que já não estão em FILES_TO_CACHE
       const cache = await caches.open(CACHE_NAME);
       const requests = await cache.keys();
       const allowed = new Set(FILES_TO_CACHE);
+
       await Promise.all(
         requests.map((req) => {
           const url = new URL(req.url);
@@ -97,30 +105,33 @@ self.addEventListener("activate", (event) => {
             url.origin === self.location.origin
               ? "." + url.pathname
               : req.url;
+
           if (!allowed.has(path)) {
-            // ficheiro já não está na lista → apaga
             return cache.delete(req);
           }
         })
       );
 
+      // garantir que começa logo a controlar as páginas
       self.clients.claim();
     })()
   );
 });
 
-// 3) FETCH – cache primeiro, mas atualiza em background (stale-while-revalidate light)
+// 3) FETCH – devolve do cache se houver, e tenta atualizar em background
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // navegação (html): tenta rede, senão dá offline
+  // navegação (HTML)
   if (req.mode === "navigate") {
     event.respondWith(
       (async () => {
         try {
+          // tenta rede primeiro
           const fresh = await fetch(req);
           return fresh;
         } catch (err) {
+          // offline → volta ao index
           const cached = await caches.match("./index.html");
           return cached;
         }
@@ -129,32 +140,41 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // assets: devolve do cache e tenta atualizar
+  // assets (css, js, img...)
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(req);
+
+      // tenta atualizar em background
       const fetchPromise = fetch(req)
         .then((networkResp) => {
-            // só mete no cache se for da mesma origem
-            if (networkResp && networkResp.ok && req.url.startsWith(self.location.origin)) {
-              cache.put(req, networkResp.clone());
-            }
-            return networkResp;
+          // só mete no cache se for da mesma origem
+          if (
+            networkResp &&
+            networkResp.ok &&
+            req.url.startsWith(self.location.origin)
+          ) {
+            cache.put(req, networkResp.clone());
+          }
+          return networkResp;
         })
         .catch(() => null);
 
-      // se tenho cache → devolvo já
+      // se já tens em cache → devolve já
       if (cached) {
         return cached;
       }
 
-      // se não tenho cache → espero rede
+      // se não tens → espera rede
       const networkResp = await fetchPromise;
       if (networkResp) return networkResp;
 
-      // fallback final
-      return new Response("Offline", { status: 503, statusText: "Offline" });
+      // último fallback
+      return new Response("Offline", {
+        status: 503,
+        statusText: "Offline",
+      });
     })()
   );
 });
