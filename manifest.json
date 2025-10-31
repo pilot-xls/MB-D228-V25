@@ -1,6 +1,6 @@
 {
-  "name": "Sevenair NavOne",
-  "short_name": "NavOne",
+  "name": "Sevenair Flytools",
+  "short_name": "Flytools",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
