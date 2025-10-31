@@ -1,218 +1,290 @@
-/* ==========================
-   ROTAS.CSS  — versão limpa e funcional
-   ========================== */
+/* ==============================
+   BASE / VARS
+   ============================== */
+:root {
+    --bg: #f3f4f6;
+    --card-bg: #fff;
+    --border: #e5e7eb;
+    --muted: #4b5563;
+    --radius-card: 14px;
+    --radius-sm: 8px;
+    --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.07);
+    --accent: #0ea5e9;
+    --danger: #ef4444;
+    --warn: #fde68a;
+}
 
 body {
-    background: #f9f9f9;
+    background: var(--bg);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding-bottom: 4rem;
 }
 
+/* título */
 h2 {
     text-align: center;
-    margin-bottom: 1rem;
+    margin: 1rem 0 .5rem;
 }
 
-/* Botões */
-.btn {
+/* toolbar de topo (se quiseres usar) */
+.toolbar-rotas {
+    max-width: 520px;
+    margin: 0 auto .8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+}
+
+/* botão “+ Nova rota” normal */
+#btn-nova-rota {
+    padding: .55rem 1.05rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 9999px;
+    color: #fff;
+    font-weight: 600;
     display: block;
-    padding: 8px 15px;
-    background: #007bff;
+    margin: 0 auto 1.2rem;
+    cursor: pointer;
+    transition: transform .1s ease-out, box-shadow .1s ease-out;
+}
+
+#btn-nova-rota:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(14, 165, 233, .25);
+}
+
+/* FAB (se quiseres o botão flutuante, mantém;
+   se não quiseres, apaga esta secção) */
+.fab-add-rota {
+    position: fixed;
+    bottom: 1.4rem;
+    right: 1.4rem;
+    width: 54px;
+    height: 54px;
+    border-radius: 9999px;
+    background: var(--accent);
     color: #fff;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    font-size: 1.65rem;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 6px 16px rgba(14,165,233,.45);
     cursor: pointer;
-    margin-left: auto;
-    margin-right: auto;
-    width: 120px;
-    min-height: 44px;
+    z-index: 50;
 }
 
-.btn-danger {
-    background: #dc3545;
-    width: 90px;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    display: inline-block;
-    width: auto;
-    padding: 5px 12px;
-    min-height: 44px;
-}
-
-/* Cartões de rota */
+/* ==============================
+   CARTÃO DA ROTA
+   ============================== */
 .rota-card {
-    background: #fff;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: var(--card-bg);
+    max-width: 520px;
+    margin: 0 auto 1rem;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 1px solid rgba(15, 23, 42, 0.03);
 }
 
-.rota-card h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-    text-align: center;
-}
-
-.rota-card .actions {
-    margin-top: 0.5rem;
-}
-
-/* Modal fullscreen */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    justify-content: center;
+/* header da rota */
+.rota-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .9rem 1rem .5rem;
+    border-bottom: 1px solid var(--border);
 }
 
-/* Estado ativo do modal */
-.modal.show {
+/* input nome da rota */
+.rota-header .nome-rota {
+    font-weight: 600;
+    font-size: 1.05rem;
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    min-height: 32px;
+}
+
+.rota-header .nome-rota::placeholder {
+    color: #cbd5f5;
+}
+
+/* ações (FCalc, C, Del, ▼) */
+.rota-actions {
     display: flex;
+    gap: .4rem;
 }
 
-.modal-content {
-    background: #fff;
-    width: 95%;
-    max-width: 500px;
+.rota-actions button {
+    min-width: 38px;
+    min-height: 32px;
+    border: none;
     border-radius: 8px;
-    padding: 1rem;
-    max-height: 90%;
-    overflow-y: auto;
-}
-
-/* Cartão de leg dentro do modal */
-.leg-card {
-    background: #f1f1f1;
-    padding: 0.8rem;
-    margin-bottom: 0.6rem;
-    border-radius: 6px;
-    flex-direction: column;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.leg-card p {
-    margin: 4px 0;
-}
-
-div.rota-card .btn-edit-card {
-    width: 90px;
-}
-
-.btns-deff-legs {
-    height: 50px;
-    width: 79px;
-    font-size: 12px;
-    padding: 0;
-}
-
-/* Inputs */
-input {
-    width: min(120px, 40vw);
-    text-align: center;
-}
-
-#nomerota {
-    display: block;
-    text-align: center;
-}
-
-#nomerota input {
-    width: 100%;
-    margin: 0.5rem 0;
-    text-align: center;
-}
-
-/* Corrigido ID */
-#input-depfuel-leg-card {
-    width: 64px;
-}
-
-/* Modal Payload */
-#popup-editar-payload.modal .modal-content h3 {
-    margin-top: 0;
-    font-size: 1.1em;
-    text-align: center;
-}
-
-#popup-editar-payload.modal table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#popup-editar-payload.modal table td {
-    padding: 4px 6px;
-    text-align: right;
-}
-
-#popup-editar-payload.modal #ppTotal {
-    text-align: left;
-}
-
-#popup-editar-payload.modal .actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
+    cursor: pointer;
+    font-size: .7rem;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    transition: filter .12s ease-out;
 }
 
-#popup-editar-payload.modal .actions button.btn.btn-secondary {
-    min-height: 50px;
+.rota-actions button:hover {
+    filter: brightness(.97);
 }
 
-#popup-editar-payload #popup-btn-Guardar-payL {
-    min-height: 50px;
+/* cores dos botões */
+.btn-fcalc {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
 }
 
-/* Separador */
-.linha-separador {
-    border-top: 1px solid #ccc;
-    margin: 20px 0;
+.btn-clear-legs {
+    background: var(--warn);
+    color: #92400e;
+    font-weight: 600;
 }
 
-/* Legs */
+.del-rota {
+    background: var(--danger);
+    color: #fff;
+}
+
+.toggleBtn {
+    background: #e5e7eb;
+    color: #000;
+}
+
+/* ==============================
+   LEGS
+   ============================== */
+.rota-leg {
+    margin: .9rem 1rem 1rem;
+    background: #f9fafb;
+    border: 1px solid #edf2f7;
+    border-radius: 12px;
+    padding: .7rem .75rem .75rem;
+}
+
+/* se estiver escondida no JS, o JS põe display:none;
+   o CSS não precisa de inline */
 .rota-leg.escondido {
     display: none;
 }
 
-.row-inputleg input {
-    height: 36px;
+.rota-leg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: .35rem;
 }
 
-/* Toggle */
-.toggleBtn {
+/* nome da leg */
+.rota-leg .leg-nome {
+    width: 155px;
+    font-weight: 600;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: .25rem .5rem;
+    background: #fff;
+}
+
+/* botão MB */
+.rota-leg .btn-mb {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: .25rem .75rem;
     cursor: pointer;
+    font-size: .75rem;
 }
 
-/* Cores padrão e alerta */
-.text-ok {
-    color: #000;
+/* linha de input da leg */
+.row-inputleg {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    border-top: 1px dashed #d1d5db;
+    padding-top: .4rem;
+    margin-top: .4rem;
 }
 
-.text-warn {
-    color: #d00;
+.row-inputleg p {
+    margin: 0;
+    font-size: .82rem;
 }
 
-div.rota-card button {
-    min-height: 30px;
+.row-inputleg input {
+    width: 110px;
+    height: 33px;
+    text-align: right;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: .83rem;
+    background: #fff;
 }
 
-div.rota-card input.nome-rota {
-    font-weight: bold;
-    font-size: 20px;
+/* infos (ZFW, TOW, LW) */
+.zfw-info,
+.ramp-weight-info,
+.tow-info,
+.landing-weight-info {
+    font-weight: 500;
+    font-size: .83rem;
+}
+
+/* quando o JS meter .style.color = "red" isto fica por cima,
+   mas se quiseres em classe: */
+.text-alert {
+    color: #dc2626 !important;
+}
+
+#leg-max-fuel,
+#leg-max-traffic-load {
+    font-size: .7rem;
+    color: #4b5563;
+    margin-top: .15rem;
+}
+
+/* botões + e - da leg */
+.rota-leg .menos-leg,
+.rota-leg .mais-leg {
     border: none;
-    outline: none;
-    background: transparent;
-    width: 70%;
-    text-align: left;
-    min-height: 30px;
+    background: #e5e7eb;
+    border-radius: 8px;
+    padding: .35rem .85rem;
+    font-size: .75rem;
+    cursor: pointer;
+    margin-top: .4rem;
+}
+
+.rota-leg .menos-leg {
+    background: #fee2e2;
+}
+
+/* ==============================
+   MOBILE
+   ============================== */
+@media (max-width: 520px) {
+    .rota-header {
+        flex-wrap: wrap;
+    }
+
+    .rota-actions {
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .row-inputleg input {
+        width: 98px;
+    }
+
+    .rota-leg {
+        margin: .6rem .6rem 1rem;
+    }
 }

@@ -67,7 +67,7 @@ h1 {
     padding: 1rem;
     border: none;
     border-radius: 0.5rem;
-    background: var(--btn-bg, rgb(83, 81, 81));
+    background: var(--btn-bg,rgb(122, 119, 119));
     color: var(--btn-color, #fff);
 }
 
@@ -76,7 +76,7 @@ h1 {
 }
 
 .operatorCLC {
-    background: var(--btn-operator,  rgb(83, 81, 81));
+    background: var(--btn-operator,  rgb(122, 119, 119));
 }
 
 .equalsCLC {

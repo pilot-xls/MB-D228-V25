@@ -348,17 +348,21 @@ function aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData) {
 
 function criarRotaCardHTML(rota) {
     return `
-  <div class="rota-card" data-id="${rota?.id || ""}" draggable="true" style="margin:20px auto;max-width:500px;">
-    <div style="display:flex;justify-content:space-between;margin-bottom:30px;align-items:flex-start;">
-      <input class="nome-rota" value="${rota?.nome ?? ""}" style="font-weight:bold;font-size:20px;border:none;outline:none;background:transparent;width:70%;text-align:left;">
-        <div style="gap:10px;display:flex;">
-            <button class="btn-fcalc" style="background-color:#17a2b8;color:#fff;min-width:50px;border-radius:10px;">FCalc</button>
-            <button class="btn-clear-legs" title="Limpar fuel e payload da rota" style="background-color:#ffc107;color:#000;min-width:40px;border-radius:10px;">C</button>
-            <button class="del-rota" style="background-color:#dc3545;color:#ffffff;min-width:40px;border-radius:10px;">Del</button>
-            <button class="toggleBtn" style="color:#000000;min-width:40px;border-radius:10px;">▼</button>
+    <div class="rota-card" data-id="${rota?.id || ""}" draggable="true">
+        <div class="rota-header">
+            <input 
+                class="nome-rota" 
+                value="${rota?.nome ?? ""}" 
+                placeholder="ex: RVP951"
+            >
+            <div class="rota-actions">
+                <button class="btn-compact btn-fcalc">FCalc</button>
+                <button class="btn-compact btn-clear-legs" title="Limpar fuel e payload da rota">C</button>
+                <button class="btn-compact del-rota">Del</button>
+                <button class="btn-compact toggleBtn">▼</button>
+            </div>
         </div>
-    </div>
-  </div>`;
+    </div>`;
 }
 
 

@@ -12,11 +12,13 @@
         <header>
             <div id="header"></div>
         </header>
-        <h2>Gestão de Rotas</h2>
-        <button class="btn" id="btn-nova-rota">+ Nova Rota</button>
+        <div class="toolbar-rotas" style="display: flex; align-items: center; justify-content: center;">
+            <h1>Gestão de Rotas</h1>
+            <button id="btn-nova-rota" class="fab-add-rota" title="Nova rota">＋</button>
+        </div>
         <!-- Lista de rotas -->
-        <div class="rota-card" style="margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 30px; align-items: flex-start;">
+        <div class="rota-card" style="max-width: 500px; padding-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px;">
                 <input class="nome-rota" style="font-weight: bold; font-size: 20px; border: none; outline: none; background: transparent; width: 70%; text-align: left;" placeholder="ex:RVP951">
                 <div style="gap: 10px; display: flex;">
                     <button class="del-rota" style="background-color: #dc3545; color: #ffffff; min-width: 40px; border-radius: 10px;">-</button>
@@ -24,7 +26,7 @@
                 </div>
             </div>
             <!-- Leg inicial -->
-            <div class="rota-leg" style="border-width: 1px; border-radius: 20px; border-style: groove; padding: 5px; margin-top: 10px;">
+            <div class="rota-leg" style="border-width: 1px; border-radius: 20px; border-style: groove; padding: 5px;">
                 <div style="display: flex; justify-content: space-between; margin-top: 13px;">
                     <input class="leg-nome" style="font-weight: bold; width: 138px; border-width: 1px; border-style: ridge; border-radius: 10px;" placeholder="ex:CAT-PRM">
                     <div style="display: flex; align-items: center; gap: 21px;">
@@ -82,91 +84,6 @@
                 <div style="display: flex; justify-content: center; gap: 15px; margin-top: 5px;">
                     <button class="menos-leg">- Leg</button>
                     <button class="mais-leg">+ Leg</button>
-                </div>
-            </div>
-        </div>
-        <!-- Modal para edição -->
-        <div class="modal" id="popup-editar-rota">
-            <div class="modal-content">
-                <h2>Editar Rota</h2>
-                <label id="nomerota">Nome da Rota:
-                    <input type="text" value="Lisboa - Porto">
-                </label>
-                <div class="leg-card">
-                    <label>
-                        <b>Nome Leg:</b>
-                        <input type="text" name="nome_leg" value="LPPT">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Departure Fuel:</b>
-                        <input type="number" name="dep_fuel" value="500" id="input-depfuel-leg-card">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Payload:</b>
-                        <input type="number" name="payload" value="300" id="input-payload-leg-card">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Trip Fuel:</b>
-                        <input type="number" name="trip_fuel" value="200">
-                    </label>
-                    <br>
-                    <label>
-                        <b>Min Fuel:</b>
-                        <input type="number" name="min_fuel" value="0">
-                    </label>
-                    <br>
-                    <div class="actions">
-                        <button class="btn btn-secondary">Guardar</button>
-                        <button class="btn btn-danger">Eliminar</button>
-                    </div>
-                </div>
-                <div id="btns-editar-rota">
-                    <button class="btn btn-add-perna btns-deff-legs">+ Adicionar Perna</button>
-                    <button class="btn btns-deff-legs" id="btn-save-perna">Guardar Alterações</button>
-                    <button class="btn btn-secondary btns-deff-legs">Cancelar</button>
-                </div>
-            </div>
-        </div>
-        <!-- Popup secundário para Payload -->
-        <div class="modal" id="popup-editar-payload">
-            <div class="modal-content">
-                <h3>Editar Payload</h3>
-                <table>
-                    <tr>
-                        <td id="label-homens">Homens</td>
-                        <td>
-                            <input type="number" id="ppHomens" min="0" value="0">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td id="label-mulheres">Mulheres</td>
-                        <td>
-                            <input type="number" id="ppMulheres" min="0" value="0">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td id="label-crianças">Crianças</td>
-                        <td>
-                            <input type="number" id="ppCriancas" min="0" value="0">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td id="label-extra">Extra</td>
-                        <td>
-                            <input type="number" id="ppBagagem" min="0" value="0">
-                        </td>
-                    </tr>
-                    <tr id="label-total">
-                        <td id="label-total">Total</td>
-                        <td id="ppTotal">0</td>
-                    </tr>
-                </table>
-                <div class="actions">
-                    <button class="btn btn-secondary" id="popup-btn-limpar-payL">Limpar</button>
-                    <button class="btn" id="popup-btn-Guardar-payL">Guardar</button>
                 </div>
             </div>
         </div>
