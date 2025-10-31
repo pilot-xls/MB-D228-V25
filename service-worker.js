@@ -49,8 +49,8 @@ const FILES_TO_CACHE = [
   "./img/serie200.png",
   "./img/serie212.png",
   "./img/serieError.png",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
+  "./img/icon-192.png",
+  "./img/icon-512.png",
 
   // MANIFESTO / SW
   "./manifest.json",
