@@ -1,3 +1,7 @@
+/* ==========================
+   ROTAS.CSS  — versão limpa e funcional
+   ========================== */
+
 body {
     background: #f9f9f9;
 }
@@ -7,9 +11,10 @@ h2 {
     margin-bottom: 1rem;
 }
 
+/* Botões */
 .btn {
     display: block;
-    padding: 5px 15px;
+    padding: 8px 15px;
     background: #007bff;
     color: #fff;
     border: none;
@@ -19,6 +24,7 @@ h2 {
     margin-left: auto;
     margin-right: auto;
     width: 120px;
+    min-height: 44px;
 }
 
 .btn-danger {
@@ -28,10 +34,13 @@ h2 {
 
 .btn-secondary {
     background: #6c757d;
-    display: inline;
-    width: 80px;
+    display: inline-block;
+    width: auto;
+    padding: 5px 12px;
+    min-height: 44px;
 }
 
+/* Cartões de rota */
 .rota-card {
     background: #fff;
     padding: 1rem;
@@ -51,10 +60,8 @@ h2 {
 }
 
 /* Modal fullscreen */
-#popup-editar-rota.modal {
+.modal {
     display: none;
-
-    /* usar display:flex/none para testar */
     position: fixed;
     top: 0;
     left: 0;
@@ -63,7 +70,11 @@ h2 {
     background: rgba(0,0,0,0.6);
     justify-content: center;
     align-items: center;
-    align-content: center;
+}
+
+/* Estado ativo do modal */
+.modal.show {
+    display: flex;
 }
 
 .modal-content {
@@ -76,6 +87,7 @@ h2 {
     overflow-y: auto;
 }
 
+/* Cartão de leg dentro do modal */
 .leg-card {
     background: #f1f1f1;
     padding: 0.8rem;
@@ -85,7 +97,6 @@ h2 {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    align-content: center;
     flex-wrap: wrap;
 }
 
@@ -101,11 +112,12 @@ div.rota-card .btn-edit-card {
     height: 50px;
     width: 79px;
     font-size: 12px;
-    padding: 0px;
+    padding: 0;
 }
 
+/* Inputs */
 input {
-    width: 100px;
+    width: min(120px, 40vw);
     text-align: center;
 }
 
@@ -120,97 +132,72 @@ input {
     text-align: center;
 }
 
-#depfuel-leg-card {
+/* Corrigido ID */
+#input-depfuel-leg-card {
     width: 64px;
 }
 
-/* usar display:flex/none para testar */
-#popup-editar-payload.modal {
-    display: none;
-}
-
-div.modal-content .leg-card div.actions {
-    margin-top: 10px;
-    display: inline-grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 30px;
-    gap: 0px;
-    margin-right: auto;
-    margin-left: auto;
-}
-
-#btns-editar-rota {
-    display: flex;
-    flex-direction: row;
-    gap: 2px;
-}
-
-#popup-editar-payload.modal > div > h3 {
+/* Modal Payload */
+#popup-editar-payload.modal .modal-content h3 {
     margin-top: 0;
     font-size: 1.1em;
     text-align: center;
 }
 
-#popup-editar-payload > div table {
+#popup-editar-payload.modal table {
     width: 100%;
-    display: flex;
-    justify-content: center;
+    border-collapse: collapse;
 }
 
-div#popup-editar-payload.modal > div table #label-homens {
+#popup-editar-payload.modal table td {
+    padding: 4px 6px;
     text-align: right;
-}
-
-div#popup-editar-payload.modal div table tbody #label-mulheres {
-    text-align: right;
-}
-
-div#popup-editar-payload.modal table #label-crianças {
-    text-align: right;
-}
-
-#popup-editar-payload.modal table #label-extra {
-    text-align: right;
-}
-
-div#popup-editar-payload.modal table #label-total {
-    text-align: right;
-}
-
-div#popup-editar-payload.modal div.actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-div#popup-editar-payload.modal div.actions button.btn.btn-secondary {
-    min-height: 50px;
 }
 
 #popup-editar-payload.modal #ppTotal {
     text-align: left;
 }
 
+#popup-editar-payload.modal .actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#popup-editar-payload.modal .actions button.btn.btn-secondary {
+    min-height: 50px;
+}
+
 #popup-editar-payload #popup-btn-Guardar-payL {
     min-height: 50px;
 }
 
+/* Separador */
 .linha-separador {
     border-top: 1px solid #ccc;
     margin: 20px 0;
 }
 
-.rota-leg {
-    display: block;
-
-    /* por defeito visível */
-}
-
+/* Legs */
 .rota-leg.escondido {
     display: none;
 }
 
 .row-inputleg input {
-    height: 20px;
+    height: 36px;
+}
+
+/* Toggle */
+.toggleBtn {
+    cursor: pointer;
+}
+
+/* Cores padrão e alerta */
+.text-ok {
+    color: #000;
+}
+
+.text-warn {
+    color: #d00;
 }

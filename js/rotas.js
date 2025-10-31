@@ -1,19 +1,3 @@
-/*
- * Rotas | Gestão de Rotas e Legs
- * Versão: v2 (refatorado)
- * Objetivo:
- *  - Carregar rotas DEFAULT de /data/rotas.json apenas na primeira utilização
- *  - Manter dados do utilizador separados das defaults (localStorage -> ROTAS_USER_KEY)
- *  - Fechar todas as rotas ao entrar na página
- *  - Calcular campos da leg com base no avião ativo e na leg anterior
- *  - Código modular, comentado e de fácil manutenção
- *
- * Dependências esperadas no projeto:
- *  - /data/rotas.json          (rotas default)
- *  - /data/aircraft.json       (aviões default)
- *  - settings.js                (guarda avião ativo no localStorage)
- *  - dataLoader.js              (opcional; aqui usamos fetch direto com fallback)
- */
 
 // ==========================
 // 0) CONFIGURAÇÃO & KEYS
@@ -336,22 +320,46 @@ function criarLegHTML(leg) {
   </div>`;
 }
 
+function aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData) {
+    const legEls = rotaCard.querySelectorAll(".rota-leg");
+    rotaData.legs.forEach((leg, i) => {
+        const el = legEls[i];
+        if (!el) return;
 
+        el.querySelector(".endurance-info").textContent = leg.endurance || "";
+        el.querySelector(".zfw-info").textContent = leg.zfw || "";
+        el.querySelector(".ramp-weight-info").textContent = leg.rampWeight || "";
+        el.querySelector(".tow-info").textContent = leg.tow || "";
+        el.querySelector(".landing-weight-info").textContent = leg.landingWeight || "";
 
+        // pintar cores dos limites
+        el.querySelector(".zfw-info").style.color = leg.limitColors?.zfw || "black";
+        el.querySelector(".ramp-weight-info").style.color = leg.limitColors?.ramp || "black";
+        el.querySelector(".tow-info").style.color = leg.limitColors?.tow || "black";
+        el.querySelector(".landing-weight-info").style.color = leg.limitColors?.ldg || "black";
+
+        // atualizar textos de máximos
+        const maxFuelEl = el.querySelector("#leg-max-fuel");
+        const maxPayloadEl = el.querySelector("#leg-max-traffic-load");
+        if (maxFuelEl) maxFuelEl.textContent = leg.maxFuelInfo || "";
+        if (maxPayloadEl) maxPayloadEl.textContent = leg.maxPayloadInfo || "";
+    });
+}
 
 function criarRotaCardHTML(rota) {
     return `
   <div class="rota-card" data-id="${rota?.id || ""}" draggable="true" style="margin:20px auto;max-width:500px;">
     <div style="display:flex;justify-content:space-between;margin-bottom:30px;align-items:flex-start;">
       <input class="nome-rota" value="${rota?.nome ?? ""}" style="font-weight:bold;font-size:20px;border:none;outline:none;background:transparent;width:70%;text-align:left;">
-      <div style="gap:10px;display:flex;">
-        <button class="del-rota" style="background-color:#dc3545;color:#ffffff;min-width:40px;border-radius:10px;">-</button>
-        <button class="toggleBtn" style="color:#000000;min-width:40px;border-radius:10px;">▼</button>
-      </div>
+        <div style="gap:10px;display:flex;">
+            <button class="btn-fcalc" style="background-color:#17a2b8;color:#fff;min-width:50px;border-radius:10px;">FCalc</button>
+            <button class="btn-clear-legs" title="Limpar fuel e payload da rota" style="background-color:#ffc107;color:#000;min-width:40px;border-radius:10px;">C</button>
+            <button class="del-rota" style="background-color:#dc3545;color:#ffffff;min-width:40px;border-radius:10px;">Del</button>
+            <button class="toggleBtn" style="color:#000000;min-width:40px;border-radius:10px;">▼</button>
+        </div>
     </div>
   </div>`;
 }
-
 
 
 function renderRotas(rootEl, estado) {
@@ -370,6 +378,8 @@ function renderRotas(rootEl, estado) {
         });
 
         rootEl.appendChild(rotaCard);
+        // aplicar cores logo após criar o card
+        aplicarCoresLimitsDaRotaNoDOM(rotaCard, rota);
     });
 }
 
@@ -390,6 +400,73 @@ function guardarEstadoRotas(estado) {
     if (estado.rotas.length === 0) return; // evita apagar defaults
     lsSet(ROTAS_USER_KEY, estado);
 }
+
+// Valida se um determinado Fuel O/B (em lb) consegue passar por TODAS as legs
+// desta rota sem violar MRW, MTOW, MLW ou MZFW, usando os mesmos dados do avião
+// e as mesmas legs que usaste no FCalc.
+//
+// Devolve:
+//   - true  → este valor de fuel é seguro para TODA a rota
+//   - false → em alguma leg rebenta um limite
+function validaFuelEmLb(legs, aircraft, pilotsKg, fuelTaxiKg, fuelLb) {
+    const lbToKg = 0.45359237;
+    const toNum = v => Number(String(v ?? "").replace(",", "."));
+    const toleranceKg = 0.5; // mesma tolerância que usaste no FCalc
+
+    // --- limites do avião (sempre em kg) ---
+    const MRW = toNum(aircraft.MRW);                    // Max Ramp Weight
+    const MTOW = toNum(aircraft.MTOW);                  // Max Take Off Weight
+    const MLW = toNum(aircraft.MLW || aircraft.MLOW);   // Max Landing Weight
+    const MZFW = toNum(aircraft.MZFW);                  // Max Zero Fuel Weight
+    const BEW = toNum(aircraft.BEW);                    // Basic Empty Weight
+
+    // Convertemos o fuel que queremos testar (vem em lb) para kg
+    let fuelObKg = fuelLb * lbToKg;
+
+    // Fuel à descolagem da leg 1 = fuel O/B - taxi
+    // (isto é o que vai pesar mesmo na TOW)
+    let fuelAtTOkg = fuelObKg - fuelTaxiKg;
+
+    // Vamos percorrer TODAS as legs da rota e verificar se com este fuel
+    // o avião consegue passar sem exceder nenhum limite.
+    for (let i = 0; i < legs.length; i++) {
+        const l = legs[i];
+
+        // ZFW = peso do avião + pilotos + payload da leg
+        const zfw = BEW + pilotsKg + l.payloadKg;
+
+        // 1) check MZFW (não depende de fuel)
+        if (zfw > MZFW + toleranceKg) {
+            return false;
+        }
+
+        // 2) Peso à descolagem desta leg = ZFW + fuel à descolagem
+        const tow = zfw + fuelAtTOkg;
+
+        // 3) Peso à aterragem = TOW - trip desta leg
+        const landing = tow - l.tripKg;
+
+        // 4) Peso à rampa (ramp) = ZFW + fuel takeoff + taxi
+        const mrwCheck = zfw + fuelAtTOkg + fuelTaxiKg;
+
+        // Se alguma destas três condições rebentar, este fuel não serve
+        if (
+            tow > (MTOW + toleranceKg) ||     // excede MTOW
+            landing > (MLW + toleranceKg) ||  // excede MLW
+            mrwCheck > (MRW + toleranceKg)    // excede MRW
+        ) {
+            return false;
+        }
+
+        // Se passou nesta leg, então para a próxima leg o fuel à descolagem
+        // vai ser o fuel atual menos o trip desta leg.
+        fuelAtTOkg = Math.max(0, fuelAtTOkg - l.tripKg);
+    }
+
+    // Se chegou aqui é porque o valor de fuel passou em TODAS as legs.
+    return true;
+}
+
 
 
 function attachEvents(container, estado, aircraft) {
@@ -420,6 +497,46 @@ function attachEvents(container, estado, aircraft) {
 
         // Scroll suave até ao topo da rota aberta
         rotaCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // Limpar FUEL O/B e PAYLOAD de TODAS as legs desta rota
+    container.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("btn-clear-legs")) return;
+
+        const rotaCard = e.target.closest(".rota-card");
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const rota = estado.rotas[rotaIndex];
+        if (!rota) return;
+
+        const ok = confirm(
+            "Vais limpar o FUEL O/B e o PAYLOAD (Traffic Load) de todas as legs nesta rota.\n" +
+            "\n" +
+            "Queres continuar?"
+        );
+        if (!ok) return;
+
+        rota.legs.forEach(leg => {
+            // mantém leg.minFuel
+            leg.fuelOB = ""; // limpa só o fuel introduzido
+            // limpa payload simples
+            if (!leg.trafficLoad) leg.trafficLoad = {};
+            leg.trafficLoad.total = "";
+            // opcional: remove sugestão herdada
+            delete leg.nextSuggestedFuel;
+        });
+
+        // recalcular e voltar a mostrar
+        recomputeRoute(rota, aircraft);
+        guardarEstadoRotas(estado);
+        renderRotas(container, estado);
+
+        const novaRotaCard = container.querySelectorAll(".rota-card")[rotaIndex];
+        if (novaRotaCard) {
+            novaRotaCard.querySelectorAll(".rota-leg").forEach(div => (div.style.display = "block"));
+            const toggleBtn = novaRotaCard.querySelector(".toggleBtn");
+            if (toggleBtn) toggleBtn.textContent = "▲";
+            aplicarCoresLimitsDaRotaNoDOM(novaRotaCard, estado.rotas[rotaIndex]);
+        }
     });
 
 
@@ -456,6 +573,8 @@ function attachEvents(container, estado, aircraft) {
             });
             const toggleBtn = novaRotaCard.querySelector(".toggleBtn");
             if (toggleBtn) toggleBtn.textContent = "▲";
+
+            aplicarCoresLimitsDaRotaNoDOM(novaRotaCard, estado.rotas[rotaIndex]);
         }
     });
 
@@ -479,6 +598,9 @@ function attachEvents(container, estado, aircraft) {
         renderRotas(container, estado);
         closeAllRoutes(container);
     });
+
+
+
 
     // Guardar inputs e recalcular + sincronizar TODAS as legs visíveis da rota
     container.addEventListener("input", (e) => {
@@ -504,40 +626,16 @@ function attachEvents(container, estado, aircraft) {
         recomputeRoute(rotaData, aircraft);
         guardarEstadoRotas(estado);
 
+        aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData);
 
-        // Atualizar DOM da rota
+        // atualizar placeholder da próxima leg (continua a ser preciso)
         const legEls = rotaCard.querySelectorAll(".rota-leg");
         rotaData.legs.forEach((ldata, i) => {
-            const el = legEls[i];
-            if (!el) return;
-
-            // Atualizar textos
-            el.querySelector(".endurance-info").textContent = ldata.endurance || "";
-            el.querySelector(".zfw-info").textContent = ldata.zfw || "";
-            el.querySelector(".ramp-weight-info").textContent = ldata.rampWeight || "";
-            el.querySelector(".tow-info").textContent = ldata.tow || "";
-            el.querySelector(".landing-weight-info").textContent = ldata.landingWeight || "";
-
-            // Atualizar cores automaticamente conforme limites
-            el.querySelector(".zfw-info").style.color = ldata.limitColors?.zfw || "black";
-            el.querySelector(".ramp-weight-info").style.color = ldata.limitColors?.ramp || "black";
-            el.querySelector(".tow-info").style.color = ldata.limitColors?.tow || "black";
-            el.querySelector(".landing-weight-info").style.color = ldata.limitColors?.ldg || "black";
-
-            // Atualizar placeholder da próxima leg se estiver vazia
             if (rotaData.legs[i + 1] && !rotaData.legs[i + 1].fuelOB) {
                 const nextEl = legEls[i + 1]?.querySelector(".fuel-ob-input");
                 if (nextEl) nextEl.placeholder = `${Math.round(ldata.landingFuelLb)} lb`;
             }
-
-            // Atualizar infos de máximos
-            const maxFuelEl = el.querySelector("#leg-max-fuel");
-            const maxPayloadEl = el.querySelector("#leg-max-traffic-load");
-            if (maxFuelEl) maxFuelEl.textContent = ldata.maxFuelInfo || "";
-            if (maxPayloadEl) maxPayloadEl.textContent = ldata.maxPayloadInfo || "";
-
         });
-
     });
 
 
@@ -657,6 +755,202 @@ function attachEvents(container, estado, aircraft) {
     });
 
 
+    // ==========================
+    // BOTÃO FCalc | Cálculo automático de combustível máximo à partida
+    // ==========================
+    // - Considera todas as legs da rota, payloads, trip fuel e limitações do avião ativo (MZFW, MTOW, MRW, MLOW).
+    // - Calcula o fuel máximo possível na leg 1 (partida).
+    // - Verifica se alguma leg fica abaixo do Min Fuel definido.
+    //   • Se sim, indica a leg que precisa de reabastecimento, o mínimo e o máximo permitidos nessa leg.
+    //   • Se não, pergunta se o valor calculado deve ser aplicado automaticamente à primeira leg.
+    // - Atualiza e re-renderiza a rota se o utilizador confirmar.
+
+    container.addEventListener("click", async (e) => {
+        if (!e.target.classList.contains("btn-fcalc")) return;
+
+        const confirmar = confirm(
+            "Calcular o máximo de combustível tem em conta:\n" +
+            "• Todas as legs da rota\n" +
+            "• Payload/Traffic Load de cada leg\n" +
+            "• Trip fuel de cada leg\n" +
+            "• Limites do avião ativo: (MZFW, MRW, MTOW, MLW)\n" +
+            "Carrega em OK para continuar ou Cancelar para sair."
+        );
+        if (!confirmar) return;
+
+        // --- contexto de rota/avião ---
+        const rotaCard = e.target.closest(".rota-card");
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const rota = estado.rotas[rotaIndex];
+        const aircraft = await getAircraftActive();
+        if (!aircraft) return alert("Nenhum avião ativo encontrado.");
+
+        // --- helpers & conversões ---
+        const lbToKg = 0.45359237;
+        const kgToLb = 1 / lbToKg;
+        const toNum = v => Number(String(v ?? "").replace(",", "."));
+        const toleranceKg = 0.5;
+
+        // --- dados do avião (kg) ---
+        const MRW = toNum(aircraft.MRW);
+        const MTOW = toNum(aircraft.MTOW);
+        const MZFW = toNum(aircraft.MZFW);
+        const MLW = toNum(aircraft.MLW || aircraft.MLOW);
+        const BEW = toNum(aircraft.BEW);
+
+        // --- parâmetros operacionais ---
+        const pilotsKg = Number(localStorage.getItem("pilotsKg")) || 0;
+        const fuelTaxiKg = Number(localStorage.getItem("fuelTaxiKg")) || 0;
+
+        // --- dados de legs normalizados ---
+        const legs = (rota.legs || []).map((l, i) => ({
+            idx: i,
+            nome: (l?.nome || "").trim() || `Leg ${i + 1}`,
+            payloadKg: toNum(l?.trafficLoad?.total || 0),
+            tripKg: toNum(l?.tripFuel || 0) * lbToKg,
+            minFuelKg: toNum(l?.minFuel || 0) * lbToKg
+        }));
+        if (!legs.length) return alert("Rota sem legs.");
+
+        // --- 1) ZFW por leg e verificação MZFW ---
+        const ZFW = legs.map(l => BEW + pilotsKg + l.payloadKg);
+        const idxZfwExcede = ZFW.findIndex(z => z > MZFW);
+        if (idxZfwExcede !== -1) {
+            const nome = legs[idxZfwExcede].nome;
+            return alert(
+                "⚠️ ZFW acima do permitido.\n\n" +
+                `• Leg: ${nome}\n` +
+                `• ZFW calculado: ${Math.round(ZFW[idxZfwExcede])} kg\n` +
+                `• MZFW avião:     ${Math.round(MZFW)} kg`
+            );
+        }
+
+        // --- 2) Limites F_TO por leg ---
+        const limitTOkg = legs.map((l, i) => {
+            const f_mtow = Math.max(0, MTOW - ZFW[i] + toleranceKg);
+            const f_mlw = Math.max(0, l.tripKg + (MLW - ZFW[i]) + toleranceKg);
+            const f_mrw = Math.max(0, MRW - ZFW[i] - fuelTaxiKg + toleranceKg);
+            return Math.min(f_mtow, f_mlw, f_mrw);
+        });
+
+        // --- 3) Backward pass ---
+        const FmaxKg = new Array(legs.length).fill(0);
+        FmaxKg[legs.length - 1] = limitTOkg[legs.length - 1];
+        for (let i = legs.length - 2; i >= 0; i--) {
+            FmaxKg[i] = Math.min(limitTOkg[i], legs[i].tripKg + FmaxKg[i + 1]);
+        }
+
+        // --- 4) Forward pass ---
+        let fuelAtTOkg = FmaxKg[0];
+        let critIndex = -1;
+        let maxPermitidoLegKg = 0;
+
+        for (let i = 0; i < legs.length; i++) {
+            const l = legs[i];
+
+            // mínimo configurado
+            if (fuelAtTOkg < l.minFuelKg) {
+                critIndex = i;
+                const f_mtow = Math.max(0, MTOW - ZFW[i]);
+                const f_mlw = Math.max(0, l.tripKg + (MLW - ZFW[i]));
+                const f_mrw = Math.max(0, MRW - ZFW[i] - fuelTaxiKg);
+                maxPermitidoLegKg = Math.min(f_mtow, f_mlw, f_mrw);
+                break;
+            }
+
+            // limites efetivos
+            const towKg = ZFW[i] + fuelAtTOkg;
+            const landingKg = towKg - l.tripKg;
+            if (
+                towKg > (MTOW + toleranceKg) ||
+                (fuelAtTOkg + fuelTaxiKg) > (MRW - ZFW[i] + toleranceKg) ||
+                landingKg > (MLW + toleranceKg)
+            ) {
+                const f_mtow = Math.max(0, MTOW - ZFW[i]);
+                const f_mlw = Math.max(0, l.tripKg + (MLW - ZFW[i]));
+                const f_mrw = Math.max(0, MRW - ZFW[i] - fuelTaxiKg);
+                maxPermitidoLegKg = Math.min(f_mtow, f_mlw, f_mrw);
+                critIndex = i;
+                break;
+            }
+
+            fuelAtTOkg = Math.max(0, fuelAtTOkg - l.tripKg);
+        }
+
+        // --- 5) Resultado base em lb ---
+        const maxFuelDepartureObKg = FmaxKg[0] + fuelTaxiKg;
+        const baseLb = Math.floor(maxFuelDepartureObKg * kgToLb);
+
+        // --- 6) Afinar até +3 lb se couber ---
+        let maxFuelDepartureLb = baseLb;
+        for (let add = 1; add <= 3; add++) {
+            const cand = baseLb + add;
+            const ok = validaFuelEmLb(legs, aircraft, pilotsKg, fuelTaxiKg, cand);
+            if (ok) {
+                maxFuelDepartureLb = cand;
+            } else {
+                break;
+            }
+        }
+
+        // ==========================
+        // Se houve leg crítica, AVISA mas NÃO sai
+        // ==========================
+        if (critIndex !== -1) {
+            const legNome = legs[critIndex].nome;
+            const minNecessarioLb = Math.round(legs[critIndex].minFuelKg * kgToLb);
+
+            // quanto lá chega com o fuel máximo que calculámos
+            const tripAntesDaCritLb = rota.legs
+                .slice(0, critIndex)
+                .reduce((s, l) => s + toNum(l?.tripFuel || 0), 0);
+
+            const fuelTOnaCritLb = Math.max(
+                0,
+                maxFuelDepartureLb - (fuelTaxiKg * kgToLb) - tripAntesDaCritLb
+            );
+
+            const maxObNaCritKg = maxPermitidoLegKg + fuelTaxiKg;
+            const maxPossivelLb = Math.round(maxObNaCritKg * kgToLb);
+
+            alert(
+                "⚠️ ATENÇÃO: rota exige reabastecimento intermédio\n\n" +
+                `• Leg crítica: ${legNome}\n` +
+                `• Fuel previsto à saída dessa leg: ${Math.round(fuelTOnaCritLb)} lb\n` +
+                `• Min fuel definido nessa leg:     ${minNecessarioLb} lb\n` +
+                "\n" +
+                "➡ Ação sugerida:\n" +
+                `• Reabastecer em ${legNome}\n` +
+                `• Min Fuel: ${minNecessarioLb} lb\n` +
+                `• Max fuel:  ${maxPossivelLb} lb\n`
+            );
+        }
+
+        // ==========================
+        // 7) Aplicar na 1ª leg
+        // ==========================
+        const primeiraLegNome = rota.legs[0]?.nome?.trim() || "1.ª leg";
+
+        const aplicar = confirm(
+            `Máximo combustível na 1.º leg (${primeiraLegNome}): ${maxFuelDepartureLb} lb\n\n` +
+            "Este valor será aplicado à 1.º leg."
+        );
+
+        if (aplicar) {
+            rota.legs[0].fuelOB = maxFuelDepartureLb;
+            recomputeRoute(rota, aircraft);
+            guardarEstadoRotas(estado);
+            renderRotas(container, estado);
+
+            const novaRotaCard = container.querySelectorAll(".rota-card")[rotaIndex];
+            if (novaRotaCard) {
+                novaRotaCard.querySelectorAll(".rota-leg").forEach(div => (div.style.display = "block"));
+                const toggleBtn = novaRotaCard.querySelector(".toggleBtn");
+                if (toggleBtn) toggleBtn.textContent = "▲";
+                aplicarCoresLimitsDaRotaNoDOM(novaRotaCard, estado.rotas[rotaIndex]);
+            }
+        }
+    });
 
 }
 
