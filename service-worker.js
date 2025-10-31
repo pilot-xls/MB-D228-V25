@@ -39,6 +39,7 @@ const FILES_TO_CACHE = [
   "./img/settings.png",
   "./img/calculator.png",
   "./img/waypoint.png",
+  "./img/weather.png",
   "./img/serie200.png",
   "./img/serie212.png",
   "./img/serieError.png",
