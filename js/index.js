@@ -3,35 +3,33 @@ if ('serviceWorker' in navigator) {
     .then(reg => console.log("Service Worker registado:", reg))
     .catch(err => console.error("Erro ao registar SW:", err));
 }
-
-
-
-// js/pwa-sheet.js
+// --- PWA INSTALL SHEET ---
 
 const INSTALL_SHEET_ID = "install-sheet";
 const INSTALL_LAST_SHOWN_KEY = "pwa-install-last-shown";
-const INSTALL_INTERVAL_MIN = 5; // minutos
+const INSTALL_INTERVAL_MIN = 5; // mostrar no máximo a cada 5 min
 
 let deferredPrompt = null;
 
-// 1) apanhar o beforeinstallprompt (Android / Chrome)
+// se o browser suportar "instalar" (Android/Chrome)
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  tentarMostrarSheet();
+  tentarMostrarSheet("android");
 });
 
-// 2) iOS não tem beforeinstallprompt → mostramos sempre
+// iOS / outros: mostrar na mesma (com intervalo)
 document.addEventListener("DOMContentLoaded", () => {
-  // se for iOS Safari, também mostramos
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (isIOS) {
-    tentarMostrarSheet();
+    tentarMostrarSheet("ios");
+  } else if (!deferredPrompt) {
+    // desktop http ou browser que não dispara o evento
+    tentarMostrarSheet("generic");
   }
 });
 
-// função que verifica tempo e mostra
-function tentarMostrarSheet() {
+function tentarMostrarSheet(modo = "generic") {
   const sheet = document.getElementById(INSTALL_SHEET_ID);
   if (!sheet) return;
 
@@ -39,40 +37,58 @@ function tentarMostrarSheet() {
   const ultimo = Number(localStorage.getItem(INSTALL_LAST_SHOWN_KEY)) || 0;
   const diffMin = (agora - ultimo) / 1000 / 60;
 
-  if (diffMin < INSTALL_INTERVAL_MIN) {
-    return; // ainda não passaram 5 min
+  // respeitar intervalo
+  if (diffMin < INSTALL_INTERVAL_MIN) return;
+
+  // mostrar bloco certo
+  const iosBlock = document.getElementById("sheet-ios");
+  const androidBlock = document.getElementById("sheet-android");
+
+  if (androidBlock) androidBlock.classList.add("hidden");
+  if (iosBlock) iosBlock.classList.add("hidden");
+
+  if (modo === "android") {
+    androidBlock?.classList.remove("hidden");
+  } else {
+    iosBlock?.classList.remove("hidden");
   }
 
+  // mostrar o sheet
   sheet.classList.remove("hidden");
+  sheet.classList.add("show"); // <--- FALTAVA ISTO
   sheet.setAttribute("aria-hidden", "false");
+
+  // registar que já mostrámos
   localStorage.setItem(INSTALL_LAST_SHOWN_KEY, String(agora));
 }
 
-// botões do sheet
+// handlers dos botões
 document.addEventListener("click", async (e) => {
   // fechar
   if (e.target.matches("[data-install-close]")) {
     const sheet = document.getElementById(INSTALL_SHEET_ID);
     if (sheet) {
-      sheet.classList.add("hidden");
+      sheet.classList.remove("show");
+      // atraso pequeno para não “saltar”
+      setTimeout(() => sheet.classList.add("hidden"), 200);
       sheet.setAttribute("aria-hidden", "true");
     }
   }
 
-  // instalar (Android / Chrome)
+  // instalar no Android/Chrome
   if (e.target.matches("[data-install-cta]")) {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      // podes tratar outcome === "accepted" ou "dismissed"
+      await deferredPrompt.userChoice;
       deferredPrompt = null;
-    } else {
-      // iOS: só fecha e o utilizador segue as instruções
-      const sheet = document.getElementById(INSTALL_SHEET_ID);
-      if (sheet) {
-        sheet.classList.add("hidden");
-        sheet.setAttribute("aria-hidden", "true");
-      }
+    }
+    // fecha sempre
+    const sheet = document.getElementById(INSTALL_SHEET_ID);
+    if (sheet) {
+      sheet.classList.remove("show");
+      setTimeout(() => sheet.classList.add("hidden"), 200);
     }
   }
 });
+
+
