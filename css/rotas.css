@@ -83,6 +83,7 @@ h2 {
     line-height: 1;
 }
 
+
 /* ==============================
    CARTÃO DA ROTA
    ============================== */
@@ -179,7 +180,9 @@ h2 {
     border-radius: 12px;
     padding: .7rem .75rem .75rem;
 }
-
+.rota-leg input {
+    font-size: 16px;
+}
 /* se estiver escondida no JS, o JS põe display:none;
    o CSS não precisa de inline */
 .rota-leg.escondido {
