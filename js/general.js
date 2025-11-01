@@ -109,87 +109,83 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 });
 
-
+// ATIVAR / DESATIVAR SWIPE
+const ENABLE_SWIPE_NAV = false; // ← mete false para suspender
 
 /*
  Script para navegação por gestos (swipe) no telemóvel
- - Swipe para a direita (>100px) → vai para proxima.html
- - Swipe para a esquerda (<-100px) → vai para anterior.html
+ ...
 */
 
+if (ENABLE_SWIPE_NAV) {
 
-// Navegação por gestos com transição e fade
-const paginas = [
-    "index.html",
-    "mb.html",
-    "rotas.html",
-    "performance.html",
-    "calculadora.html",
-    "settings.html"
-];
+    const paginas = [
+        "index.html",
+        "mb.html",
+        "rotas.html",
+        "performance.html",
+        "calculadora.html",
+        "settings.html"
+    ];
 
-const atual = window.location.pathname.split("/").pop();
-const pos = paginas.indexOf(atual);
+    const atual = window.location.pathname.split("/").pop();
+    const pos = paginas.indexOf(atual);
 
-let touchStartX = 0;
-let deltaX = 0;
-let preview = null;
+    let touchStartX = 0;
+    let deltaX = 0;
+    let preview = null;
 
-// cria pré-visualização da próxima página (iframe)
-function preloadNextPage(nextUrl, direction) {
-    preview = document.createElement("iframe");
-    preview.src = nextUrl;
-    preview.style.position = "fixed";
-    preview.style.top = "0";
-    preview.style.left = direction === "left" ? "100%" : "-100%";
-    preview.style.width = "100%";
-    preview.style.height = "100%";
-    preview.style.border = "none";
-    preview.style.opacity = "0";
-    preview.style.transition = "transform 0.25s ease, opacity 0.25s ease";
-    document.body.appendChild(preview);
-    // ligeiro atraso para ativar transição
-    requestAnimationFrame(() => (preview.style.opacity = "1"));
-}
-
-document.addEventListener("touchstart", e => {
-    touchStartX = e.changedTouches[0].screenX;
-});
-
-document.addEventListener("touchmove", e => {
-    deltaX = e.changedTouches[0].screenX - touchStartX;
-    if (Math.abs(deltaX) < 20) return;
-
-    if (deltaX < 0 && pos < paginas.length - 1) {
-        if (!preview) preloadNextPage(paginas[pos + 1], "left");
-        preview.style.transform = `translateX(${deltaX}px)`;
-    } else if (deltaX > 0 && pos > 0) {
-        if (!preview) preloadNextPage(paginas[pos - 1], "right");
-        preview.style.transform = `translateX(${deltaX - window.innerWidth}px)`;
-    }
-});
-
-document.addEventListener("touchend", () => {
-    if (!preview) return;
-
-    if (deltaX < -100 && pos < paginas.length - 1) {
-        // swipe esquerda → próxima página
-        preview.style.transform = "translateX(-100%)";
-        preview.style.opacity = "1";
-        setTimeout(() => (window.location.href = paginas[pos + 1]), 200);
-    } else if (deltaX > 100 && pos > 0) {
-        // swipe direita → página anterior
-        preview.style.transform = "translateX(0)";
-        preview.style.opacity = "1";
-        setTimeout(() => (window.location.href = paginas[pos - 1]), 200);
-    } else {
-        // gesto cancelado → reverter
-        preview.style.transform = "translateX(0)";
+    function preloadNextPage(nextUrl, direction) {
+        preview = document.createElement("iframe");
+        preview.src = nextUrl;
+        preview.style.position = "fixed";
+        preview.style.top = "0";
+        preview.style.left = direction === "left" ? "100%" : "-100%";
+        preview.style.width = "100%";
+        preview.style.height = "100%";
+        preview.style.border = "none";
         preview.style.opacity = "0";
-        setTimeout(() => {
-            preview.remove();
-            preview = null;
-        }, 200);
+        preview.style.transition = "transform 0.25s ease, opacity 0.25s ease";
+        document.body.appendChild(preview);
+        requestAnimationFrame(() => (preview.style.opacity = "1"));
     }
-});
 
+    document.addEventListener("touchstart", e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener("touchmove", e => {
+        deltaX = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(deltaX) < 20) return;
+
+        if (deltaX < 0 && pos < paginas.length - 1) {
+            if (!preview) preloadNextPage(paginas[pos + 1], "left");
+            preview.style.transform = `translateX(${deltaX}px)`;
+        } else if (deltaX > 0 && pos > 0) {
+            if (!preview) preloadNextPage(paginas[pos - 1], "right");
+            preview.style.transform = `translateX(${deltaX - window.innerWidth}px)`;
+        }
+    });
+
+    document.addEventListener("touchend", () => {
+        if (!preview) return;
+
+        if (deltaX < -100 && pos < paginas.length - 1) {
+            preview.style.transform = "translateX(-100%)";
+            preview.style.opacity = "1";
+            setTimeout(() => (window.location.href = paginas[pos + 1]), 200);
+        } else if (deltaX > 100 && pos > 0) {
+            preview.style.transform = "translateX(0)";
+            preview.style.opacity = "1";
+            setTimeout(() => (window.location.href = paginas[pos - 1]), 200);
+        } else {
+            preview.style.transform = "translateX(0)";
+            preview.style.opacity = "0";
+            setTimeout(() => {
+                preview.remove();
+                preview = null;
+            }, 200);
+        }
+    });
+
+}
