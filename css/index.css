@@ -153,3 +153,105 @@ img {
     font-family: 'Maven Pro', sans-serif;
 }
 
+
+/* PWA */
+
+/* 2) CSS */
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  transition: transform .25s ease-out, opacity .25s ease-out;
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sheet.show {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sheet-body {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 30px rgba(15,23,42,.15);
+  padding: 1.2rem 1.2rem 1.4rem;
+  position: relative;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.sheet-close {
+  position: absolute;
+  top: .75rem;
+  right: .9rem;
+  border: none;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sheet-app {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  margin-bottom: .9rem;
+}
+
+.sheet-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+
+.sheet-sub {
+  margin: .15rem 0 0;
+  color: #6b7280;
+  font-size: .8rem;
+}
+
+.sheet-steps {
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+  color: #111827;
+  font-size: .9rem;
+}
+
+.sheet-steps li {
+  margin-bottom: .5rem;
+}
+
+.sheet-btn {
+  width: 100%;
+  border: none;
+  background: #0ea5e9;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: .55rem 0;
+  font-size: .9rem;
+  cursor: pointer;
+}
+
+.ios-share {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  background: url("./img/share-ios.svg") center/contain no-repeat;
+  vertical-align: -2px;
+}
+
+/* esconder em desktop se quiseres */
+@media (min-width: 900px) {
+  .sheet {
+    bottom: 1.2rem;
+    transform: translateY(20px);
+  }
+}
