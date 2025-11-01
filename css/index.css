@@ -248,6 +248,8 @@ img {
   vertical-align: -2px;
 }
 
+.hidden { display: none !important; }
+
 /* esconder em desktop se quiseres */
 @media (min-width: 900px) {
   .sheet {
