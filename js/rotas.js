@@ -268,7 +268,7 @@ function criarLegHTML(leg) {
        pattern="[0-9]*"
                value="${leg?.fuelOB ?? ''}">
       </div>
-<p id="leg-max-fuel" style="font-size:12px;color:#555;margin:0;">${leg?.maxFuelInfo || ""}</p>
+<p id="leg-max-fuel" style="color:#555;margin:0;">${leg?.maxFuelInfo || ""}</p>
 
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;">
@@ -276,7 +276,7 @@ function criarLegHTML(leg) {
         <input class="traffic-load-input" placeholder="Kg" type="number" inputmode="numeric"
        pattern="[0-9]*" value="${leg?.trafficLoad?.total ?? ""}">
       </div>
-<p id="leg-max-traffic-load" style="font-size:12px;color:#555;margin:0;">${leg?.maxPayloadInfo || ""}</p>
+<p id="leg-max-traffic-load" style="color:#555;margin:0;">${leg?.maxPayloadInfo || ""}</p>
 
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;">
