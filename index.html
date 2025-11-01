@@ -67,9 +67,10 @@
         </div> 
         
         <!-- sheet de instalação -->
-        <div id="install-sheet" class="sheet hidden" aria-hidden="true">
+        <!-- sheet de instalação -->
+<div id="install-sheet" class="sheet hidden" aria-hidden="true">
   <div class="sheet-body">
-    <button id="sheet-close" class="sheet-close" aria-label="Fechar">×</button>
+    <button class="sheet-close" aria-label="Fechar" data-install-close>×</button>
 
     <div class="sheet-app">
       <img src="icons/icon-192.png" alt="App" class="sheet-icon">
@@ -89,12 +90,13 @@
     <!-- bloco Android -->
     <div id="sheet-android" class="hidden">
       <p style="margin-bottom:.8rem;">Podes instalar a app no Android.</p>
-      <button id="btn-install-android" class="sheet-btn">Instalar agora</button>
+      <button id="btn-install-android" class="sheet-btn" data-install-cta>Instalar agora</button>
     </div>
 
-    <button id="sheet-ok" class="sheet-btn sheet-ok">Percebi</button>
+    <button class="sheet-btn sheet-ok" data-install-close>Percebi</button>
   </div>
 </div>
+
 
         <script src="js/index.js"></script>
     </body>     
