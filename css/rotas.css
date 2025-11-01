@@ -180,9 +180,6 @@ h2 {
     padding: .7rem .75rem .75rem;
 }
 
-.rota-leg input {
-    font-size: 16px;
-}
 
 /* se estiver escondida no JS, o JS põe display:none;
    o CSS não precisa de inline */
@@ -239,7 +236,7 @@ h2 {
     text-align: right;
     border: 1px solid #d1d5db;
     border-radius: 6px;
-    font-size: 16px;
+    font-size: 20px;
     background: #fff;
 }
 
