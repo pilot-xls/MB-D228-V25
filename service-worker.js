@@ -47,6 +47,8 @@ const FILES_TO_CACHE = [
   "./img/icon-192.png",
   "./img/icon-512.png",
   "./img/iphone-share.png",
+  "./img/app-192.png",
+  "./img/app-512.png",
   
   // MANIFESTO
   "./manifest.json",
