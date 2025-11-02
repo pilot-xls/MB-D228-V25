@@ -1,4 +1,4 @@
-const CACHE_NAME = "mb-d228-cache-v1";
+const CACHE_NAME = "mb-d228-cache-v2";
 
 const FILES_TO_CACHE = [
   "./",
@@ -46,6 +46,8 @@ const FILES_TO_CACHE = [
   "./img/serieError.png",
   "./img/icon-192.png",
   "./img/icon-512.png",
+  "./img/iphone-share.png",
+  
   // MANIFESTO
   "./manifest.json",
   // IMPORTANTE: NÃO pôr ./service-worker.js
