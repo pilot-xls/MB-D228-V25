@@ -71,7 +71,7 @@ body {
 .hamburger {
     font-size: 32px;
     background: none;
-    border: 2px solid #fff;
+    border: none;
     border-radius: 4px;
     color: #fff;
     cursor: pointer;

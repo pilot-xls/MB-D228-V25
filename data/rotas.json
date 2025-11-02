@@ -5,8 +5,7 @@
       "legs": [
         {
           "nome": "BGC-VRL",
-          "minFuel": "800",
-          "fuelOB": "2000",
+          "minFuel": "900",
           "tripFuel": "250"
         },
         {
@@ -16,12 +15,12 @@
         },
         {
           "nome": "VSE-CAT",
-          "minFuel": "800",
+          "minFuel": "1000",
           "tripFuel": "500"
         },
         {
           "nome": "CAT-PRM",
-          "minFuel": "800",
+          "minFuel": "900",
           "tripFuel": "400"
         }
       ]
@@ -31,13 +30,13 @@
       "legs": [
         {
           "nome": "PRM-CAT",
-          "minFuel": "800",
+          "minFuel": "1100",
           "fuelOB": "2000",
           "tripFuel": "400"
         },
         {
           "nome": "CAT-VSE",
-          "minFuel": "800",
+          "minFuel": "1100",
           "tripFuel": "150"
         },
         {
@@ -47,7 +46,7 @@
         },
         {
           "nome": "VRL-BGC",
-          "minFuel": "800",
+          "minFuel": "1000",
           "tripFuel": "400"
         }
       ]
@@ -57,7 +56,7 @@
       "legs": [
         {
           "nome": "BGC-VRL",
-          "minFuel": "800",
+          "minFuel": "900",
           "fuelOB": "2000",
           "tripFuel": "250"
         },
@@ -68,12 +67,12 @@
         },
         {
           "nome": "VSE-CAT",
-          "minFuel": "800",
+          "minFuel": "1000",
           "tripFuel": "500"
         },
         {
           "nome": "CAT-PRM",
-          "minFuel": "800",
+          "minFuel": "900",
           "tripFuel": "400"
         }
       ]
@@ -83,13 +82,13 @@
       "legs": [
         {
           "nome": "PRM-CAT",
-          "minFuel": "800",
+          "minFuel": "1100",
           "fuelOB": "2000",
           "tripFuel": "400"
         },
         {
           "nome": "CAT-VSE",
-          "minFuel": "800",
+          "minFuel": "1100",
           "tripFuel": "150"
         },
         {
@@ -99,7 +98,7 @@
         },
         {
           "nome": "VRL-BGC",
-          "minFuel": "800",
+          "minFuel": "1000",
           "tripFuel": "400"
         }
       ]

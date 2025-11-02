@@ -246,8 +246,11 @@ function criarLegHTML(leg) {
     <div style="display:flex;justify-content:space-between;margin-top:13px;">
       <input class="leg-nome" style="font-weight:bold;width:138px;border-width:1px;border-style:ridge;border-radius:10px;"
         placeholder="ex:CAT-PRM" value="${leg?.nome ?? ""}">
-      <div style="display:flex;align-items:center;gap:21px;">
-        <button class="btn-mb">MB</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        
+            <button class="btn-perf">Perf</button>
+            <button class="btn-mb">MB</button>
+        
       </div>
     </div>
 
@@ -562,6 +565,10 @@ function attachEvents(container, estado, aircraft) {
 
         // === Remover leg ===
         if (e.target.classList.contains("menos-leg") && rota.legs.length > 1) {
+            const nomeLeg = rota.legs[legIndex]?.nome?.trim() || `Leg ${legIndex + 1}`;
+            const querApagar = confirm(`A leg "${nomeLeg}" vai ser eliminada.`);
+            if (!querApagar) return;
+
             rota.legs.splice(legIndex, 1);
         }
 

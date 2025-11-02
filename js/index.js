@@ -115,9 +115,9 @@ document.addEventListener("click", async (e) => {
 
 
 // FORÇAR PARA TESTE EM DESKTOP
-if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) {
+//if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) {
   // mostra versão iOS só para testar no PC
-  mostrarSheet("ios");
-}
+  //mostrarSheet("ios");
+//}
 
 
