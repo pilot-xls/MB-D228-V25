@@ -13,7 +13,7 @@ h1 {
     margin: 20px auto;
 }
 
-button {
+.menu button.btn-tools {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -30,17 +30,17 @@ button {
     min-height: 90px;
 }
 
-button:hover {
+.menu button:hover {
     background: #151718;
 }
 
-button img {
+.menu button img {
     width: 28px;
     height: 28px;
     margin-bottom: 8px;
 }
 
-img {
+.menu img {
     width: 120px;
     margin-bottom: 30px;
 }
@@ -57,19 +57,19 @@ img {
         gap: 15px;
     }
 
-    button {
+    .menu button {
         min-width: 120px;
         min-height: 120px;
         font-size: 14px;
         padding: 12px;
     }
 
-    button img {
+    .menu button img {
         width: 35px;
         height: 35px;
     }
 
-    img {
+    .menu img {
         width: 150px;
     }
 }
@@ -86,19 +86,19 @@ img {
         gap: 20px;
     }
 
-    button {
+    .menu button {
         min-width: 180px;
         min-height: 180px;
         font-size: 16px;
         padding: 15px;
     }
 
-    button img {
+    .menu button img {
         width: 50px;
         height: 50px;
     }
 
-    img {
+    .menu img {
         width: 200px;
     }
 }
@@ -115,19 +115,19 @@ img {
         margin: 50px auto;
     }
 
-    button {
+    .menu button {
         min-width: 220px;
         min-height: 220px;
         font-size: 18px;
         padding: 18px;
     }
 
-    button img {
+    .menu button img {
         width: 60px;
         height: 60px;
     }
 
-    img {
+    .menu img {
         width: 250px;
     }
 }
@@ -153,114 +153,171 @@ img {
     font-family: 'Maven Pro', sans-serif;
 }
 
-
-/* PWA */
-
-/* 2) CSS */
-.sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-  display: flex;
-  justify-content: center;
-  transition: transform .25s ease-out, opacity .25s ease-out;
-  transform: translateY(100%);
-  opacity: 0;
-  pointer-events: none;
+/* === SHEET PWA (instalar app) ===================== */
+#install-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    transition: transform .25s ease-out, opacity .25s ease-out;
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
-.sheet.show {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
+#install-sheet.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
 }
 
-.sheet-body {
-  width: min(520px, 100%);
-  background: #fff;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -8px 30px rgba(15,23,42,.15);
-  padding: 1.2rem 1.2rem 1.4rem;
-  position: relative;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+#install-sheet.hidden {
+    display: none !important;
 }
 
-.sheet-close {
-  position: absolute;
-  top: .75rem;
-  right: .9rem;
-  border: none;
-  background: transparent;
-  font-size: 1.6rem;
-  line-height: 1;
-  cursor: pointer;
+#install-body {
+    width: min(520px, 100%);
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 30px rgba(15,23,42,.15);
+    padding: 1.2rem 1.2rem 1.4rem;
+    position: relative;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-.sheet-app {
-  display: flex;
-  gap: .75rem;
-  align-items: center;
-  margin-bottom: .9rem;
+/* header do sheet */
+#install-body > div:first-child h3 {
+    margin: 0;
+    font-size: 1rem;
 }
 
-.sheet-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+#install-close {
+    border: none;
+    background: transparent;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
 }
 
-.sheet-sub {
-  margin: .15rem 0 0;
-  color: #6b7280;
-  font-size: .8rem;
+/* bloco app */
+#install-app {
+    display: flex;
+    gap: .75rem;
+    align-items: center;
+    margin: .9rem 0;
 }
 
-.sheet-steps {
-  margin: 0 0 1rem;
-  padding-left: 1.2rem;
-  color: #111827;
-  font-size: .9rem;
+#install-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 6px;
 }
 
-.sheet-steps li {
-  margin-bottom: .5rem;
+#install-title {
+    margin: 0;
+    font-size: .95rem;
 }
 
-.sheet-btn {
-  width: 100%;
-  border: none;
-  background: #0ea5e9;
-  color: #fff;
-  font-weight: 600;
-  border-radius: 9999px;
-  padding: .55rem 0;
-  font-size: .9rem;
-  cursor: pointer;
+#install-sub {
+    margin: .15rem 0 0;
+    color: #6b7280;
+    font-size: .75rem;
 }
 
-.ios-share {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  background: url("./img/share-ios.svg") center/contain no-repeat;
-  vertical-align: -2px;
+/* iOS steps */
+#install-ios {
+    margin: 0 0 1rem;
+    padding-left: 1.2rem;
+    color: #111827;
+    font-size: .85rem;
 }
 
-.hidden { display: none !important; }
+#install-ios li {
+    margin-bottom: .45rem;
+}
 
-/* esconder em desktop se quiseres */
+/* icon partilha iOS */
+#ios-share {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    background: url("/img/iphone-share.png") center/contain no-repeat;
+    vertical-align: -2px;
+}
+
+/* bloco android */
+#install-android {
+    margin-bottom: 1rem;
+}
+
+#install-android.hidden {
+    display: none !important;
+}
+
+#install-android-btn {
+    width: 100%;
+    height: 38px;
+    border: none;
+    border-radius: 9999px;
+    background: #0ea5e9;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: .85rem;
+}
+
+/* opcional: não mostrar em ecrã grande */
 @media (min-width: 900px) {
-  .sheet {
-    bottom: 1.2rem;
-    transform: translateY(20px);
-  }
+    #install-sheet {
+        bottom: 1.2rem;
+        transform: translateY(20px);
+    }
 }
-.sheet.show::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, .35);
-  pointer-events: none;
+
+/* se estiver em iPhone e for Chrome (ou outro que não seja Safari), em vez de mostrar o sheet de instalação mostras uma nota tipo “Para instalar usa o Safari”. */
+#install-warning {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: .8rem;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+#install-warning-body {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.05);
+    box-shadow: 0 10px 30px rgba(15,23,42,.22);
+    border-radius: 14px;
+    padding: .75rem 1rem .8rem;
+    width: min(460px, 94vw);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    pointer-events: auto;
+    text-align: center;
+}
+
+#install-warning p {
+    margin: 0 0 .35rem;
+    font-size: .85rem;
+    color: #111827;
+}
+
+#install-warning button {
+    margin-top: .4rem;
+    background: #0ea5e9;
+    color: #fff;
+    border: none;
+    border-radius: 9999px;
+    padding: .35rem .95rem;
+    font-size: .8rem;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
 }

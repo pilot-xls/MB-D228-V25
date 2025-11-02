@@ -180,7 +180,6 @@ h2 {
     padding: .7rem .75rem .75rem;
 }
 
-
 /* se estiver escondida no JS, o JS põe display:none;
    o CSS não precisa de inline */
 .rota-leg.escondido {

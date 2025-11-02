@@ -22,82 +22,87 @@
             </div>
             <div class="menu">
                 <!--https://www.flaticon.com/ -->                 
-                <button onclick="location.href='calculadora.html'">
+                <button onclick="location.href='calculadora.html'" class="btn-tools">
                     <img src="img/calculator.png" alt="Calculator">
                     Calculator
                 </button>
-                <button onclick="location.href='mb.html'">
+                <button onclick="location.href='mb.html'" class="btn-tools">
                     <img src="img/balance.png" alt="Mass & Balance">
                     Weight & Balance
                 </button>
-                <button onclick="location.href='performance.html'">
+                <button onclick="location.href='performance.html'" class="btn-tools">
                     <img src="img/performance.png" alt="Performance">
                     Performance
                 </button>
-                <button onclick="location.href='rotas.html'">
+                <button onclick="location.href='rotas.html'" class="btn-tools">
                     <img src="img/waypoint.png" alt="Rotas">
                     Routes
                 </button>
-                <button onclick="location.href='settings.html'">
+                <button onclick="location.href='settings.html'" class="btn-tools">
                     <img src="img/settings.png" alt="Settings">
                     Settings
                 </button>
-                <button onclick="location.href='index.html'">
+                <button onclick="location.href='index.html'" class="btn-tools">
                     <img src="img/data.png" alt="FDR">
                     FDR
                 </button>
-                <button onclick="location.href='index.html'">
+                <button onclick="location.href='index.html'" class="btn-tools">
                     <img src="img/mapa.png" alt="charts">
                     Charts
                 </button>
-                <button onclick="location.href='index.html'">
+                <button onclick="location.href='index.html'" class="btn-tools">
                     <img src="img/NOTAM.png" alt="notam">
                     NOTAM
                 </button>
-                <button onclick="location.href='index.html'">
+                <button onclick="location.href='index.html'" class="btn-tools">
                     <img src="img/SMS.png" alt="sms">
                     SMS
                 </button>
-                <button onclick="location.href='index.html'">
+                <button onclick="location.href='index.html'" class="btn-tools">
                     <img src="img/weather.png" alt="weather">
                     METEO
                 </button>
             </div>
-            <img src="img/sevenair.png">
-        </div> 
-        
+            <img src="img/sevenair.png" style="margin-bottom: 50px;">
+        </div>         
         <!-- sheet de instalação -->
         <!-- sheet de instalação -->
-<div id="install-sheet" class="sheet hidden" aria-hidden="true">
-  <div class="sheet-body">
-    <button class="sheet-close" aria-label="Fechar" data-install-close>×</button>
-
-    <div class="sheet-app">
-      <img src="icons/icon-192.png" alt="App" class="sheet-icon">
-      <div>
-        <h3 id="sheet-title">Instalar aplicação</h3>
-        <p class="sheet-sub" id="sheet-sub">M&B D228</p>
-      </div>
-    </div>
-
-    <!-- bloco iOS -->
-    <ol class="sheet-steps" id="sheet-ios">
-      <li>Toca em <span class="ios-share"></span> no menu do navegador</li>
-      <li>Escolhe <strong>Adicionar ao ecrã principal</strong></li>
-      <li>Abre a app pelo ícone</li>
-    </ol>
-
-    <!-- bloco Android -->
-    <div id="sheet-android" class="hidden">
-      <p style="margin-bottom:.8rem;">Podes instalar a app no Android.</p>
-      <button id="btn-install-android" class="sheet-btn" data-install-cta>Instalar agora</button>
-    </div>
-
-    <button class="sheet-btn sheet-ok" data-install-close>Percebi</button>
-  </div>
-</div>
-
-
+        <div id="install-sheet" class="hidden" aria-hidden="true">
+            <div id="install-body">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+                    <h3>Instalar aplicação</h3>
+                    <button id="install-close" aria-label="Fechar">×</button>
+                </div>
+                <div id="install-app">
+                    <img id="install-icon" src="/img/icon-192.png" alt="App">
+                    <div style="display:flex;align-items:baseline;gap:5px;">
+                        <h3 id="install-title">Sevenair</h3>
+                        <p id="install-sub">Flytools</p>
+                    </div>
+                </div>
+                <!-- iOS -->
+                <ol id="install-ios">
+                    <li>Toca em <span id="ios-share"></span> no menu do Safari
+                    </li>
+                    <li>Escolhe <strong>Adicionar ao ecrã principal</strong>
+                    </li>
+                    <li>Abre a app pelo ícone</li>
+                </ol>
+                <!-- Android -->
+                <div id="install-android" class="hidden">
+                    <p>Podes instalar a app neste dispositivo.</p>
+                    <button id="install-android-btn">Instalar agora</button>
+                </div>
+            </div>
+        </div>
+        <!-- aviso para browsers que não suportam instalar -->
+        <div id="install-warning" class="hidden" aria-hidden="true">
+            <div id="install-warning-body">
+                <p>Este navegador não permite instalar a app.</p>
+                <p>Abre esta página no <strong>Safari</strong> para adicionares ao ecrã principal.</p>
+                <button id="install-warning-close" aria-label="Fechar">OK</button>
+            </div>
+        </div>
         <script src="js/index.js"></script>
     </body>     
 </html>
