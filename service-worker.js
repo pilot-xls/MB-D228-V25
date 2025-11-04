@@ -1,4 +1,4 @@
-const CACHE_NAME = "mb-d228-cache-v4";
+const CACHE_NAME = "mb-d228-cache-v5";
 
 const FILES_TO_CACHE = [
   "./",
@@ -88,20 +88,30 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (req.mode === "navigate") {
-    event.respondWith(
-      (async () => {
-        try {
-          const fresh = await fetch(req);
-          return fresh;
-        } catch (err) {
-          const cached = await caches.match("./index.html");
-          return cached;
-        }
-      })()
-    );
-    return;
-  }
+
+if (req.mode === "navigate") {
+  event.respondWith(
+    (async () => {
+      try {
+        // 1. Tenta ir à rede para obter a versão mais recente
+        const fresh = await fetch(req);
+        return fresh;
+      } catch (err) {
+        // 2. Se a rede falhar (offline): Procura a página solicitada (ex: /rotas.html) no cache
+        const cached = await caches.match(req);
+        
+        if (cached) {
+          return cached; // Devolve a página específica do cache
+        }
+        
+        // 3. Se a página específica não for encontrada no cache, devolve o fallback (index.html)
+        const fallback = await caches.match("./index.html");
+        return fallback;
+      }
+    })()
+  );
+  return;
+}
 
   event.respondWith(
     (async () => {
