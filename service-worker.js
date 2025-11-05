@@ -10,6 +10,8 @@ const FILES_TO_CACHE = [
   "./performance.html",
   "./fdr.html",
   "./header.html",
+  "./popup-fuel.html",
+  "./Popup-TrafficLoad.html",  
   // CSS
   "./css/index.css",
   "./css/rotas.css",
