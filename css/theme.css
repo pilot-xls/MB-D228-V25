@@ -14,11 +14,6 @@ main {
     display: block;
 }
 
-h1 {
-    font-size: 2em;
-    margin: .67em 0;
-}
-
 hr {
     box-sizing: content-box;
     height: 0;
@@ -207,4 +202,9 @@ h6 {
 body,
 html {
     min-height: 100vh;
+}
+
+#flytools-heading h1 {
+    margin: 0px;
+    padding: 0px;
 }

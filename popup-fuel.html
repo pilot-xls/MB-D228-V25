@@ -1,0 +1,105 @@
+<!doctype html> 
+<html lang="pt-PT" style="max-width: px; 260max-height: 160px;"> 
+    <head> 
+        <meta charset="utf-8"> 
+        <title>Popup Valor → Kg</title>         
+        <meta name="viewport" content="width=device-width, initial-scale=1"> 
+        <style>:root { font-family: system-ui, Arial, sans-serif; } /* sem margem extra da janela */html, body { margin: 0; } /* caixa com o tamanho do conteúdo do popup */.wrap { width: 260px; height: 160px; box-sizing: border-box; padding: 16px; display: grid; gap: 12px; overflow: hidden;  /* evita scroll */ } label { font-size: 14px; } input[type="number"] { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; } .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } button { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; } .hint { font-size: 12px; color: #666; } .err { color: #b00020; font-size: 13px; min-height: 1.2em; }</style>         
+        <link href="css/theme.css" rel="stylesheet" type="text/css"> 
+    </head>     
+    <body> 
+        <div class="wrap" style="max-width: 260px; max-height: 160px;"> 
+            <div style="display: flex; flex-direction: column; max-height: 80px;"> 
+                <!-- Campo onde introduces o valor original; pode ser em kg ou lbs -->                 
+                <input id="valor" type="number" inputmode="decimal" step="0.01" placeholder="Valor" style="text-align: center;"> 
+                <!-- Instrução: independentemente do botão, o envio final é sempre em KG -->                 
+                <div class="hint">Usa Lbs para converter para kg. Usa Kg para manter. O envio é sempre em kg.</div>                 
+                <!-- Contém mensagens de validação (vazio, inválido, negativo) -->                 
+                <div id="err" class="err"></div>                 
+            </div>             
+            <!-- Botão "Lbs" converte para kg; botão "Kg" envia tal como está -->             
+            <div class="row" style="display: flex; justify-content: space-around; height: 50px;"> 
+                <button id="btn-lbs" type="button" style="max-width: 120px; min-width: 80px; min-height: 30px; max-height: 40px;">Lbs</button>                 
+                <button id="btn-kg" type="button" style="max-width: 120px; min-width: 80px; min-height: 30px; max-height: 40px;">Kg</button>                 
+            </div>             
+        </div>         
+        <script>
+    // ============================================================
+    // Protocolo do popup:
+    // - Entrada opcional (querystring): ?token=abc   → ecoada de volta
+    // - Saída por postMessage para window.opener:
+    //   { type: 'STD_POPUP_KG', kg: Number, token?: string }
+    // - O popup não toca no DOM do opener. Apenas envia mensagem.
+    // ============================================================
+
+    // Fator de conversão exato: 1 lb = 0.45359237 kg
+    const LB_TO_KG = 0.45359237;
+
+    // Lê o token opcional da querystring; permite ao chamador saber que input preencher
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token') || undefined;
+
+    // Referências aos elementos do DOM do popup
+    const $valor = document.getElementById('valor');
+    const $err = document.getElementById('err');
+
+    /**
+     * Valida e converte a string do input para Number.
+     * Aceita vírgula como separador decimal e rejeita vazios/NaN/negativos.
+     * @returns {number|null} número válido ou null se inválido
+     */
+    function parseValor() {
+      const v = $valor.value.trim().replace(',', '.');
+      if (!v) { $err.textContent = 'Insere um número.'; return null; }
+      const num = Number(v);
+      if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
+      if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
+      $err.textContent = '';
+      return num;
+    }
+
+    /**
+     * Envia o valor final em KG ao opener e fecha o popup.
+     * Se existir token, inclui-o no payload para endereçar o input certo.
+     * @param {number} kg valor final em quilogramas
+     */
+    function enviarKgEFechar(kg) {
+      const payload = { type: 'STD_POPUP_KG', kg: Number(kg) };
+      if (token) payload.token = token;
+
+      try {
+        // Segurança opcional: substitui '*' pela origem esperada.
+        // window.opener?.postMessage(payload, 'https://o-teu-dominio.tld');
+        window.opener?.postMessage(payload, '*');
+      } catch {
+        // Ignora erros caso não exista opener ou política bloqueie a mensagem
+      }
+      // Fecha o popup após enviar
+      window.close();
+    }
+
+    // Clique em "Lbs": converte o número introduzido de libras para kg e envia
+    document.getElementById('btn-lbs').addEventListener('click', () => {
+      const num = parseValor(); if (num == null) return;
+      enviarKgEFechar(num * LB_TO_KG);
+    });
+
+    // Clique em "Kg": envia o número tal como está, assumindo que já está em kg
+    document.getElementById('btn-kg').addEventListener('click', () => {
+      const num = parseValor(); if (num == null) return;
+      enviarKgEFechar(num);
+    });
+
+    // UX: pressionar Enter equivale a carregar em "Kg"
+    $valor.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('btn-kg').click();
+      }
+    });
+
+    // Coloca foco automático no campo quando o popup abre
+    setTimeout(() => $valor.focus(), 50);
+  </script>         
+    </body>     
+</html>

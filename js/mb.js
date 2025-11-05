@@ -1,6 +1,5 @@
 // ============================================
-// mb.js — versão final estável (base 10:47)
-// Correções críticas + Autosave + Restauro + Envelopes
+// mb.js 
 // ============================================
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -153,14 +152,14 @@ async function exec_calculo() {
     // --- Infos cruzadas Payload/Fuel ---
     const maxFuelByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
     const maxFuelByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + payload) + fuelTaxi;
-    const maxFuelByMLW = (parseFloat(ac.MLW) || Infinity) - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
+    const maxFuelByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
     const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
     const maxFuelLb = maxFuelKg * 2.20462;
 
     const maxPayloadByMZFW = (parseFloat(ac.MZFW) || Infinity) - (basicWeight + pilots);
     const maxPayloadByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
     const maxPayloadByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + fuel);
-    const maxPayloadByMLW = (parseFloat(ac.MLW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
+    const maxPayloadByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
     const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW);
     const maxPayloadLb = maxPayloadKg * 2.20462;
 
@@ -191,7 +190,7 @@ async function exec_calculo() {
     checkLimit("zfw", zfw, parseFloat(ac.MZFW) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
     checkLimit("takeoffRow", tow, parseFloat(ac.MTOW) || Infinity, "kg");
-    checkLimit("landingRow", lw, parseFloat(ac.MLW) || Infinity, "kg");
+    checkLimit("landingRow", lw, parseFloat(ac.MLOW) || Infinity, "kg");
 
     // --- Desenho das bolas CG ---
     if (ac.Serie === "200" || ac.Serie === "212") {
@@ -321,7 +320,7 @@ function desenharPontos(resultados) {
         if (r.label === "LDG") {
             // texto à esquerda da bola
             text.setAttribute("x", x - 8);
-            text.setAttribute("y", y +5);
+            text.setAttribute("y", y + 5);
             text.setAttribute("text-anchor", "end");
             svg.appendChild(text);
             svg.appendChild(circle);
@@ -334,3 +333,107 @@ function desenharPontos(resultados) {
         }
     });
 }
+
+
+
+
+
+// ============================================
+// popup-fuel
+// ============================================
+
+(function () {
+  // URL do popup.
+  const POPUP_URL = 'popup-fuel.html';
+
+  // Dimensões do popup em píxeis.
+  const W = 260, H = 160;
+
+  // Referência da janela do popup para reutilização e controlo.
+  let popupRef = null;
+
+  // Flag de exclusão mútua simples. Evita múltiplos popups sobrepostos.
+  let popupBusy = false;
+
+  /**
+   * Garante que o elemento tem um id. Necessário para “tokenizar”
+   * a resposta do popup e saber qual input preencher.
+   */
+  function ensureId(el) {
+    if (!el.id) el.id = 'inp_' + Math.random().toString(36).slice(2);
+    return el.id;
+  }
+
+  /**
+   * Abre (ou reutiliza) o popup para um input específico.
+   * Passa o id do input como "token" via querystring.
+   * Usa um lock (popupBusy) para evitar aberturas repetidas.
+   */
+  function openPopupFor(el) {
+    if (popupBusy) return;
+    popupBusy = true;
+
+    const token = ensureId(el);
+
+    // Centra aproximadamente na janela atual.
+    const left = window.screenX + Math.max(0, (window.outerWidth  - W) / 2);
+    const top  = window.screenY + Math.max(0, (window.outerHeight - H) / 3);
+
+    // Reutiliza a janela existente se ainda estiver aberta.
+    if (popupRef && !popupRef.closed) {
+      popupRef.location.href = POPUP_URL + '?token=' + encodeURIComponent(token);
+      popupRef.focus();
+      // Mantém popupBusy=true até receber resposta (message) ou até timeout abaixo.
+    } else {
+      // Abre como popup pequeno; depende das políticas do browser.
+      popupRef = window.open(
+        POPUP_URL + '?token=' + encodeURIComponent(token),
+        'PopupKg', // nome lógico da janela
+        `width=${W},height=${H},left=${left},top=${top},resizable=no,scrollbars=no`
+      );
+    }
+
+    // Se o browser bloquear o popup, solta o lock passado um instante.
+    setTimeout(() => { if (!popupRef || popupRef.closed) popupBusy = false; }, 300);
+  }
+
+  // Abre ao clicar no input marcado
+  document.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.popup-fuel');
+    if (!el) return;
+
+    // Evita que o foco imediato dispare outros handlers que possam reabrir.
+    e.preventDefault();
+    openPopupFor(el);
+  });
+
+  // Recebe o valor em kg e preenche
+  window.addEventListener('message', (event) => {
+    // Segurança opcional:
+    // if (event.origin !== 'https://o-teu-dominio.tld') return;
+
+    const data = event.data;
+    if (!data || data.type !== 'STD_POPUP_KG') return;
+
+    const el = document.getElementById(data.token);
+    if (!el) { popupBusy = false; return; }
+
+    el.value = Number(data.kg).toFixed(2);
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Corta o ciclo de reabertura
+    el.blur();
+    popupBusy = false;
+  });
+
+  // Se o utilizador fechar o popup manualmente, liberta o lock
+  window.addEventListener('focus', () => {
+    if (popupRef && popupRef.closed) popupBusy = false;
+  });
+})();
+
+
+
+
+

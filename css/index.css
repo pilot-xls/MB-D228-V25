@@ -1,9 +1,4 @@
 /* Base: ecrãs muito pequenos (iPhone SE ~320px) */
-h1 {
-    font-size: 35px;
-    font-family: 'ADLaM Display', cursive;
-}
-
 .menu {
     display: grid;
     grid-template-columns: 1fr;
