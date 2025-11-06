@@ -458,24 +458,25 @@ function desenharPontos(resultados) {
         const num = parseValor(); if (num == null) return;
         enviarKg(num);
     };
+
     // --- Correção final (funciona em iOS e Android sem precisar tocar 2 vezes) ---
-const btnLbs = document.getElementById('btnLbs');
-const btnKg = document.getElementById('btnKg');
+    const btnLbs = document.getElementById('btnLbs');
+    const btnKg = document.getElementById('btnKg');
 
-function handleTouch(e) {
-  if (document.activeElement === $valor) {
-    e.preventDefault();       // evita que o toque apenas feche o teclado
-    const target = e.currentTarget;
-    $valor.blur();            // fecha teclado imediatamente
-    // chama o clique real após o teclado fechar
-    setTimeout(() => target.click(), 100);
-  }
-}
+    function handleTouch(e) {
+        if (document.activeElement === $valor) {
+            e.preventDefault();       // evita que o toque apenas feche o teclado
+            const target = e.currentTarget;
+            $valor.blur();            // fecha teclado imediatamente
+            // chama o clique real após o teclado fechar
+            setTimeout(() => target.click(), 100);
+        }
+    }
 
-// ativa também no primeiro toque, não no fim do gesto
-[btnLbs, btnKg].forEach(btn => {
-  btn.addEventListener('touchstart', handleTouch, { passive: false });
-});
+    // ativa também no primeiro toque, não no fim do gesto
+    [btnLbs, btnKg].forEach(btn => {
+        btn.addEventListener('touchstart', handleTouch, { passive: false });
+    });
 
     document.addEventListener('pointerdown', (e) => {
         const el = e.target.closest('.popup-fuel');
