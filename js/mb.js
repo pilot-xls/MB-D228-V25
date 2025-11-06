@@ -343,67 +343,73 @@ function desenharPontos(resultados) {
 // ============================================
 
 (function () {
-  const modalHtml = `
-    <dialog id="popupKg" style="border:none;border-radius:10px;padding:20px;width:260px;">
-      <form method="dialog" style="display:flex;flex-direction:column;gap:12px;">
-        <input id="valorKg" type="number" step="0.01" placeholder="Valor" style="text-align:center;font-size:16px;padding:10px;">
-        <div style="font-size:12px;color:#666;">Usa Lbs para converter para kg. Usa Kg para manter. O envio é sempre em kg.</div>
-        <div id="errKg" style="color:#b00020;font-size:13px;min-height:1.2em;"></div>
-        <div style="display:flex;justify-content:space-around;">
-          <button id="btnLbs" type="button" style="width:100px;">Lbs</button>
-          <button id="btnKg" type="button" style="width:100px;">Kg</button>
-        </div>
-      </form>
-    </dialog>`;
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modalHtml = `
+  <dialog id="popupKg" class="modal-popup">
+    <form method="dialog" class="modal-form">
+      <input id="valorKg" 
+       type="number" 
+       inputmode="numeric" 
+       pattern="[0-9]*" 
+       step="1" 
+       placeholder="Valor" 
+       class="modal-input">
+      <div id="errKg" class="modal-error"></div>
+      <div class="modal-buttons">
+        <button id="btnLbs" type="button" class="modal-btn">Lbs</button>
+        <button id="btnKg" type="button" class="modal-btn">Kg</button>
+      </div>
+    </form>
+  </dialog>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-  const modal = document.getElementById('popupKg');
-  const $valor = document.getElementById('valorKg');
-  const $err = document.getElementById('errKg');
-  const LB_TO_KG = 0.45359237;
-  let targetInput = null;
+    const modal = document.getElementById('popupKg');
+    const $valor = document.getElementById('valorKg');
+    const $err = document.getElementById('errKg');
+    const LB_TO_KG = 0.45359237;
+    let targetInput = null;
 
-  function parseValor() {
-    const v = $valor.value.trim().replace(',', '.');
-    if (!v) { $err.textContent = 'Insere um número.'; return null; }
-    const num = Number(v);
-    if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
-    if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
-    $err.textContent = '';
-    return num;
-  }
-
-  function enviarKg(kg) {
-    if (targetInput) {
-      targetInput.value = kg.toFixed(2);
-      targetInput.dispatchEvent(new Event('input',  { bubbles: true }));
-      targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+    function parseValor() {
+        const v = $valor.value.trim().replace(',', '.');
+        if (!v) { $err.textContent = 'Insere um número.'; return null; }
+        const num = Number(v);
+        if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
+        if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
+        $err.textContent = '';
+        return num;
     }
-    modal.close();
-  }
 
-  document.getElementById('btnLbs').onclick = () => {
-    const num = parseValor(); if (num == null) return;
-    enviarKg(num * LB_TO_KG);
-  };
+    function enviarKg(kg) {
+        if (targetInput) {
+            const inteiro = Math.round(kg); // garante número inteiro
+            targetInput.value = inteiro;
+            targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        modal.close();
+    }
 
-  document.getElementById('btnKg').onclick = () => {
-    const num = parseValor(); if (num == null) return;
-    enviarKg(num);
-  };
 
-  document.addEventListener('pointerdown', (e) => {
-    const el = e.target.closest('.popup-fuel');
-    if (!el) return;
-    e.preventDefault();
-    targetInput = el;
-    $valor.value = '';
-    $err.textContent = '';
-    modal.showModal();
-    setTimeout(() => $valor.focus(), 50);
-  });
+    document.getElementById('btnLbs').onclick = () => {
+        const num = parseValor(); if (num == null) return;
+        enviarKg(num * LB_TO_KG);
+    };
+
+    document.getElementById('btnKg').onclick = () => {
+        const num = parseValor(); if (num == null) return;
+        enviarKg(num);
+    };
+
+    document.addEventListener('pointerdown', (e) => {
+        const el = e.target.closest('.popup-fuel');
+        if (!el) return;
+        e.preventDefault();
+        targetInput = el;
+        $valor.value = '';
+        $err.textContent = '';
+        modal.showModal();
+        setTimeout(() => $valor.focus(), 50);
+    });
 })();
-
 
 
 

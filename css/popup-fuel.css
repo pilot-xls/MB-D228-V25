@@ -1,0 +1,117 @@
+/* ========================================
+   popup-fuel.css — Estilo moderno (fixo 260px)
+   ======================================== */
+
+.modal-popup {
+  border: none;
+  border-radius: 14px;
+  padding: 20px;
+  width: 260px;
+  background: rgb(231, 245, 215);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  animation: popupFade 0.2s ease-out;
+  font-family: system-ui, Arial, sans-serif;
+  overflow: hidden;        /* impede scroll interno */
+  max-height: 90vh;        /* adapta a ecrãs pequenos */
+}
+
+@keyframes popupFade {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-input {
+  text-align: center;
+  font-size: 20px;
+  padding: 10px;
+  width: 90%;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: #007aff; /* azul iOS */
+}
+
+.modal-error {
+  color: #d32f2f;
+  font-size: 13px;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-btn {
+  flex: 1;
+  font-size: 18px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+#btnLbs {
+  background: linear-gradient(135deg, #333, #333);
+}
+
+#btnKg {
+  background: linear-gradient(135deg, #333, #333);
+}
+
+.modal-btn:active {
+  transform: scale(0.97);
+}
+
+.modal-btn:hover {
+  filter: brightness(1.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-popup {
+    background: #1e1e1e;
+    color: #f0f0f0;
+  }
+
+  .modal-input {
+    background: #2b2b2b;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .modal-input:focus {
+    border-color: #409cff;
+  }
+
+  #btnLbs {
+    background: linear-gradient(135deg, #ffa733, #ff8800);
+  }
+
+  #btnKg {
+    background: linear-gradient(135deg, #339cff, #0066ff);
+  }
+}
+
+::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+body:has(dialog[open]) {
+  overflow: hidden; /* bloqueia scroll do fundo */
+}
+
