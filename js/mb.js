@@ -458,28 +458,24 @@ function desenharPontos(resultados) {
         const num = parseValor(); if (num == null) return;
         enviarKg(num);
     };
-    // --- Correção: iOS/Android ignoram primeiro toque após teclado fechar ---
-    const btnLbs = document.getElementById('btnLbs');
-    const btnKg = document.getElementById('btnKg');
+    // --- Correção robusta: permite clicar em Lbs/Kg mesmo com teclado aberto (iOS/Android) ---
+const btnLbs = document.getElementById('btnLbs');
+const btnKg = document.getElementById('btnKg');
 
-    [$valor, btnLbs, btnKg].forEach(el => {
-        el.addEventListener('touchstart', () => {
-            if (document.activeElement === $valor) {
-                $valor.blur(); // tira o foco antes do toque no botão
-            }
-        }, { passive: true });
-    });
-    document.addEventListener('pointerdown', (e) => {
-        const el = e.target.closest('.popup-fuel');
-        if (!el) return;
-        e.preventDefault();
-        targetInput = el;
-        $valor.value = '';
-        $err.textContent = '';
-        modal.showModal();
-        setTimeout(() => $valor.focus(), 50);
-    });
-})();
+function handleTouch(e) {
+  // se o input está focado, fecha o teclado
+  if (document.activeElement === $valor) {
+    e.preventDefault(); // impede que o toque apenas feche o teclado
+    $valor.blur();      // remove foco imediatamente
+    // executa o clique após pequeno atraso para dar tempo ao teclado de fechar
+    setTimeout(() => e.target.click(), 50);
+  }
+}
+
+// Aplica aos botões de ação
+[btnLbs, btnKg].forEach(btn => {
+  btn.addEventListener('touchend', handleTouch, { passive: false });
+});
     document.addEventListener('pointerdown', (e) => {
         const el = e.target.closest('.popup-fuel');
         if (!el) return;
