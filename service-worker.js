@@ -23,6 +23,7 @@ const FILES_TO_CACHE = [
   "./css/normalize.css",
   "./css/style.css",
   "./css/theme.css",
+  "./css/popup-fuel.css",
   // JS
   "./js/general.js",
   "./js/dataLoader.js",
