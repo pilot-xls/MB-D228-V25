@@ -398,7 +398,88 @@ function desenharPontos(resultados) {
         const num = parseValor(); if (num == null) return;
         enviarKg(num);
     };
+    // ============================================
+// popup-fuel → versão modal compatível com PWA
+// ============================================
 
+(function () {
+    const modalHtml = `
+  <dialog id="popupKg" class="modal-popup">
+    <form method="dialog" class="modal-form">
+      <input id="valorKg" 
+       type="number" 
+       inputmode="numeric" 
+       pattern="[0-9]*" 
+       step="1" 
+       placeholder="Valor" 
+       class="modal-input">
+      <div id="errKg" class="modal-error"></div>
+      <div class="modal-buttons">
+        <button id="btnLbs" type="button" class="modal-btn">Lbs</button>
+        <button id="btnKg" type="button" class="modal-btn">Kg</button>
+      </div>
+    </form>
+  </dialog>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal = document.getElementById('popupKg');
+    const $valor = document.getElementById('valorKg');
+    const $err = document.getElementById('errKg');
+    const LB_TO_KG = 0.45359237;
+    let targetInput = null;
+
+    function parseValor() {
+        const v = $valor.value.trim().replace(',', '.');
+        if (!v) { $err.textContent = 'Insere um número.'; return null; }
+        const num = Number(v);
+        if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
+        if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
+        $err.textContent = '';
+        return num;
+    }
+
+    function enviarKg(kg) {
+        if (targetInput) {
+            const inteiro = Math.round(kg); // garante número inteiro
+            targetInput.value = inteiro;
+            targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        modal.close();
+    }
+
+
+    document.getElementById('btnLbs').onclick = () => {
+        const num = parseValor(); if (num == null) return;
+        enviarKg(num * LB_TO_KG);
+    };
+
+    document.getElementById('btnKg').onclick = () => {
+        const num = parseValor(); if (num == null) return;
+        enviarKg(num);
+    };
+    // --- Correção: iOS/Android ignoram primeiro toque após teclado fechar ---
+    const btnLbs = document.getElementById('btnLbs');
+    const btnKg = document.getElementById('btnKg');
+
+    [$valor, btnLbs, btnKg].forEach(el => {
+        el.addEventListener('touchstart', () => {
+            if (document.activeElement === $valor) {
+                $valor.blur(); // tira o foco antes do toque no botão
+            }
+        }, { passive: true });
+    });
+    document.addEventListener('pointerdown', (e) => {
+        const el = e.target.closest('.popup-fuel');
+        if (!el) return;
+        e.preventDefault();
+        targetInput = el;
+        $valor.value = '';
+        $err.textContent = '';
+        modal.showModal();
+        setTimeout(() => $valor.focus(), 50);
+    });
+})();
     document.addEventListener('pointerdown', (e) => {
         const el = e.target.closest('.popup-fuel');
         if (!el) return;
