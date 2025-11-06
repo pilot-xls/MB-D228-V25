@@ -414,18 +414,31 @@ function desenharPontos(resultados) {
     btn.addEventListener('touchstart', handleTouch, { passive: false });
   });
 
-  // Abrir modal ao tocar num input com classe .popup-fuel
-  document.addEventListener('pointerdown', (e) => {
-    const el = e.target.closest('.popup-fuel');
-    if (!el) return;
-    e.preventDefault();
-    targetInput = el;
-    $valor.value = '';
-    $err.textContent = '';
-    modal.showModal();
-    setTimeout(() => $valor.focus(), 50);
-  });
+  // Guarda e restaura a posição de scroll
+let scrollYBeforeOpen = 0;
+
+function abrirModal(el) {
+  targetInput = el;
+  $valor.value = '';
+  $err.textContent = '';
+  scrollYBeforeOpen = window.scrollY; // guarda posição atual
+  modal.showModal();
+  setTimeout(() => $valor.focus(), 50);
+}
+
+modal.addEventListener('close', () => {
+  window.scrollTo(0, scrollYBeforeOpen); // restaura scroll
+});
+
+// Abre o modal ao tocar num input com classe .popup-fuel
+document.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('.popup-fuel');
+  if (!el) return;
+  e.preventDefault();
+  abrirModal(el);
+});
 })();
+
 
    
 
