@@ -424,8 +424,8 @@ function abrirModal(el) {
   scrollYBeforeOpen = window.scrollY; // guarda posição atual
   modal.showModal();
   setTimeout(() => {
-  $valor.focus({ preventScroll: true });
-}, 50);
+  setTimeout(() => $valor.focus(), 50);
+
 }
 
 modal.addEventListener('close', () => {
