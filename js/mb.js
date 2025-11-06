@@ -458,24 +458,25 @@ function desenharPontos(resultados) {
         const num = parseValor(); if (num == null) return;
         enviarKg(num);
     };
-    // --- Correção robusta: permite clicar em Lbs/Kg mesmo com teclado aberto (iOS/Android) ---
+    // --- Correção final (funciona em iOS e Android sem precisar tocar 2 vezes) ---
 const btnLbs = document.getElementById('btnLbs');
 const btnKg = document.getElementById('btnKg');
 
 function handleTouch(e) {
-  // se o input está focado, fecha o teclado
   if (document.activeElement === $valor) {
-    e.preventDefault(); // impede que o toque apenas feche o teclado
-    $valor.blur();      // remove foco imediatamente
-    // executa o clique após pequeno atraso para dar tempo ao teclado de fechar
-    setTimeout(() => e.target.click(), 50);
+    e.preventDefault();       // evita que o toque apenas feche o teclado
+    const target = e.currentTarget;
+    $valor.blur();            // fecha teclado imediatamente
+    // chama o clique real após o teclado fechar
+    setTimeout(() => target.click(), 100);
   }
 }
 
-// Aplica aos botões de ação
+// ativa também no primeiro toque, não no fim do gesto
 [btnLbs, btnKg].forEach(btn => {
-  btn.addEventListener('touchend', handleTouch, { passive: false });
+  btn.addEventListener('touchstart', handleTouch, { passive: false });
 });
+
     document.addEventListener('pointerdown', (e) => {
         const el = e.target.closest('.popup-fuel');
         if (!el) return;
