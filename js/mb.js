@@ -339,97 +339,68 @@ function desenharPontos(resultados) {
 
 
 // ============================================
-// popup-fuel
+// popup-fuel → versão modal compatível com PWA
 // ============================================
 
 (function () {
-  // URL do popup.
-  const POPUP_URL = 'popup-fuel.html';
+  const modalHtml = `
+    <dialog id="popupKg" style="border:none;border-radius:10px;padding:20px;width:260px;">
+      <form method="dialog" style="display:flex;flex-direction:column;gap:12px;">
+        <input id="valorKg" type="number" step="0.01" placeholder="Valor" style="text-align:center;font-size:16px;padding:10px;">
+        <div style="font-size:12px;color:#666;">Usa Lbs para converter para kg. Usa Kg para manter. O envio é sempre em kg.</div>
+        <div id="errKg" style="color:#b00020;font-size:13px;min-height:1.2em;"></div>
+        <div style="display:flex;justify-content:space-around;">
+          <button id="btnLbs" type="button" style="width:100px;">Lbs</button>
+          <button id="btnKg" type="button" style="width:100px;">Kg</button>
+        </div>
+      </form>
+    </dialog>`;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-  // Dimensões do popup em píxeis.
-  const W = 260, H = 160;
+  const modal = document.getElementById('popupKg');
+  const $valor = document.getElementById('valorKg');
+  const $err = document.getElementById('errKg');
+  const LB_TO_KG = 0.45359237;
+  let targetInput = null;
 
-  // Referência da janela do popup para reutilização e controlo.
-  let popupRef = null;
-
-  // Flag de exclusão mútua simples. Evita múltiplos popups sobrepostos.
-  let popupBusy = false;
-
-  /**
-   * Garante que o elemento tem um id. Necessário para “tokenizar”
-   * a resposta do popup e saber qual input preencher.
-   */
-  function ensureId(el) {
-    if (!el.id) el.id = 'inp_' + Math.random().toString(36).slice(2);
-    return el.id;
+  function parseValor() {
+    const v = $valor.value.trim().replace(',', '.');
+    if (!v) { $err.textContent = 'Insere um número.'; return null; }
+    const num = Number(v);
+    if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
+    if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
+    $err.textContent = '';
+    return num;
   }
 
-  /**
-   * Abre (ou reutiliza) o popup para um input específico.
-   * Passa o id do input como "token" via querystring.
-   * Usa um lock (popupBusy) para evitar aberturas repetidas.
-   */
-  function openPopupFor(el) {
-    if (popupBusy) return;
-    popupBusy = true;
-
-    const token = ensureId(el);
-
-    // Centra aproximadamente na janela atual.
-    const left = window.screenX + Math.max(0, (window.outerWidth  - W) / 2);
-    const top  = window.screenY + Math.max(0, (window.outerHeight - H) / 3);
-
-    // Reutiliza a janela existente se ainda estiver aberta.
-    if (popupRef && !popupRef.closed) {
-      popupRef.location.href = POPUP_URL + '?token=' + encodeURIComponent(token);
-      popupRef.focus();
-      // Mantém popupBusy=true até receber resposta (message) ou até timeout abaixo.
-    } else {
-      // Abre como popup pequeno; depende das políticas do browser.
-      popupRef = window.open(
-        POPUP_URL + '?token=' + encodeURIComponent(token),
-        'PopupKg', // nome lógico da janela
-        `width=${W},height=${H},left=${left},top=${top},resizable=no,scrollbars=no`
-      );
+  function enviarKg(kg) {
+    if (targetInput) {
+      targetInput.value = kg.toFixed(2);
+      targetInput.dispatchEvent(new Event('input',  { bubbles: true }));
+      targetInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
-
-    // Se o browser bloquear o popup, solta o lock passado um instante.
-    setTimeout(() => { if (!popupRef || popupRef.closed) popupBusy = false; }, 300);
+    modal.close();
   }
 
-  // Abre ao clicar no input marcado
+  document.getElementById('btnLbs').onclick = () => {
+    const num = parseValor(); if (num == null) return;
+    enviarKg(num * LB_TO_KG);
+  };
+
+  document.getElementById('btnKg').onclick = () => {
+    const num = parseValor(); if (num == null) return;
+    enviarKg(num);
+  };
+
   document.addEventListener('pointerdown', (e) => {
     const el = e.target.closest('.popup-fuel');
     if (!el) return;
-
-    // Evita que o foco imediato dispare outros handlers que possam reabrir.
     e.preventDefault();
-    openPopupFor(el);
-  });
-
-  // Recebe o valor em kg e preenche
-  window.addEventListener('message', (event) => {
-    // Segurança opcional:
-    // if (event.origin !== 'https://o-teu-dominio.tld') return;
-
-    const data = event.data;
-    if (!data || data.type !== 'STD_POPUP_KG') return;
-
-    const el = document.getElementById(data.token);
-    if (!el) { popupBusy = false; return; }
-
-    el.value = Number(data.kg).toFixed(2);
-    el.dispatchEvent(new Event('input',  { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-
-    // Corta o ciclo de reabertura
-    el.blur();
-    popupBusy = false;
-  });
-
-  // Se o utilizador fechar o popup manualmente, liberta o lock
-  window.addEventListener('focus', () => {
-    if (popupRef && popupRef.closed) popupBusy = false;
+    targetInput = el;
+    $valor.value = '';
+    $err.textContent = '';
+    modal.showModal();
+    setTimeout(() => $valor.focus(), 50);
   });
 })();
 
