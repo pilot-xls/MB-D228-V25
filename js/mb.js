@@ -423,7 +423,9 @@ function abrirModal(el) {
   $err.textContent = '';
   scrollYBeforeOpen = window.scrollY; // guarda posição atual
   modal.showModal();
-  setTimeout(() => $valor.focus(), 50);
+  setTimeout(() => {
+  $valor.focus({ preventScroll: true });
+}, 50);
 }
 
 modal.addEventListener('close', () => {
