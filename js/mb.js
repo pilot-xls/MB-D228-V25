@@ -343,7 +343,7 @@ function desenharPontos(resultados) {
 // ============================================
 
 (function () {
-  const modalHtml = `
+    const modalHtml = `
     <dialog id="popupKg" class="modal-popup">
       <form method="dialog" class="modal-form">
         <input id="valorKg"
@@ -360,89 +360,94 @@ function desenharPontos(resultados) {
         </div>
       </form>
     </dialog>`;
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-  const modal  = document.getElementById('popupKg');
-  const $valor = document.getElementById('valorKg');
-  const $err   = document.getElementById('errKg');
-  const LB_TO_KG = 0.45359237;
-  let targetInput = null;
+    const modal = document.getElementById('popupKg');
+    const $valor = document.getElementById('valorKg');
+    const $err = document.getElementById('errKg');
+    const LB_TO_KG = 0.45359237;
+    let targetInput = null;
 
-  function parseValor() {
-    const v = $valor.value.trim().replace(',', '.');
-    if (!v) { $err.textContent = 'Insere um número.'; return null; }
-    const num = Number(v);
-    if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
-    if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
-    $err.textContent = '';
-    return num;
-  }
-
-  function enviarKg(kg) {
-    if (targetInput) {
-      const inteiro = Math.round(kg); // força inteiro
-      targetInput.value = inteiro;
-      targetInput.dispatchEvent(new Event('input',  { bubbles: true }));
-      targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+    function parseValor() {
+        const v = $valor.value.trim().replace(',', '.');
+        if (!v) { $err.textContent = 'Insere um número.'; return null; }
+        const num = Number(v);
+        if (!isFinite(num)) { $err.textContent = 'Valor inválido.'; return null; }
+        if (num < 0) { $err.textContent = 'Sem negativos.'; return null; }
+        $err.textContent = '';
+        return num;
     }
-    modal.close();
-  }
 
-  // Ações dos botões
-  document.getElementById('btnLbs').onclick = () => {
-    const num = parseValor(); if (num == null) return;
-    enviarKg(num * LB_TO_KG);
-  };
-  document.getElementById('btnKg').onclick = () => {
-    const num = parseValor(); if (num == null) return;
-    enviarKg(num);
-  };
-
-  // Correção iOS/Android: permitir toque único com teclado aberto
-  const btnLbs = document.getElementById('btnLbs');
-  const btnKg  = document.getElementById('btnKg');
-
-  function handleTouch(e) {
-    if (document.activeElement === $valor) {
-      e.preventDefault();          // evita que o toque se “perca”
-      const target = e.currentTarget;
-      $valor.blur();               // fecha o teclado
-      setTimeout(() => target.click(), 100); // dispara clique real
+    function enviarKg(kg) {
+        if (targetInput) {
+            const inteiro = Math.round(kg); // força inteiro
+            targetInput.value = inteiro;
+            targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        modal.close();
     }
-  }
-  [btnLbs, btnKg].forEach(btn => {
-    btn.addEventListener('touchstart', handleTouch, { passive: false });
-  });
 
-  // Guarda e restaura a posição de scroll
-let scrollYBeforeOpen = 0;
+    // Ações dos botões
+    document.getElementById('btnLbs').onclick = () => {
+        const num = parseValor(); if (num == null) return;
+        enviarKg(num * LB_TO_KG);
+    };
+    document.getElementById('btnKg').onclick = () => {
+        const num = parseValor(); if (num == null) return;
+        enviarKg(num);
+    };
 
-function abrirModal(el) {
-  targetInput = el;
-  $valor.value = '';
-  $err.textContent = '';
-  scrollYBeforeOpen = window.scrollY; // guarda posição atual
-  modal.showModal();
-  setTimeout(() => $valor.focus(), 50);
+    // Correção iOS/Android: permitir toque único com teclado aberto
+    const btnLbs = document.getElementById('btnLbs');
+    const btnKg = document.getElementById('btnKg');
 
-}
+    function handleTouch(e) {
+        if (document.activeElement === $valor) {
+            e.preventDefault();          // evita que o toque se “perca”
+            const target = e.currentTarget;
+            $valor.blur();               // fecha o teclado
+            setTimeout(() => target.click(), 100); // dispara clique real
+        }
+    }
+    [btnLbs, btnKg].forEach(btn => {
+        btn.addEventListener('touchstart', handleTouch, { passive: false });
+    });
 
-modal.addEventListener('close', () => {
-  window.scrollTo(0, scrollYBeforeOpen); // restaura scroll
-});
+    // Guarda e restaura a posição de scroll
+    let scrollYBeforeOpen = 0;
 
-// Abre o modal ao tocar num input com classe .popup-fuel
-document.addEventListener('pointerdown', (e) => {
-  const el = e.target.closest('.popup-fuel');
-  if (!el) return;
-  e.preventDefault();
-  abrirModal(el);
-});
+    function abrirModal(el) {
+        targetInput = el;
+        $valor.value = '';
+        $err.textContent = '';
+
+        scrollYBeforeOpen = window.scrollY;
+        modal.showModal();
+
+        // BLOQUEIA O SCROLL DO FUNDO
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollYBeforeOpen}px`;
+
+        setTimeout(() => $valor.focus(), 50);
+    }
+
+
+    modal.addEventListener('close', () => {
+        // DESBLOQUEIA O SCROLL
+        document.body.style.position = '';
+        document.body.style.top = '';
+
+        window.scrollTo(0, scrollYBeforeOpen);
+    });
+
+
+    // Abre o modal ao tocar num input com classe .popup-fuel
+    document.addEventListener('pointerdown', (e) => {
+        const el = e.target.closest('.popup-fuel');
+        if (!el) return;
+        e.preventDefault();
+        abrirModal(el);
+    });
 })();
-
-
-   
-
-
-
 
