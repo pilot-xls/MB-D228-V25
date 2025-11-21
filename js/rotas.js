@@ -258,7 +258,7 @@ function criarLegHTML(leg) {
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;padding-bottom:12px;">
         <p style="margin-bottom:0;">Min Fuel O/B</p>
-        <input class="min-fuel-input" placeholder="Lb" type="number" inputmode="numeric"
+        <input class="min-fuel-input" placeholder="Lb" type="text" inputmode="numeric"
        pattern="[0-9]*" value="${leg?.minFuel ?? ""}">
       </div>
 
@@ -267,7 +267,7 @@ function criarLegHTML(leg) {
         <p style="margin-bottom:0;">Fuel O/B</p>
         <input class="fuel-ob-input"
                placeholder="${leg?.nextSuggestedFuel || 'Lb'}"
-               type="number" inputmode="numeric"
+               type="text" inputmode="numeric"
        pattern="[0-9]*"
                value="${leg?.fuelOB ?? ''}">
       </div>
@@ -276,7 +276,7 @@ function criarLegHTML(leg) {
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;">
         <p style="margin-bottom:0;">Traffic Load</p>
-        <input class="traffic-load-input" placeholder="Kg" type="number" inputmode="numeric"
+        <input class="traffic-load-input" placeholder="Kg" type="text" inputmode="numeric"
        pattern="[0-9]*" value="${leg?.trafficLoad?.total ?? ""}">
       </div>
 <p id="leg-max-traffic-load" style="color:#555;margin:0;">${leg?.maxPayloadInfo || ""}</p>
@@ -284,7 +284,7 @@ function criarLegHTML(leg) {
       <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
           border-top-width:1px;border-top-style:dotted;">
         <p style="margin-bottom:0;">Trip fuel:</p>
-        <input class="trip-fuel-input" placeholder="Lb" type="number" inputmode="numeric"
+        <input class="trip-fuel-input" placeholder="Lb" type="text" inputmode="numeric"
        pattern="[0-9]*" value="${leg?.tripFuel ?? ""}">
       </div>
 
@@ -384,10 +384,31 @@ function renderRotas(rootEl, estado) {
             rotaCard.insertAdjacentHTML("beforeend", criarLegHTML(leg));
         });
 
+        // Formatar unidades ao carregar
+        rotaCard.querySelectorAll(".rota-leg").forEach((legEl) => {
+            legEl.querySelectorAll("input").forEach(inp => {
+                if (inp.classList.contains("min-fuel-input")) {
+                    if (inp.value) inp.value = `${inp.value} lb`;
+                }
+                if (inp.classList.contains("fuel-ob-input")) {
+                    if (inp.value) inp.value = `${inp.value} lb`;
+                }
+                if (inp.classList.contains("trip-fuel-input")) {
+                    if (inp.value) inp.value = `${inp.value} lb`;
+                }
+                if (inp.classList.contains("traffic-load-input")) {
+                    if (inp.value) inp.value = `${inp.value} kg`;
+                }
+            });
+        });
+
+
         rootEl.appendChild(rotaCard);
         // aplicar cores logo após criar o card
         aplicarCoresLimitsDaRotaNoDOM(rotaCard, rota);
     });
+
+
 }
 
 function closeAllRoutes(container) {
@@ -624,12 +645,29 @@ function attachEvents(container, estado, aircraft) {
         const rotaData = estado.rotas[rotaIndex];
         const legData = rotaData.legs[legIndex];
 
-        if (e.target.classList.contains("leg-nome")) legData.nome = e.target.value;
-        if (e.target.classList.contains("min-fuel-input")) legData.minFuel = e.target.value;
-        if (e.target.classList.contains("fuel-ob-input")) legData.fuelOB = e.target.value;
-        if (e.target.classList.contains("trip-fuel-input")) legData.tripFuel = e.target.value;
+        // Nome da leg — mantém texto normal
+        if (e.target.classList.contains("leg-nome")) {
+            legData.nome = e.target.value;
+        }
+
+        // Min Fuel O/B — limpa unidades e converte para número
+        if (e.target.classList.contains("min-fuel-input")) {
+            legData.minFuel = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
+        }
+
+        // Fuel O/B — limpa unidades e converte para número
+        if (e.target.classList.contains("fuel-ob-input")) {
+            legData.fuelOB = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
+        }
+
+        // Trip Fuel — limpa unidades e converte para número
+        if (e.target.classList.contains("trip-fuel-input")) {
+            legData.tripFuel = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
+        }
+
+        // Traffic Load — mantém a tua lógica mas com limpeza igual às outras
         if (e.target.classList.contains("traffic-load-input")) {
-            const total = Number(e.target.value) || 0;
+            const total = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
             legData.trafficLoad = { ...(legData.trafficLoad || {}), total };
         }
 
@@ -775,6 +813,37 @@ function attachEvents(container, estado, aircraft) {
     //   • Se sim, indica a leg que precisa de reabastecimento, o mínimo e o máximo permitidos nessa leg.
     //   • Se não, pergunta se o valor calculado deve ser aplicado automaticamente à primeira leg.
     // - Atualiza e re-renderiza a rota se o utilizador confirmar.
+
+
+    container.addEventListener("blur", (e) => {
+        const el = e.target;
+        if (!el.classList) return;
+
+        function format(val, unidade) {
+            const n = Number(String(val).replace(/[^\d.]/g, ""));
+            return (!isNaN(n) && n > 0) ? `${n} ${unidade}` : "";
+        }
+
+        if (el.classList.contains("min-fuel-input")) {
+            el.value = format(el.value, "lb");
+            return;
+        }
+
+        if (el.classList.contains("fuel-ob-input")) {
+            el.value = format(el.value, "lb");
+            return;
+        }
+
+        if (el.classList.contains("trip-fuel-input")) {
+            el.value = format(el.value, "lb");
+            return;
+        }
+
+        if (el.classList.contains("traffic-load-input")) {
+            el.value = format(el.value, "kg");
+            return;
+        }
+    }, true);
 
     container.addEventListener("click", async (e) => {
         if (!e.target.classList.contains("btn-fcalc")) return;
@@ -963,7 +1032,26 @@ function attachEvents(container, estado, aircraft) {
         }
     });
 
+
+    //Remove unidades ao focar:
+    container.addEventListener("focusin", (e) => {
+        const el = e.target;
+        if (!el.classList) return;
+
+        if (
+            el.classList.contains("min-fuel-input") ||
+            el.classList.contains("fuel-ob-input") ||
+            el.classList.contains("trip-fuel-input") ||
+            el.classList.contains("traffic-load-input")
+        ) {
+            el.value = String(el.value).replace(/[^\d.]/g, "");
+        }
+    });
+
+
 }
+//attachEvents fim
+
 
 // ==========================
 // 7) INTEGRAÇÃO COM SETTINGS | REPOR ORIGEM
