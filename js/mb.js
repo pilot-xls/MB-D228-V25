@@ -449,5 +449,17 @@ function desenharPontos(resultados) {
         e.preventDefault();
         abrirModal(el);
     });
+
+    // Fecha o popup ao clicar fora
+    modal.addEventListener('click', (e) => {
+        const rect = modal.getBoundingClientRect();
+        const clickedOutside =
+            e.clientX < rect.left ||
+            e.clientX > rect.right ||
+            e.clientY < rect.top ||
+            e.clientY > rect.bottom;
+
+        if (clickedOutside) modal.close();
+    });
 })();
 
