@@ -1,113 +1,74 @@
-/**
- * service-worker.js
- * - Cache completo total com base em assets.js
- * - Instalação rígida: se falhar 1 asset, o SW NÃO ativa (offline incompleto = bloqueado)
- * - Fornece status (percentagem + missing) para a UI
- * - Expõe versão do cache para validação
- */
+const CACHE_NAME = 'd228-cache-v1.0.0';
 
-importScripts('./assets.js');
+const ASSETS = [
+  './',
+  './index.html',
+  './calculadora.html',
+  './mb.html',
+  './performance.html',
+  './rotas.html',
+  './settings.html',
+  './header.html',
 
-// Versão do cache: MUDA SEMPRE que mudares assets/app
-// Sugestão: inclui a tua versão humana (ex: 251101.1)
-const CACHE = 'd228-251101.1';
+  './css/theme.css',
+  './css/menu.css',
+  './css/index.css',
+  './css/calculadora.css',
+  './css/mb.css',
+  './css/performance.css',
+  './css/rotas.css',
+  './css/settings.css',
+  './css/popup-fuel.css',
+  './css/popup-TrafficLoad.css',
 
-/**
- * Instalação: tenta cachear TODOS os ficheiros.
- * Se um falhar, aborta a instalação (melhor falhar do que ficar “meio offline”).
- */
-self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
+  './js/general.js',
+  './js/index.js',
+  './js/calculadora.js',
+  './js/mb.js',
+  './js/rotas.js',
+  './js/settings.js',
+  './js/dataLoader.js',
+  './js/popup-TrafficLoad.js',
 
-    // Cache rígida: se um falhar, lança erro
-    for (const asset of self.__ASSETS__) {
-      const response = await fetch(asset, { cache: 'no-cache' });
-      if (!response.ok) {
-        throw new Error(`Falhou o download para cache: ${asset} (${response.status})`);
-      }
-      await cache.put(asset, response);
-    }
-  })());
+  './img/icon-192.png',
+  './img/sevenair.png',
+  './img/calculator.png',
+  './img/balance.png',
+  './img/performance.png',
+  './img/waypoint.png',
+  './img/settings.png',
+  './img/data.png',
+  './img/mapa.png',
+  './img/NOTAM.png',
+  './img/SMS.png',
+  './img/weather.png',
+  './img/lay19pax.png',
+  './img/front-cargo.png',
+  './img/small-rear-cargo.png'
+];
 
-  // Faz o SW novo “tomar posse” o mais cedo possível
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
   self.skipWaiting();
 });
 
-/**
- * Ativação: remove caches antigas.
- */
-self.addEventListener('activate', (event) => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
+    )
+  );
+  self.clients.claim();
 });
 
-/**
- * Fetch: offline-first (cache primeiro).
- * Se não estiver em cache e estiver online, vai buscar à rede.
- */
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-
-  event.respondWith((async () => {
-    const cached = await caches.match(event.request);
-    if (cached) return cached;
-
-    // Se não estiver em cache, tenta rede
-    return fetch(event.request);
-  })());
-});
-
-/**
- * Mensagens: a UI pede o estado offline (percentagem + missing)
- * e validação de versão.
- */
-self.addEventListener('message', (event) => {
-  const data = event.data || {};
-
-  // 1) Estado offline: percentagem real e lista do que falta
-  if (data.type === 'CHECK_OFFLINE_STATUS') {
-    (async () => {
-      const cache = await caches.open(CACHE);
-      const keys = await cache.keys();
-      const cachedPaths = keys.map(r => new URL(r.url).pathname);
-
-      const total = self.__ASSETS__.length;
-      let cachedCount = 0;
-      const missing = [];
-
-      for (const asset of self.__ASSETS__) {
-        // Normaliza "./x" -> "/x"
-        const path = asset.replace('./', '/');
-        if (cachedPaths.includes(path)) {
-          cachedCount++;
-        } else {
-          missing.push(asset);
-        }
-      }
-
-      event.source.postMessage({
-        type: 'OFFLINE_STATUS',
-        total,
-        cached: cachedCount,
-        percent: Math.round((cachedCount / total) * 100),
-        ready: cachedCount === total,
-        missing
-      });
-    })();
-  }
-
-  // 2) Validação de versão: a UI envia a versão “humana”
-  if (data.type === 'CHECK_VERSION') {
-    const appVersion = String(data.appVersion || '');
-    event.source.postMessage({
-      type: 'VERSION_STATUS',
-      cacheName: CACHE,
-      appVersion,
-      match: CACHE.includes(appVersion)
-    });
-  }
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response =>
+      response || fetch(event.request)
+    )
+  );
 });
