@@ -44,8 +44,8 @@ h2 {
     border-radius: 9999px;
     color: #fff;
     font-weight: 600;
-    display: block;
-    margin: 0 auto 1.2rem;
+
+    /* margin: 0 auto 1.2rem */
     cursor: pointer;
     transition: transform .1s ease-out, box-shadow .1s ease-out;
 }
@@ -71,7 +71,8 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: center;
-    line-height: 1;
+
+    /* line-height: 1 */
     padding: 0;
     box-shadow: 0 6px 16px rgba(255, 255, 255, 0.45);
     cursor: pointer;
@@ -79,8 +80,6 @@ h2 {
 }
 
 .fab-add-rota span {
-    display: block;
-    line-height: 1;
 }
 
 /* ==============================
@@ -314,3 +313,31 @@ h2 {
         margin: .6rem .6rem 1rem;
     }
 }
+
+/* ==============================
+   POPUP TRAFFICLOAD
+   ============================== */
+#traffic-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(3px);
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup-box {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+

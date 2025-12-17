@@ -125,27 +125,6 @@
     background: rgba(0, 0, 0, 0.40);
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-    .modal-popup {
-        background: #2e2e2e;
-        color: #f0f0f0;
-    }
-
-    .modal-input {
-        background: #3b3b3b;
-        border-color: #555;
-        color: #fff;
-    }
-
-    #btnKg {
-        background: #0073ff;
-    }
-
-    #btnLbs {
-        background: #ff8a00;
-    }
-}
 
 .modal-popup::backdrop {
     touch-action: none;

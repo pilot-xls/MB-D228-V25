@@ -42,6 +42,20 @@
       "armPilotos": "4.21",      
       "armFuel": "7.936",
       "armPayload": "8.7"
+    },
+    "CS-ATI": {
+      "ID": "CS-ATI",
+      "Serie": "212",
+      "BEW": "3960",
+      "MZFW": "5940",
+      "MRW": "6430",
+      "MTOW": "6400",
+      "MLOW": "6100",
+      "consumo": "600",
+      "armBEW": "7.89686",
+      "armPilotos": "4.21",      
+      "armFuel": "7.936",
+      "armPayload": "8.7"
     }
   }
 }

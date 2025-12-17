@@ -3,167 +3,215 @@
     <head>
         <meta charset="UTF-8">
         <title>Popup - Traffic Load</title>
-        <style>body { font-family: Arial, sans-serif; margin: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; height: 100vh; } .popup { position: relative; background: #fff; width: 420px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); animation: fadeIn 0.3s ease; } .tabs { display: flex; background: #333; } .tab { flex: 1; padding: 12px; text-align: center; color: #fff; cursor: pointer; font-weight: bold; } .tab.active { background: #555; } .tab-content { display: none; padding: 20px; } .tab-content.active { display: block; } /* mapa de assentos */.seat-map { position: relative; width: 80px;  /* AJUSTA AQUI */ margin: 0 auto;  /* centra no tab */ } .seat-img { width: 80px;  /* MESMO VALOR QUE EM CIMA */ height: auto; display: block; } .seat-btn { position: absolute; width: 25px; height: 30px; border-radius: 8px; border: none; background: rgba(0, 0, 0, 0); cursor: pointer; transform: translate(-50%, -50%); } .seat-btn.man { background: rgba(74, 144, 226, 0.9); } .seat-btn.woman { background: rgba(226, 74, 144, 0.9); } .seat-btn.child { background: rgba(240, 192, 0, 0.9); } /* botão flutuante */.floating-enter { position: absolute; right: 16px; bottom: 16px; width: 52px; height: 52px; border-radius: 50%; border: none; background: #d40000; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); } /* contadores */.counter-row { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; font-size: 16px; } .counter-btn { background: #333; color: #fff; border: none; border-radius: 6px; width: 36px; height: 36px; font-size: 20px; cursor: pointer; } .counter-value { width: 60px; text-align: center; font-weight: bold; } /* layout de carga */.layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 15px; } .cargo { width: 50px; height: 50px; background: #ccc; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; } .cargo input { width: 40px; text-align: center; margin-top: 4px; } @keyframes fadeIn { from {  opacity: 0;  transform: scale(0.9); }  to {  opacity: 1;  transform: scale(1); } }</style>
-        <link href="css/theme.css" rel="stylesheet" type="text/css">
+        <link href="css/theme.css" rel="stylesheet">
+        <link href="css/popup-TrafficLoad.css" rel="stylesheet">
     </head>
-    <body>
-        <div class="popup" id="popup">
+    <body style="display: flex; align-items: center; justify-content: center; min-width: 355px;">
+        <div id="popup-TLoad" class="popup-TLoad">
             <div class="tabs">
-                <div class="tab active" data-tab="1">Traffic Load</div>
-                <div class="tab" data-tab="2">Contagem</div>
-                <div class="tab" data-tab="3">Assentos</div>
-                <div class="tab" data-tab="4">Carga</div>
+                <div class="tab active" data-tab="1">Manual Load</div>
+                <div class="tab" data-tab="2">Manual Pax</div>
+                <div class="tab" data-tab="3">Seat Control</div>
+                <div class="tab" data-tab="4">Cargo Control</div>
             </div>
             <!-- Tab 1 -->
             <div class="tab-content active" id="tab1">
                 <label for="manual-load">Traffic Load Manual (Kg):</label>
-                <input type="number" id="manual-load" placeholder="ex: 420" style="width:100%;margin-top:10px;font-size:18px;">
+                <input type="number" id="manual-load" placeholder="ex: 420">
             </div>
             <!-- Tab 2 -->
             <div class="tab-content" id="tab2">
-                <div class="counter-row">
-                    <span style="font-weight: bold;">Homens</span>
-                    <div style="display:flex;align-items:center;gap:10px;">
+                <div class="counter-row"> <span>Homens</span>
+                    <div>
                         <button class="counter-btn" onclick="updateCount('men', -1)">−</button>
                         <span id="men-count" class="counter-value">0</span>
                         <button class="counter-btn" onclick="updateCount('men', 1)">+</button>
                     </div>
                 </div>
                 <div class="counter-row">
-                    <span style="font-weight: bold;">Mulheres</span>
-                    <div style="display:flex;align-items:center;gap:10px;">
+                    <span>Mulheres</span>
+                    <div>
                         <button class="counter-btn" onclick="updateCount('women', -1)">−</button>
                         <span id="women-count" class="counter-value">0</span>
                         <button class="counter-btn" onclick="updateCount('women', 1)">+</button>
                     </div>
                 </div>
                 <div class="counter-row">
-                    <span style="font-weight: bold;">Crianças</span>
-                    <div style="display:flex;align-items:center;gap:10px;">
+                    <span>Crianças</span>
+                    <div>
                         <button class="counter-btn" onclick="updateCount('children', -1)">−</button>
                         <span id="children-count" class="counter-value">0</span>
                         <button class="counter-btn" onclick="updateCount('children', 1)">+</button>
                     </div>
                 </div>
-                <div style="display:flex;justify-content:center;gap:50px;margin-top:10px;">
-                    <span style="font-weight:bold;">Extra</span>
-                    <span id="extra">50</span>
-                </div>
-                <div style="display:flex;justify-content:center;gap:50px;margin-top:10px;">
-                    <span style="font-weight:bold;">Total</span>
-                    <span id="total">100</span>
+                <div id="Total-Man-Pax">
+                    <div>
+                        <span>Extra</span>
+                        <input id="extra"></input>
+                    </div>
+                    <div><span>Total</span><span id="total">100</span>
+                    </div>
                 </div>
             </div>
             <!-- Tab 3 -->
             <div class="tab-content" id="tab3">
-                <p style="text-align: center;">Seleciona ocupação por assento:</p>
-                <div class="seat-map">
-                    <img src="img/lay19pax.png" class="seat-img" alt="layout avião">
-                    <!-- fila 1 -->
-                    <button class="seat-btn" data-seat="1" style="top: 24%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="2" style="top: 24%; left: 78%;"></button>
-                    <!-- fila 2 -->
-                    <button class="seat-btn" data-seat="3" style="top: 32.5%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="4" style="top: 32.5%; left: 78%;"></button>
-                    <!-- fila 3 -->
-                    <button class="seat-btn" data-seat="5" style="top: 41.5%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="6" style="top: 41.5%; left: 78%;"></button>
-                    <!-- fila 4 -->
-                    <button class="seat-btn" data-seat="7" style="top: 50.5%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="8" style="top: 50.5%; left: 78%;"></button>
-                    <!-- fila 5 -->
-                    <button class="seat-btn" data-seat="9" style="top: 59%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="10" style="top: 59%; left: 78%;"></button>
-                    <!-- fila 6 -->
-                    <button class="seat-btn" data-seat="11" style="top: 67.5%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="12" style="top: 67.5%; left: 78%;"></button>
-                    <!-- fila 7 -->
-                    <button class="seat-btn" data-seat="11" style="top: 76%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="12" style="top: 76.5%; left: 78%;"></button>
-                    <!-- fila 8 -->
-                    <button class="seat-btn" data-seat="11" style="top: 86.5%; left: 47%;"></button>
-                    <button class="seat-btn" data-seat="12" style="top: 86.5%; left: 78%;"></button>
-                    <!-- fila 9 -->
-                    <button class="seat-btn" data-seat="11" style="top: 94.5%; left: 21%;"></button>
-                    <button class="seat-btn" data-seat="12" style="top: 94.5%; left: 47%;"></button>
-                    <button class="seat-btn" data-seat="12" style="top: 94.5%; left: 78%;"></button>
+                <h2>Select seat occupancy:</h2>
+                <div id="Total-weight-seat-control">
+                    <span>Total Weight</span>
+                    <p id="totalWeight">0Kg</p>
                 </div>
+                <div id="moments">
+                    <span>Total Moments</span>
+                    <p id="totalMoment">0Kg</p>
+                </div>
+                <div class="seat-map"><strong class="inputData" id="txt-Arm">Arm</strong><strong class="inputData" id="txt-kg">Kg</strong><strong class="inputData" id="txt-Right-kg">Kg</strong>
+                    <div class="inputData">
+                        <div id="rowR1">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR2">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR3">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR4">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR5">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR6">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR7">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR8">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowR9">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                    </div>
+                    <div class="inputData">
+                        <div id="rowL1">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL2">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL3">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL4">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL5">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL6">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL7">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL8">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL9">
+                            <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                        <div id="rowL9B" style="
+/* top: 486px */">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                        </div>
+                    </div>
+                    <img src="img/lay19pax.png" class="seat-img" alt="layout avião" style="padding-bottom: 0px; margin-bottom: 16px; padding-top: 0px; margin-top: 0px;">
+                    <!-- fila 1 -->
+                    <button class="seat-btn" data-seat="1" id="btn-RowL1"></button>
+                    <button class="seat-btn" data-seat="2" id="btn-RowR1"></button>
+                    <!-- fila 2 -->
+                    <button class="seat-btn" data-seat="3" id="btn-RowL2"></button>
+                    <button class="seat-btn" data-seat="4" id="btn-RowR2"></button>
+                    <!-- fila 3 -->
+                    <button class="seat-btn" data-seat="5" id="btn-RowL3"></button>
+                    <button class="seat-btn" data-seat="6" id="btn-RowR3"></button>
+                    <!-- fila 4 -->
+                    <button class="seat-btn" data-seat="7" id="btn-RowL4"></button>
+                    <button class="seat-btn" data-seat="8" id="btn-RowR4"></button>
+                    <!-- fila 5 -->
+                    <button class="seat-btn" data-seat="9" id="btn-RowL5"></button>
+                    <button class="seat-btn" data-seat="10" id="btn-RowR5"></button>
+                    <!-- fila 6 -->
+                    <button class="seat-btn" data-seat="11" id="btn-RowL6"></button>
+                    <button class="seat-btn" data-seat="12" id="btn-RowR6"></button>
+                    <!-- fila 7 -->
+                    <button class="seat-btn" data-seat="11" id="btn-RowL7"></button>
+                    <button class="seat-btn" data-seat="12" id="btn-RowR7"></button>
+                    <!-- fila 8 -->
+                    <button class="seat-btn" data-seat="11" id="btn-RowL8"></button>
+                    <button class="seat-btn" data-seat="12" id="btn-RowR8"></button>
+                    <!-- fila 9 -->
+                    <button class="seat-btn" data-seat="11" id="btn-RowL9"></button>
+                    <button class="seat-btn" data-seat="12" id="btn-RowB9"></button>
+                    <button class="seat-btn" data-seat="12" id="btn-RowR9"></button>
+                </div>
+                <div class="legenda">
+                    <span id="Leg-Press">Press any seat to set passenger type</span>
+                    <span class="homem">Man</span><span class="mulher">Woman</span><span class="crianca">Child</span>
+                </div>
+                <button class="floating-edit" id="edit-btn">✎</button>
             </div>
             <!-- Tab 4 -->
             <div class="tab-content" id="tab4">
-                <p>Layout de carga (Arm e Peso):</p>
-                <div class="layout" id="cargo-layout"></div>
+                <div class="layout" id="cargo-layout">
+                    <div id="grid">
+                        <img src="img/front-cargo.png" loading="lazy" width="145">
+                        <div id="fwd-values">
+                            <div>
+                                <strong>Weight</strong>
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0">
+                            </div>
+                            <div>
+                                <strong>Arm</strong>
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            </div>
+                        </div>
+                        <div id="Warning">
+                            <strong id="msg">WARNING!<br>Front baggage compartment exceeds limits!</strong>
+                        </div>
+                        <img src="img/small-rear-cargo.png" width="145" loading="lazy" id="cargoImage" style="border-top-style: none;">
+                        <div id="aft-values">
+                            <div>
+                                <strong>Weight</strong>
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0">
+                            </div>
+                            <div>
+                                <strong>Arm</strong>
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                            </div>
+                            <div class="toggle-row">
+                                <label class="toggle">
+                                    <input type="checkbox" id="toggleSeatType"><span class="slider"></span>
+                                </label><strong style="font-size: 12px;">Large Baggage compartment</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- botão flutuante -->
             <button class="floating-enter" id="enter-btn">↩</button>
         </div>
-        <script>
-      // alternar separadores
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-          tab.classList.add('active');
-          document.getElementById('tab' + tab.dataset.tab).classList.add('active');
-        });
-      });
-
-      // contadores
-      const counts = { men: 0, women: 0, children: 0 };
-
-      function updateCount(type, delta) {
-        counts[type] = Math.max(0, counts[type] + delta);
-        document.getElementById(type + '-count').textContent = counts[type];
-
-        // exemplo de total
-        const total = counts.men + counts.women + counts.children;
-        document.getElementById('total').textContent = total;
-      }
-
-      // botões de assento
-      document.querySelectorAll('.seat-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (btn.classList.contains('man')) {
-            btn.className = 'seat-btn woman';
-          } else if (btn.classList.contains('woman')) {
-            btn.className = 'seat-btn child';
-          } else if (btn.classList.contains('child')) {
-            btn.className = 'seat-btn';
-          } else {
-            btn.className = 'seat-btn man';
-          }
-        });
-      });
-
-      // layout de carga (exemplo simples)
-      const cargoLayout = document.getElementById('cargo-layout');
-      for (let i = 1; i <= 6; i++) {
-        const div = document.createElement('div');
-        div.className = 'cargo';
-        div.innerHTML = `
-          <strong>${i}</strong>
-          <input type="number" placeholder="kg">
-        `;
-        cargoLayout.appendChild(div);
-      }
-
-      // ação do botão flutuante
-      document.getElementById('enter-btn').addEventListener('click', () => {
-        console.log('ENTER clicado');
-      });
-
-      // fechar ao clicar fora
-      document.addEventListener(
-        'click',
-        e => {
-          const popup = document.getElementById('popup');
-          if (!popup.contains(e.target)) {
-            popup.style.display = 'none';
-            document.body.style.background = 'transparent';
-          }
-        },
-        true
-      );
-    </script>
+        <script src="js/Popup-TrafficLoad.js"></script>
     </body>
 </html>

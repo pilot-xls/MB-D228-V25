@@ -2,9 +2,11 @@
 // mb.js 
 // ============================================
 
+let usarMomentoImportado = true;
+
 document.addEventListener("DOMContentLoaded", async () => {
     const { aircraftData, defaultId } = await ensureSettingsData();
-
+    
     // --- 1. Preenche dados do avião default ---
     if (defaultId && aircraftData[defaultId]) {
         const aircraft = aircraftData[defaultId];
@@ -18,18 +20,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         const imgEl = document.querySelector("#loadsheet-img img");
         if (!imgEl || !ac) return;
         switch (ac.Serie) {
-            case "200": imgEl.setAttribute("src", "img/serie200.png"); break;
-            case "212": imgEl.setAttribute("src", "img/serie212.png"); break;
-            default: imgEl.setAttribute("src", "img/serieError.png");
+            case "200": 
+                imgEl.setAttribute("src", "img/serie200.png"); 
+                break;
+            case "212":
+                if (ac.ID === "CS-ATH") {
+                    //CS-ATH TEM UMA FOLHA DE MB DIFERENTE DEVIDO AO ZFW VARIAVEL
+                    imgEl.setAttribute("src", "img/serie212.png"); 
+                } else {
+                    imgEl.setAttribute("src", "img/serie212-Standard.png");
+                }                 
+                break;
+            default: 
+                imgEl.setAttribute("src", "img/serieError.png");
         }
     }
 
     // --- 3. Restauro automático dos valores guardados ---
+
+    // dados que vem de BOTÃO "MB" DE ROTAS.JS
     const dadosGuardados = JSON.parse(localStorage.getItem("mbLegSelecionada") || "null");
+    
     if (dadosGuardados) {
         if (dadosGuardados.nome) document.getElementById("nomeLeg").innerText = dadosGuardados.nome || "";
         if (dadosGuardados.trafficLoad && typeof dadosGuardados.trafficLoad.total === "number")
             document.getElementById("manualPayload").value = dadosGuardados.trafficLoad.total || 0;
+        if (typeof dadosGuardados.trafficLoad?.moment === "number") {
+            if (dadosGuardados.trafficLoad.moment !== 0) {
+                document.getElementById("momentPayload").value = dadosGuardados.trafficLoad.moment;
+            } else {
+                usarMomentoImportado = false; // em caso de que o momento venha "0" de localstorage o momento ira ser calculado                
+            }
+        }
         if (typeof dadosGuardados.fuelOB === "number")
             document.getElementById("fuel").value = dadosGuardados.fuelOB || 0;
         if (typeof dadosGuardados.tripFuel === "number")
@@ -39,6 +61,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (typeof dadosGuardados.fuelTaxi === "number")
             document.getElementById("fuelTaxi").value = dadosGuardados.fuelTaxi || 0;
     }
+    // se o input manualPayload for alterado o momento passa a ser calculado
+    document.getElementById("manualPayload").addEventListener("input", () => {
+        usarMomentoImportado = false; // obriga mb a calcular
+    });
 
     // --- 4. Autosave em todos os inputs ---
     document.querySelectorAll("input").forEach(inp => {
@@ -103,7 +129,13 @@ async function exec_calculo() {
     // --- Momentos individuais ---
     const momentBasic = basicWeight * armBEW;
     const momentPilots = pilots * armPilots;
-    const momentPayload = payload * armPayload;
+    let momentPayload = 0;
+    if (usarMomentoImportado) {
+        const momImportado = parseFloat(document.getElementById("momentPayload").value) || 0;
+        momentPayload = momImportado;
+    } else {
+        momentPayload = payload * armPayload;//usa o braço standard em settings
+    }
     const momentFuel = fuel * armFuel;
     const momentTaxi = fuelTaxi * armFuel;
     const momentDest = fuelDest * armFuel;
