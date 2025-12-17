@@ -1,5 +1,4 @@
 const CACHE_NAME = 'd228-cache-v1.0.0';
-
 const ASSETS = [
   './',
   './index.html',
@@ -9,43 +8,74 @@ const ASSETS = [
   './rotas.html',
   './settings.html',
   './header.html',
+  './popup-fuel.html',
+  './Popup-TrafficLoad.html',
 
-  './css/theme.css',
-  './css/menu.css',
-  './css/index.css',
+  /* CSS */
   './css/calculadora.css',
+  './css/index.css',
   './css/mb.css',
+  './css/menu.css',
+  './css/normalize.css',
   './css/performance.css',
+  './css/popup-fuel.css',
+  './css/popup-TLoad.css',
+  './css/popup-TrafficLoad.css',
   './css/rotas.css',
   './css/settings.css',
-  './css/popup-fuel.css',
-  './css/popup-TrafficLoad.css',
+  './css/style.css',
+  './css/theme.css',
 
-  './js/general.js',
-  './js/index.js',
-  './js/calculadora.js',
-  './js/mb.js',
-  './js/rotas.js',
-  './js/settings.js',
-  './js/dataLoader.js',
-  './js/popup-TrafficLoad.js',
+  /* DATA (CRÍTICO PARA OFFLINE REAL) */
+  './data/aircraft.json',
+  './data/payload.json',
+  './data/rotas.json',
+  './data/TrafficLoad.json',
 
-  './img/icon-192.png',
-  './img/sevenair.png',
-  './img/calculator.png',
+  /* IMAGENS — TODAS */
+  './img/app-192.png',
+  './img/app-512.png',
   './img/balance.png',
-  './img/performance.png',
-  './img/waypoint.png',
-  './img/settings.png',
+  './img/calculator.png',
   './img/data.png',
+  './img/front-cargo.png',
+  './img/icon-192-old.png',
+  './img/icon-192.png',
+  './img/icon-512-old.png',
+  './img/icon-512.png',
+  './img/iphone-share.png',
+  './img/large-rear-cargo.png',
+  './img/lay19pax - Cópia.png',
+  './img/lay19pax.png',
+  './img/laycargo.png',
+  './img/layout_19PAX.webp',
+  './img/Layout_Cargo.webp',
   './img/mapa.png',
   './img/NOTAM.png',
+  './img/performance.png',
+  './img/serie200.png',
+  './img/serie212-Standard.png',
+  './img/serie212.png',
+  './img/serieError.png',
+  './img/settings.png',
+  './img/sevenair.png',
+  './img/small-rear-cargo.png',
   './img/SMS.png',
+  './img/waypoint.png',
   './img/weather.png',
-  './img/lay19pax.png',
-  './img/front-cargo.png',
-  './img/small-rear-cargo.png'
+
+  /* JS */
+  './js/calculadora.js',
+  './js/dataLoader.js',
+  './js/general.js',
+  './js/index.js',
+  './js/mb.js',
+  './js/popup-TLoad.js',
+  './js/Popup-TrafficLoad.js',
+  './js/rotas.js',
+  './js/settings.js'
 ];
+
 
 self.addEventListener('install', event => {
   event.waitUntil(
