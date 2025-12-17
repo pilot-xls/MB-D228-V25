@@ -20,16 +20,30 @@ dialog::backdrop {
 }
 
 .popup-TLoad {
-    position: relative;
+    position: fixed; /* Importante: fixed em vez de relative */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centraliza perfeito */
+    
     background: #fff;
     border-radius: 12px;
     border: none;
     padding: 0px;
-    overflow: hidden;
-    box-shadow: 10px 15px 20px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 0.3s ease;
+    
+    /* Ajuste para o teclado */
+    width: 90%; /* Um pouco mais flexível em mobile */
     max-width: 420px;
-    width: 345px;
+    max-height: 90dvh; /* Usa 90% da altura disponível, descontando o teclado */
+    overflow-y: auto; /* Se o conteúdo for grande, ele cria scroll interno em vez de subir */
+    
+    box-shadow: 10px 15px 20px rgba(0, 0, 0, 0.3);
+    margin: 0; /* Remove margens automáticas do <dialog> */
+}
+
+/* Garante que o body não tente mexer o layout quando o dialog está aberto */
+dialog:modal {
+    max-width: 100vw;
+    max-height: 100dvh;
 }
 
 /* tabs */
