@@ -309,3 +309,12 @@ function libertarScroll() {
 window.popupTLoad.addEventListener("close", libertarScroll);
 window.popupTLoad.addEventListener("cancel", libertarScroll);
 
+// Prevenir que o scroll do body interfira quando o input ganha foco
+window.popupTLoad.querySelectorAll('input').forEach(input => {
+    input.addEventListener('focus', () => {
+        // Pequeno delay para o teclado subir
+        setTimeout(() => {
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    });
+});
