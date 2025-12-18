@@ -1,10 +1,14 @@
 // Busca os valores standard em Setting do PAXs
 const storedPayload = JSON.parse(localStorage.getItem("payloadDefaults") || "{}");
-const {
-    man = 0,
-    woman = 0,
-    child = 0
-} = storedPayload;
+
+// Primeiro extraímos (pode vir 0 ou null)
+let { man, woman, child } = storedPayload;
+
+// Depois garantimos o mínimo (se for 0, null ou undefined, assume o padrão)
+man   = man   || 0;
+woman = woman || 0;
+child = child || 0;
+
 // Criar o popup a partir do template
 const template = document.getElementById("popup-TLoad-Template");
 const dialog = template.content.querySelector("dialog").cloneNode(true);
@@ -21,12 +25,6 @@ let moment = 0;
 const extra   = document.getElementById("extra");
 const totalEl = document.getElementById("total");
 extra.addEventListener("input", calcularTotal);
-
-
-
-
-
-
 
 // set all variaveias ao abrir o popup 
 window.setAndUpdatePopup = function () {
@@ -56,11 +54,9 @@ window.setAndUpdatePopup = function () {
     // set variaveis TAB4 LOAD CONTROL
 
     weight = window.trafficLegAlvo?.trafficLoad?.total;
-    
+    moment = window.trafficLegAlvo?.trafficLoad?.moment;
     calcularTotal();
     
-    moment = window.trafficLegAlvo?.trafficLoad?.moment;
-
 };
 
 //------------------------------------------------------------------------
@@ -101,7 +97,6 @@ editBtn.addEventListener("click", () => {
     }
 });
 
-
 // alternar separadores
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -140,7 +135,6 @@ function updateCount(type, delta) {
 
     calcularTotal();
 }
-
 
 // botões de assento
 document.querySelectorAll('.seat-btn').forEach(btn => {
@@ -257,7 +251,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
-
 // Obtém o toggle (switch) através do id "toggleSeatType"
 const toggleSeatType = document.getElementById("toggleSeatType");
 const cargoImage = document.getElementById("cargoImage");
@@ -280,8 +273,6 @@ window.popupTLoad.addEventListener("click", (event) => {
     }
 });
 
-
-
 function calcularTotal() {
     counts.extra = Number(extra.value) || 0;
 
@@ -294,27 +285,30 @@ function calcularTotal() {
     totalEl.textContent = weight;
 }
 
-
+let scrollYPos = 0; // Variável global para guardar o scroll
 
 function bloquearScroll() {
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none"; // iOS
+    // 1. Guarda a posição atual do scroll
+    scrollYPos = window.scrollY;
+
+    // 2. Aplica o estilo "congelado" ao body
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollYPos}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll'; // Evita que a página "salte" ao esconder a scrollbar
 }
 
 function libertarScroll() {
-    document.body.style.overflow = "";
-    document.body.style.touchAction = "";
+    // 1. Remove os estilos de bloqueio
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+
+    // 2. Devolve o utilizador à posição exata onde estava
+    window.scrollTo(0, scrollYPos);
 }
 
 window.popupTLoad.addEventListener("close", libertarScroll);
 window.popupTLoad.addEventListener("cancel", libertarScroll);
 
-// Prevenir que o scroll do body interfira quando o input ganha foco
-window.popupTLoad.querySelectorAll('input').forEach(input => {
-    input.addEventListener('focus', () => {
-        // Pequeno delay para o teclado subir
-        setTimeout(() => {
-            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-    });
-});
