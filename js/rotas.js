@@ -802,6 +802,8 @@ function attachEvents(container, estado, aircraft) {
         // abrir popup
         bloquearScroll();
         window.popupTLoad.showModal();
+        // Tira o foco do input e foca no diálogo (evita abrir teclado no mobile)
+        dialog.focus();
         //em popup-TLoad.js update 
         window.setAndUpdatePopup();
         
