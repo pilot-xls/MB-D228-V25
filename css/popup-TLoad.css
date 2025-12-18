@@ -45,7 +45,7 @@ dialog::backdrop {
 }
 /* Se a Tab 1 estiver ativa, podemos baixar um pouco o popup */
 .popup-TLoad:has(#tab1.active) {
-    top: 75%; 
+    top: 50%; 
 }
 /* tabs */
 .popup-TLoad .tabs {
