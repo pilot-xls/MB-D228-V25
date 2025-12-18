@@ -47,6 +47,7 @@ dialog::backdrop {
 .popup-TLoad:has(#tab1.active) {
     top: 50%; 
 }
+
 /* tabs */
 .popup-TLoad .tabs {
     display: flex;
@@ -73,7 +74,6 @@ dialog::backdrop {
 
 .popup-TLoad .tab-content.active {
     display: block;
-    width: 303px;
 }
 
 /* mapa de assentos */
@@ -429,7 +429,7 @@ dialog::backdrop {
 .popup-TLoad #tab3 .seat-map #txt-Arm {
     top: 86px;
     position: absolute;
-    right: 160px;
+    right: 148px;
 }
 
 .popup-TLoad #tab3 .seat-map #txt-kg {
@@ -453,7 +453,7 @@ dialog::backdrop {
 }
 
 .popup-TLoad #tab3 .seat-map .inputData input {
-    width: 50px;
+    width: 40px;
 }
 
 .popup-TLoad #tab3 .seat-map #rowR2 {
@@ -748,9 +748,6 @@ dialog::backdrop {
 .popup-TLoad #tab4 #cargo-layout #cargoImage {
     border-top-width: 1px;
     border-top-style: solid;
-}
-
-.popup-TLoad #tab4 #cargo-layout img {
 }
 
 .popup-TLoad #tab4 #Info-fwd-cargo-arm {
