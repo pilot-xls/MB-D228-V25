@@ -42,6 +42,9 @@ dialog::backdrop {
     
     /* 4. Importante para browsers mobile */
     margin: 0;
+
+    /* Impede que o browser tente fazer scroll automático do dialog */
+    overscroll-behavior: contain;
 }
 
 
