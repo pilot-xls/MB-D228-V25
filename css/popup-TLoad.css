@@ -20,16 +20,28 @@ dialog::backdrop {
 }
 
 .popup-TLoad {
-    position: fixed; /*relative*/
+    /* 1. Fixar no centro do ecrã */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    /* 2. Estilos visuais que já tinhas */
     background: #fff;
     border-radius: 12px;
     border: none;
     padding: 0px;
-    overflow: hidden;
     box-shadow: 10px 15px 20px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s ease;
-    max-width: 420px;
-    width: 345px;
+    
+    /* 3. Garantir que não "explode" no telemóvel */
+    width: 90%;          /* Usa percentagem para ser responsivo */
+    max-width: 345px;    /* Mantém o teu tamanho original */
+    max-height: 90vh;    /* Não deixa o popup ser maior que a altura do ecrã */
+    overflow-y: auto;    /* Se o teclado tapar muito, permite fazer scroll dentro do popup */
+    
+    /* 4. Importante para browsers mobile */
+    margin: 0;
 }
 
 /* tabs */
