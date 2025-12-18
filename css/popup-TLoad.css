@@ -33,20 +33,26 @@ dialog::backdrop {
     padding: 0px;
     box-shadow: 10px 15px 20px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s ease;
-    
+
     /* 3. Garantir que não "explode" no telemóvel */
-    width: 90%;          /* Usa percentagem para ser responsivo */
-    max-width: 345px;    /* Mantém o teu tamanho original */
-    max-height: 90vh;    /* Não deixa o popup ser maior que a altura do ecrã */
-    overflow-y: auto;    /* Se o teclado tapar muito, permite fazer scroll dentro do popup */
-    
-    /* 4. Importante para browsers mobile */
-    margin: 0;
+    width: 90%;
+
+    /* Usa percentagem para ser responsivo */
+    max-width: 345px;
+
+    /* Mantém o teu tamanho original */
+    max-height: 90vh;
+
+    /* Não deixa o popup ser maior que a altura do ecrã */
+    overflow-y: auto;
 
     /* Impede que o browser tente fazer scroll automático do dialog */
     overscroll-behavior: contain;
-}
 
+    /* Se o teclado tapar muito, permite fazer scroll dentro do popup */
+    /* 4. Importante para browsers mobile */
+    margin: 0;
+}
 
 /* tabs */
 .popup-TLoad .tabs {
@@ -257,7 +263,7 @@ dialog::backdrop {
     padding: 5px;
     border-top-width: 1px;
     border-top-style: dotted;
-    right: 32px;
+    right: 30px;
     z-index: 999;
 }
 
