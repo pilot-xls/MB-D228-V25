@@ -43,6 +43,9 @@ dialog::backdrop {
     /* 4. Importante para browsers mobile */
     margin: 0;
 }
+.popup-TLoad #tab1.tab-content {
+    padding-top: 30px; /* Dá "ar" para o input não ficar colado ao topo */
+}
 
 /* tabs */
 .popup-TLoad .tabs {
