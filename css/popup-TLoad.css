@@ -43,9 +43,10 @@ dialog::backdrop {
     /* 4. Importante para browsers mobile */
     margin: 0;
 }
-/* Se a Tab 1 estiver ativa, podemos baixar um pouco o popup */
-.popup-TLoad:has(#tab1.active) {
-    top: 50%; 
+/* 3. Ajuste para quando o teclado está aberto (Opcional) */
+/* Se quiseres que ele suba um pouco apenas quando um input está focado */
+.popup-TLoad:focus-within {
+    top: 40%; /* Sobe ligeiramente para dar mais espaço ao teclado */
 }
 
 /* tabs */
