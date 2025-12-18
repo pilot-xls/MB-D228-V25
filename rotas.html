@@ -2,7 +2,7 @@
 <html lang="pt">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Gestão de Rotas</title>
         <link href="css/theme.css" rel="stylesheet">
         <link href="css/rotas.css" rel="stylesheet">
@@ -31,7 +31,7 @@
                 <!-- Tab 1 -->
                 <div class="tab-content active" id="tab1">
                     <label for="manual-load">Traffic Load Manual (Kg):</label>
-                    <input type="number" id="manual-load" placeholder="ex: 420">
+                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="manual-load" placeholder="ex: 420">
                 </div>
                 <!-- Tab 2 -->
                 <div class="tab-content" id="tab2">
@@ -55,7 +55,7 @@
                     </div>
                     <div id="Total-Man-Pax">
                         <div><span>Extra</span>
-                            <input id="extra"></input>
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="extra"></input>
                         </div>
                         <div>
                             <span>Total</span>
@@ -64,7 +64,7 @@
                     </div>
                 </div>
                 <!-- Tab 3 -->
-                <div class="tab-content" id="tab3">
+                <div class="tab-content" id="tab3" style="margin-left: 10px; margin-bottom: 10px;">
                     <h2>Select seat occupancy:</h2>
                     <div id="Total-weight-seat-control"><span>Total Weight</span>
                         <p id="totalWeight">0Kg</p>
