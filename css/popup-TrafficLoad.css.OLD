@@ -1,8 +1,3 @@
-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(2px);
-}
-
 .popup-TLoad body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -20,38 +15,16 @@ dialog::backdrop {
 }
 
 .popup-TLoad {
-    /* 1. Fixar no centro do ecrã */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    /* 2. Estilos visuais que já tinhas */
+    position: relative;
     background: #fff;
     border-radius: 12px;
     border: none;
     padding: 0px;
+    overflow: hidden;
     box-shadow: 10px 15px 20px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s ease;
-
-    /* 3. Garantir que não "explode" no telemóvel */
-    width: 90%;
-
-    /* Usa percentagem para ser responsivo */
-    max-width: 345px;
-
-    /* Mantém o teu tamanho original */
-    max-height: 90vh;
-
-    /* Não deixa o popup ser maior que a altura do ecrã */
-    overflow-y: auto;
-
-    /* Impede que o browser tente fazer scroll automático do dialog */
-    overscroll-behavior: contain;
-
-    /* Se o teclado tapar muito, permite fazer scroll dentro do popup */
-    /* 4. Importante para browsers mobile */
-    margin: 0;
+    max-width: 420px;
+    width: 345px;
 }
 
 /* tabs */
@@ -80,6 +53,7 @@ dialog::backdrop {
 
 .popup-TLoad .tab-content.active {
     display: block;
+    width: 303px;
 }
 
 /* mapa de assentos */
@@ -263,7 +237,7 @@ dialog::backdrop {
     padding: 5px;
     border-top-width: 1px;
     border-top-style: dotted;
-    right: 30px;
+    right: 32px;
     z-index: 999;
 }
 
@@ -435,7 +409,7 @@ dialog::backdrop {
 .popup-TLoad #tab3 .seat-map #txt-Arm {
     top: 86px;
     position: absolute;
-    right: 148px;
+    right: 160px;
 }
 
 .popup-TLoad #tab3 .seat-map #txt-kg {
@@ -459,7 +433,7 @@ dialog::backdrop {
 }
 
 .popup-TLoad #tab3 .seat-map .inputData input {
-    width: 40px;
+    width: 50px;
 }
 
 .popup-TLoad #tab3 .seat-map #rowC2 {
@@ -754,6 +728,9 @@ dialog::backdrop {
 .popup-TLoad #tab4 #cargo-layout #cargoImage {
     border-top-width: 1px;
     border-top-style: solid;
+}
+
+.popup-TLoad #tab4 #cargo-layout img {
 }
 
 .popup-TLoad #tab4 #Info-fwd-cargo-arm {

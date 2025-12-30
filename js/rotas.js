@@ -60,12 +60,39 @@ function novaLegData() {
         minFuel: "",
         fuelOB: "",
         trafficLoad: {
-            homens: 0,
-            mulheres: 0,
-            criancas: 0,
-            extra: 0,
-            total: "",
-            moment: 0
+                    // --- UI state (verdade para restaurar classes) ---
+                    seats: {},     // ex: { "1A":"man", "1C":"child", "9B":"woman" }
+                    seatKg: {},    // ex: { "1A":92, "1C":35, "9B":75 }
+
+                    // --- Totais/derivados ---
+                    homens: 0,
+                    mulheres: 0,
+                    criancas: 0,
+                    extra: 0,
+                    total: 0,
+                    moment: 0,
+
+                    // --- Arms fixos ---
+                    r1Arm: 5.43, r2Arm: 6.16, r3Arm: 6.96, r4Arm: 7.72, r5Arm: 8.46,
+                    r6Arm: 9.21, r7Arm: 9.96, r8Arm: 10.84, r9Arm: 11.58,
+
+                    // --- (Opcional) derivados por seat em kg (se quiseres manter) ---
+                    // Se não precisares destes campos fora do popup, podes remover.
+                    /*
+                    r1_A: 0, r1_C: 0,
+                    r2_A: 0, r2_C: 0,
+                    r3_A: 0, r3_C: 0,
+                    r4_A: 0, r4_C: 0,
+                    r5_A: 0, r5_C: 0,
+                    r6_A: 0, r6_C: 0,
+                    r7_A: 0, r7_C: 0,
+                    r8_B: 0, r8_C: 0,
+                    r9_A: 0, r9_B: 0, r9_C: 0,
+                    */
+
+                    // --- baggage/cargo ---
+                    f_gabArm: 2.560, f_gab: 0,
+                    r_gabArm: 13.142, r_gab: 0
         },
         tripFuel: "",
         endurance: "",
@@ -608,8 +635,7 @@ function attachEvents(container, estado, aircraft) {
 
         rota.legs.forEach(leg => {
             leg.fuelOB = "";
-            if (!leg.trafficLoad) leg.trafficLoad = {};
-            leg.trafficLoad.total = "";
+            leg.trafficLoad = createEmptyTrafficLoad();
             delete leg.nextSuggestedFuel;
         });
 
@@ -710,15 +736,11 @@ function attachEvents(container, estado, aircraft) {
 
         if (e.target.classList.contains("traffic-load-input")) {
             const total = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
-            // Garante que o objeto está completo
             legData.trafficLoad = {
-                homens: window.trafficLegAlvo.trafficLoad?.homens ?? 0,
-                mulheres: window.trafficLegAlvo.trafficLoad?.mulheres ?? 0,
-                criancas: window.trafficLegAlvo.trafficLoad?.criancas ?? 0,
-                extra: window.trafficLegAlvo.trafficLoad?.extra ?? 0,
-                total: total,
-                moment: window.trafficLegAlvo.trafficLoad?.moment ?? 0
-            };
+                ...(legData.trafficLoad || {}),
+                total
+            };            
+
         }
 
         recomputeRoute(rotaData, aircraft);
@@ -799,9 +821,10 @@ function attachEvents(container, estado, aircraft) {
 
         // abrir popup
         bloquearScroll();
+        
         window.popupTLoad.showModal();
-        // Tira o foco do input e foca no diálogo (evita abrir teclado no mobile)
         popupTLoad.focus();
+        
         //em popup-TLoad.js update 
         window.setAndUpdatePopup();
         
@@ -1114,6 +1137,8 @@ window.reporRotasParaOrigem = async function reporRotasParaOrigem() {
     lsSet(ROTAS_USER_KEY, sane);
 };
 
+
+
 // -------------------------------------------------------
 // 9. BOOTSTRAP DA PÁGINA ROTAS
 // -------------------------------------------------------
@@ -1137,41 +1162,18 @@ window.reporRotasParaOrigem = async function reporRotasParaOrigem() {
     // ---------------------------------------------------------
     for (const rota of estado.rotas) {
         for (const leg of rota.legs) {
+            // Normalizar leg para ter sempre o modelo completo
+            const base = novaLegData();
 
-            // garantir trafficLoad
-            if (!leg.trafficLoad || typeof leg.trafficLoad !== "object") {
-                leg.trafficLoad = {};
-            }
-            leg.trafficLoad.homens ??= 0;
-            leg.trafficLoad.mulheres ??= 0;
-            leg.trafficLoad.criancas ??= 0;
-            leg.trafficLoad.extra ??= 0;
-            leg.trafficLoad.total ??= "";
-            leg.trafficLoad.moment ??= 0;
+            // Copia valores existentes da leg (mantém o que já tens)
+            Object.assign(base, leg);
 
-            // garantir limitColors
-            if (!leg.limitColors || typeof leg.limitColors !== "object") {
-                leg.limitColors = {};
-            }
-            leg.limitColors.zfw ??= "black";
-            leg.limitColors.ramp ??= "black";
-            leg.limitColors.tow ??= "black";
-            leg.limitColors.ldg ??= "black";
+            // Normaliza sub-objetos: defaults + valores existentes
+            base.trafficLoad = { ...novaLegData().trafficLoad, ...(leg.trafficLoad || {}) };
+            base.limitColors = { ...novaLegData().limitColors, ...(leg.limitColors || {}) };
 
-            // garantir outros campos essenciais
-            leg.nome ??= "";
-            leg.minFuel ??= "";
-            leg.fuelOB ??= "";
-            leg.tripFuel ??= "";
-            leg.endurance ??= "";
-            leg.zfw ??= "";
-            leg.rampWeight ??= "";
-            leg.tow ??= "";
-            leg.landingWeight ??= "";
-            leg.landingFuelLb ??= 0;
-            leg.nextSuggestedFuel ??= "";
-            leg.maxFuelInfo ??= "";
-            leg.maxPayloadInfo ??= "";
+            // Escreve de volta na própria referência da leg
+            Object.assign(leg, base);
         }
     }
     // ---------------------------------------------------------
@@ -1229,6 +1231,37 @@ window.reporRotasParaOrigem = async function reporRotasParaOrigem() {
 
 
 // -------------------------------------------------------
-// 10. 
+// 10. limpar traffic load quando press "C" button
 // -------------------------------------------------------
+function createEmptyTrafficLoad() {
+  return {
+    // totais finais
+    total: 0,
+    moment: 0,
+
+    // pax
+    homens: 0,
+    mulheres: 0,
+    criancas: 0,
+    extra: 0,
+
+    paxTotalKg: 0,
+    paxMoment: 0,
+
+    // seats
+    seats: {},
+    seatKg: {},
+
+    // cargo
+    f_gab: 0,
+    f_gabArm: 2.560,
+
+    r_gab: 0,
+    r_gabArm: 13.142,
+    r_gabType: "SMALL",
+
+    cargoTotalKg: 0,
+    cargoMoment: 0
+  };
+}
 

@@ -20,8 +20,8 @@
             </button>
         </div>
         <!-- POPUP TRAFFIC LOAD -->
-        <template id="popup-TLoad-Template" tabindex="-1">
-            <dialog id="popup-TLoad" class="popup-TLoad">
+        <template id="popup-TLoad-Template">
+            <dialog id="popup-TLoad" class="popup-TLoad" tabindex="-1">
                 <div class="tabs">
                     <div class="tab active" data-tab="1">Manual Load</div>
                     <div class="tab" data-tab="2">Manual Pax</div>
@@ -77,105 +77,105 @@
                         <strong class="inputData" id="txt-kg">Kg</strong>
                         <strong class="inputData" id="txt-Right-kg">Kg</strong>
                         <div class="inputData">
-                            <div id="rowR1">
+                            <div id="rowC1">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR2">
+                            <div id="rowC2">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR3">
+                            <div id="rowC3">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR4">
+                            <div id="rowC4">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR5">
+                            <div id="rowC5">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR6">
+                            <div id="rowC6">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR7">
+                            <div id="rowC7">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR8">
+                            <div id="rowC8">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowR9">
+                            <div id="rowC9">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
                         </div>
                         <div class="inputData">
-                            <div id="rowL1">
+                            <div id="rowA1">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL2">
+                            <div id="rowA2">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL3">
+                            <div id="rowA3">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL4">
+                            <div id="rowA4">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL5">
+                            <div id="rowA5">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL6">
+                            <div id="rowA6">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL7">
+                            <div id="rowA7">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL8">
+                            <div id="rowB8">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL9">
+                            <div id="rowA9">
                                 <input class="arm-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
-                            <div id="rowL9B" style="
-    /* top: 486px */">
+                            <div id="rowB9" style="
+/* top: 486px */">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
                             </div>
                         </div>
                         <img src="img/lay19pax.png" class="seat-img" alt="layout avião" style="padding-bottom: 0px; margin-bottom: 16px; padding-top: 0px; margin-top: 0px;">
                         <!-- fila 1 -->
-                        <button class="seat-btn" data-seat="1" id="btn-RowL1"></button>
-                        <button class="seat-btn" data-seat="2" id="btn-RowR1"></button>
+                        <button class="seat-btn" data-seat="A" data-row="1" id="btn-RowA1"></button>
+                        <button class="seat-btn" data-seat="C" data-row="1" id="btn-RowC1"></button>
                         <!-- fila 2 -->
-                        <button class="seat-btn" data-seat="3" id="btn-RowL2"></button>
-                        <button class="seat-btn" data-seat="4" id="btn-RowR2"></button>
+                        <button class="seat-btn" data-seat="A" data-row="2" id="btn-RowA2"></button>
+                        <button class="seat-btn" data-seat="C" data-row="2" id="btn-RowC2"></button>
                         <!-- fila 3 -->
-                        <button class="seat-btn" data-seat="5" id="btn-RowL3"></button>
-                        <button class="seat-btn" data-seat="6" id="btn-RowR3"></button>
+                        <button class="seat-btn" data-seat="A" data-row="3" id="btn-RowA3"></button>
+                        <button class="seat-btn" data-seat="C" data-row="3" id="btn-RowC3"></button>
                         <!-- fila 4 -->
-                        <button class="seat-btn" data-seat="7" id="btn-RowL4"></button>
-                        <button class="seat-btn" data-seat="8" id="btn-RowR4"></button>
+                        <button class="seat-btn" data-seat="A" data-row="4" id="btn-RowA4"></button>
+                        <button class="seat-btn" data-seat="C" data-row="4" id="btn-RowC4"></button>
                         <!-- fila 5 -->
-                        <button class="seat-btn" data-seat="9" id="btn-RowL5"></button>
-                        <button class="seat-btn" data-seat="10" id="btn-RowR5"></button>
+                        <button class="seat-btn" data-seat="A" data-row="5" id="btn-RowA5"></button>
+                        <button class="seat-btn" data-seat="C" data-row="5" id="btn-RowC5"></button>
                         <!-- fila 6 -->
-                        <button class="seat-btn" data-seat="11" id="btn-RowL6"></button>
-                        <button class="seat-btn" data-seat="12" id="btn-RowR6"></button>
+                        <button class="seat-btn" data-seat="A" data-row="6" id="btn-RowA6"></button>
+                        <button class="seat-btn" data-seat="C" data-row="6" id="btn-RowC6"></button>
                         <!-- fila 7 -->
-                        <button class="seat-btn" data-seat="11" id="btn-RowL7"></button>
-                        <button class="seat-btn" data-seat="12" id="btn-RowR7"></button>
+                        <button class="seat-btn" data-seat="A" data-row="7" id="btn-RowA7"></button>
+                        <button class="seat-btn" data-seat="C" data-row="7" id="btn-RowC7"></button>
                         <!-- fila 8 -->
-                        <button class="seat-btn" data-seat="11" id="btn-RowL8"></button>
-                        <button class="seat-btn" data-seat="12" id="btn-RowR8"></button>
+                        <button class="seat-btn" data-seat="B" data-row="8" id="btn-RowB8"></button>
+                        <button class="seat-btn" data-seat="C" data-row="8" id="btn-RowC8"></button>
                         <!-- fila 9 -->
-                        <button class="seat-btn" data-seat="11" id="btn-RowL9"></button>
-                        <button class="seat-btn" data-seat="12" id="btn-RowB9"></button>
-                        <button class="seat-btn" data-seat="12" id="btn-RowR9"></button>
+                        <button class="seat-btn" data-seat="A" data-row="9" id="btn-RowA9"></button>
+                        <button class="seat-btn" data-seat="B" data-row="9" id="btn-RowB9"></button>
+                        <button class="seat-btn" data-seat="C" data-row="9" id="btn-RowC9"></button>
                     </div>
                     <div class="legenda"><span id="Leg-Press">Press any seat to set passenger type</span><span class="homem">Man</span>
                         <span class="mulher">Woman</span>
@@ -190,10 +190,10 @@
                             <img src="img/front-cargo.png" loading="lazy" width="145">
                             <div id="fwd-values">
                                 <div><strong>Weight</strong>
-                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0">
+                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0" id="f-cargo-weight" required="true">
                                 </div>
                                 <div><strong>Arm</strong>
-                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="f-cargo-Arm" value="2.560" required="true">
                                 </div>
                             </div>
                             <div id="Warning"><strong id="msg">WARNING!<br>     Front baggage compartment exceeds limits!</strong>
@@ -201,10 +201,10 @@
                             <img src="img/small-rear-cargo.png" width="145" loading="lazy" id="cargoImage" style="border-top-style: none;">
                             <div id="aft-values">
                                 <div><strong>Weight</strong>
-                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0">
+                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0" id="r-cargo-weight" required="true">
                                 </div>
                                 <div><strong>Arm</strong>
-                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
+                                    <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="r-cargo-Arm" required="true">
                                 </div>
                                 <div class="toggle-row">
                                     <label class="toggle">
