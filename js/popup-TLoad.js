@@ -8,7 +8,7 @@ const dialog = template.content.querySelector("dialog").cloneNode(true);
 document.body.appendChild(dialog);
 // Guardar referência global para poder fechar depois
 window.popupTLoad = dialog;
-let manual_payload = 0;
+
 //quantidade de pax e extra load
 let counts = { men: 0, women: 0, children: 0, extra: 0};
 let weight = 0;
@@ -18,8 +18,8 @@ function toNum(v) {
   return Number(String(v ?? "").replace(",", ".")) || 0;
 }
 
-const extra   = document.getElementById("extra");
-const totalEl = document.getElementById("total");
+const extra   = dialog.querySelector("#extra");
+const totalEl = dialog.querySelector("#total");
 extra.addEventListener("input", calcularTotal_Tab2);
 
 
@@ -87,6 +87,7 @@ window.setAndUpdatePopup = function () {
     calcular_CargoControl();
 
 
+    enablePopupZoomBlock();
 
     //imprime na console toda a info da leg alvo 
         //console.log(JSON.stringify(window.trafficLegAlvo, null, 2));
@@ -184,20 +185,6 @@ window.popupTLoad.addEventListener("click", (event) => {
     }
 });
 
-//atualizar a leg que estou a usar com os novos dados
-function updateTragetLeg() {
-
-    // Actualizar os campos correctos
-    window.trafficLegAlvo.trafficLoad.total = weight;
-    window.trafficLegAlvo.trafficLoad.moment = moment;
-    window.trafficLegAlvo.trafficLoad.homens = counts.men;
-    window.trafficLegAlvo.trafficLoad.mulheres = counts.women;
-    window.trafficLegAlvo.trafficLoad.criancas = counts.children;
-    window.trafficLegAlvo.trafficLoad.extra = counts.extra;
-
-    //    
-    counts = { men: 0, women: 0, children: 0, extra: 0};
-}
 
 //Botão enter 
 const btnEnter = document.getElementById("enter-btn");
@@ -217,7 +204,13 @@ btnEnter.addEventListener("click", () => {
     // TAB 2 — passageiros
     if (tabId === "2") {
         weight = Number(document.getElementById("total").textContent.trim()) || 0;
-        moment = 0;        
+        window.trafficLegAlvo.trafficLoad.total = weight;
+        window.trafficLegAlvo.trafficLoad.moment = 0;
+        window.trafficLegAlvo.trafficLoad.homens = counts.men;
+        window.trafficLegAlvo.trafficLoad.mulheres = counts.women;
+        window.trafficLegAlvo.trafficLoad.criancas = counts.children;
+        window.trafficLegAlvo.trafficLoad.extra = counts.extra;
+        counts = { men: 0, women: 0, children: 0, extra: 0};    
     }
     // TAB 3 — passageiros
     if (tabId === "3") {
@@ -225,6 +218,8 @@ btnEnter.addEventListener("click", () => {
         const tl = window.trafficLegAlvo?.trafficLoad;
         weight = Number(tl?.total || 0);
         moment = Number(tl?.moment || 0);
+        window.trafficLegAlvo.trafficLoad.total = weight;
+        window.trafficLegAlvo.trafficLoad.moment = moment;
     }
     // TAB 4 — passageiros
     if (tabId === "4") {
@@ -232,9 +227,9 @@ btnEnter.addEventListener("click", () => {
         const tl = window.trafficLegAlvo?.trafficLoad;
         weight = Number(tl?.total || 0);
         moment = Number(tl?.moment || 0);
+        window.trafficLegAlvo.trafficLoad.total = weight;
+        window.trafficLegAlvo.trafficLoad.moment = moment;
     }
-    
-    updateTragetLeg();
 
     // Atualizar o input 
     window.trafficInputAlvo.value = weight + " kg";
@@ -267,7 +262,57 @@ btnEnter.addEventListener("click", () => {
   el.addEventListener("input", calcular_CargoControl);
 });
 
+
+
 /*>>>>>>>>>>>>FIM GENERAL<<<<<<<<<<<*/
+
+
+
+/* ---------------------  “zoom”  ------------------- */
+
+let popupZoomBlockOn = false;
+let lastTouchEnd = 0;
+
+function enablePopupZoomBlock() {
+  if (popupZoomBlockOn) return;
+  popupZoomBlockOn = true;
+
+  // Bloqueia pinch zoom (gesto com 2 dedos)
+  document.addEventListener("touchmove", onTouchMoveBlockPinch, { passive: false });
+
+  // Bloqueia double-tap zoom
+  document.addEventListener("touchend", onTouchEndBlockDoubleTap, { passive: false });
+}
+
+function disablePopupZoomBlock() {
+  if (!popupZoomBlockOn) return;
+  popupZoomBlockOn = false;
+
+  document.removeEventListener("touchmove", onTouchMoveBlockPinch, { passive: false });
+  document.removeEventListener("touchend", onTouchEndBlockDoubleTap, { passive: false });
+}
+
+function onTouchMoveBlockPinch(e) {
+  // Só bloqueia quando o popup está mesmo aberto
+  if (!window.popupTLoad || !window.popupTLoad.open) return;
+
+  // pinch = mais do que 1 touch
+  if (e.touches && e.touches.length > 1) {
+    e.preventDefault();
+  }
+}
+
+function onTouchEndBlockDoubleTap(e) {
+  if (!window.popupTLoad || !window.popupTLoad.open) return;
+
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) {
+    e.preventDefault(); // impede double-tap zoom
+  }
+  lastTouchEnd = now;
+}
+
+/* --------------------- fim “zoom”  ------------------- */
 
 
 
@@ -296,8 +341,14 @@ function libertarScroll() {
     window.scrollTo(0, scrollYPos);
 }
 
-window.popupTLoad.addEventListener("close", libertarScroll);
-window.popupTLoad.addEventListener("cancel", libertarScroll);
+window.popupTLoad.addEventListener("close", () => {
+  disablePopupZoomBlock();
+  libertarScroll();
+});
+window.popupTLoad.addEventListener("cancel", () => {
+  disablePopupZoomBlock();
+  libertarScroll();
+});
 /*>>>>>>>FIM SCROLL<<<<<<<*/
 
 
@@ -766,7 +817,6 @@ function calcular_CargoControl() {
 
 
 /*>>>>>>>>>>FIM TAB4<<<<<<<<<<<*/
-
 
 
 
