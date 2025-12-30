@@ -217,7 +217,7 @@ btnEnter.addEventListener("click", () => {
     // TAB 2 — passageiros
     if (tabId === "2") {
         weight = Number(document.getElementById("total").textContent.trim()) || 0;
-        moment = 0;
+        moment = 0;        
     }
     // TAB 3 — passageiros
     if (tabId === "3") {
@@ -233,13 +233,8 @@ btnEnter.addEventListener("click", () => {
         weight = Number(tl?.total || 0);
         moment = Number(tl?.moment || 0);
     }
-    const tlFinal = window.trafficLegAlvo?.trafficLoad;
-    if (tlFinal) {
-        weight = Number(tlFinal.total || 0);
-        moment = Number(tlFinal.moment || 0);
-    }
+    
     updateTragetLeg();
-
 
     // Atualizar o input 
     window.trafficInputAlvo.value = weight + " kg";
