@@ -823,7 +823,7 @@ function attachEvents(container, estado, aircraft) {
         bloquearScroll();
         
         window.popupTLoad.showModal();
-        popupTLoad.focus();
+        window.popupTLoad.focus();
         
         //em popup-TLoad.js update 
         window.setAndUpdatePopup();
