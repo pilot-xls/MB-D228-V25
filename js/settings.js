@@ -35,6 +35,10 @@ const childInput = document.getElementById("std-child");
   manInput.value = payloadDefaults.man || "";
   womanInput.value = payloadDefaults.woman || "";
   childInput.value = payloadDefaults.child || "";
+
+  if (!localStorage.getItem("payloadDefaults")) {
+    localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
+    }
 })();
 
 // preencher dropdown
@@ -240,6 +244,9 @@ localStorage.setItem("rotasUserV1", JSON.stringify(sane));
   manInput.value = payloadDefaults.man || "";
   womanInput.value = payloadDefaults.woman || "";
   childInput.value = payloadDefaults.child || "";
+
+    localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
+
 
   alert("Todos os dados foram repostos a partir dos ficheiros JSON.");
 });

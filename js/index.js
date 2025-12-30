@@ -113,11 +113,17 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+function bootstrapFirstRunDefaults() {
+  // Valores “de fábrica” (ajusta aos teus)
+  const FACTORY_PAYLOAD = { man: 86, woman: 68, child: 35 };
 
-// FORÇAR PARA TESTE EM DESKTOP
-//if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) {
-  // mostra versão iOS só para testar no PC
-  //mostrarSheet("ios");
-//}
+  // Se não existe payloadDefaults, cria já
+  if (!localStorage.getItem("payloadDefaults")) {
+    localStorage.setItem("payloadDefaults", JSON.stringify(FACTORY_PAYLOAD));
+  }
+}
+
+document.addEventListener("DOMContentLoaded", bootstrapFirstRunDefaults);
+
 
 

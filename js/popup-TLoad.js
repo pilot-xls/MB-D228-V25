@@ -1,13 +1,5 @@
 // Busca os valores standard em Setting do PAXs
-const storedPayload = JSON.parse(localStorage.getItem("payloadDefaults") || "{}");
-
-// Primeiro extraímos (pode vir 0 ou null)
-let { man, woman, child } = storedPayload;
-
-// Depois garantimos o mínimo (se for 0, null ou undefined, assume o padrão)
-man   = man   || 0;
-woman = woman || 0;
-child = child || 0;
+const { man, woman, child } = getPayloadDefaults();
 
 // Criar o popup a partir do template
 const template = document.getElementById("popup-TLoad-Template");
@@ -29,6 +21,301 @@ function toNum(v) {
 const extra   = document.getElementById("extra");
 const totalEl = document.getElementById("total");
 extra.addEventListener("input", calcularTotal_Tab2);
+
+
+
+
+
+
+
+/*>>>>>>>>>GENERAL<<<<<<<<<<<*/
+
+// set all variaveias ao abrir o popup 
+window.setAndUpdatePopup = function () {
+    //01- set variaveis do popup
+    
+    counts = { men: 0, women: 0, children: 0, extra: 0};
+
+// TAB1 – PAYLOAD MANUAL
+    const manual_payload = window.trafficLegAlvo?.trafficLoad?.total ?? 0;
+    document.getElementById("manual-load").value = manual_payload;
+
+// TAB2 – MANUAL PAX
+    counts.men      = window.trafficLegAlvo?.trafficLoad?.homens   ?? 0;
+    document.getElementById('men-count').textContent = counts.men;
+
+    counts.women    = window.trafficLegAlvo?.trafficLoad?.mulheres ?? 0;
+    document.getElementById("women-count").textContent = counts.women;
+
+    counts.children = window.trafficLegAlvo?.trafficLoad?.criancas ?? 0;
+    document.getElementById("children-count").textContent = counts.children;
+
+    counts.extra    = window.trafficLegAlvo?.trafficLoad?.extra    ?? 0;
+    document.getElementById("extra").value = counts.extra;
+    
+    calcularTotal_Tab2();
+
+// TAB3 SEAT CONTROL
+
+    restoreSeatUIFromLeg();
+
+    // ligar listeners de inputs kg (1x) para guardar overrides
+    attachSeatKgInputListeners();
+
+    // recalcular totais
+    calcular_SeatControl_CargoControl();
+
+
+// TAB4 LOAD CONTROL    
+    const tl = window.trafficLegAlvo?.trafficLoad;
+
+    // restaurar valores
+    document.getElementById("f-cargo-weight").value = tl?.f_gab ?? 0;
+    document.getElementById("f-cargo-Arm").value    = tl?.f_gabArm ?? 2.560;
+    document.getElementById("r-cargo-weight").value = tl?.r_gab ?? 0;
+
+    const toggle = document.getElementById("toggleSeatType");
+    const isLarge =
+    tl?.r_gabType === "LARGE" ||
+    Number(tl?.r_gabArm) === 12.8;
+
+    toggle.checked = !!isLarge;
+
+    document.getElementById("r-cargo-Arm").value = isLarge ? 12.8 : 13.142;
+
+    // recalcular
+    calcular_CargoControl();
+
+
+
+    //imprime na console toda a info da leg alvo 
+        //console.log(JSON.stringify(window.trafficLegAlvo, null, 2));
+    
+};
+
+function getPayloadDefaults() {
+  const fallback = { man: 86, woman: 68, child: 35 };
+
+  let stored;
+  try {
+    stored = JSON.parse(localStorage.getItem("payloadDefaults") || "null");
+  } catch {
+    stored = null;
+  }
+
+  // se não existir, cria já e devolve fallback
+  if (!stored) {
+    localStorage.setItem("payloadDefaults", JSON.stringify(fallback));
+    return fallback;
+  }
+
+  // normaliza para números
+  const man   = Number(stored.man);
+  const woman = Number(stored.woman);
+  const child = Number(stored.child);
+
+  // se vier lixo, usa fallback e regrava
+  if (![man, woman, child].every(v => Number.isFinite(v) && v > 0)) {
+    localStorage.setItem("payloadDefaults", JSON.stringify(fallback));
+    return fallback;
+  }
+
+  return { man, woman, child };
+}
+
+
+
+
+// alternar separadores
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab' + tab.dataset.tab).classList.add('active');
+    });
+});
+
+
+//lê o ficheiro JSON e preenche os ARM
+document.addEventListener("DOMContentLoaded", () => {
+
+    // 1. Carrega TrafficLoad.json
+    fetch("data/TrafficLoad.json")
+        .then(response => response.json())
+        .then(armValues => {
+
+            // 2. Selecciona todos os inputs da esquerda
+            const armInputs = document.querySelectorAll(".arm-input");
+
+            // 3. Preenche cada input pela ordem row1…row9
+            let index = 0;
+            for (const key in armValues) {
+                if (armInputs[index]) {
+                    armInputs[index].value = armValues[key];
+                }
+                index++;
+            }
+
+        })
+        .catch(err =>
+            console.error("Erro ao carregar TrafficLoad.json:", err)
+        );
+
+});
+
+// Obtém o toggle (switch) através do id "toggleSeatType"
+const toggleSeatType = document.getElementById("toggleSeatType");
+const cargoImage = document.getElementById("cargoImage");
+
+toggleSeatType.addEventListener("change", () => {
+  cargoImage.src = toggleSeatType.checked ? "img/large-rear-cargo.png" : "img/small-rear-cargo.png";
+  calcular_CargoControl();
+});
+
+
+// Fecha o popup ao clicar em qualquer ponto fora da caixa do popup
+window.popupTLoad.addEventListener("click", (event) => {
+    if (event.target === window.popupTLoad) {
+        window.popupTLoad.close();
+        if (window.trafficInputAlvo) window.trafficInputAlvo.blur();
+        window.trafficInputAlvo = null;
+        window.trafficLegAlvo = null;
+    }
+});
+
+//atualizar a leg que estou a usar com os novos dados
+function updateTragetLeg() {
+
+    // Actualizar os campos correctos
+    window.trafficLegAlvo.trafficLoad.total = weight;
+    window.trafficLegAlvo.trafficLoad.moment = moment;
+    window.trafficLegAlvo.trafficLoad.homens = counts.men;
+    window.trafficLegAlvo.trafficLoad.mulheres = counts.women;
+    window.trafficLegAlvo.trafficLoad.criancas = counts.children;
+    window.trafficLegAlvo.trafficLoad.extra = counts.extra;
+
+    //    
+    counts = { men: 0, women: 0, children: 0, extra: 0};
+}
+
+//Botão enter 
+const btnEnter = document.getElementById("enter-btn");
+btnEnter.addEventListener("click", () => {
+
+    // 1) Detectar tab ativa
+    const tabActive = document.querySelector(".tab.active");
+    const tabId = tabActive ? tabActive.dataset.tab : null;
+    
+
+    // TAB 1 — carga manual
+    if (tabId === "1") {
+        weight = Number(document.getElementById("manual-load").value) || 0;
+        moment = 0;
+    }
+
+    // TAB 2 — passageiros
+    if (tabId === "2") {
+        weight = Number(document.getElementById("total").textContent.trim()) || 0;
+        moment = 0;
+    }
+    // TAB 3 — passageiros
+    if (tabId === "3") {
+        calcular_SeatControl_CargoControl();
+        const tl = window.trafficLegAlvo?.trafficLoad;
+        weight = Number(tl?.total || 0);
+        moment = Number(tl?.moment || 0);
+    }
+    // TAB 4 — passageiros
+    if (tabId === "4") {
+        calcular_CargoControl();
+        const tl = window.trafficLegAlvo?.trafficLoad;
+        weight = Number(tl?.total || 0);
+        moment = Number(tl?.moment || 0);
+    }
+    const tlFinal = window.trafficLegAlvo?.trafficLoad;
+    if (tlFinal) {
+        weight = Number(tlFinal.total || 0);
+        moment = Number(tlFinal.moment || 0);
+    }
+    updateTragetLeg();
+
+
+    // Atualizar o input 
+    window.trafficInputAlvo.value = weight + " kg";
+
+    // Disparar evento input para recalcular e vai gravar por despara o evento em:
+    /* 
+        rotas.js
+        Guardar inputs e recalcular rota
+        container.addEventListener("input", (e) => {
+    */
+    window.trafficInputAlvo.dispatchEvent(new Event("input", { bubbles: true }));
+
+    
+    //fechar popup
+    dialog.close();
+
+    // Perder foco ao input na rota/leg input da leg que abriu o popup
+    if (window.trafficInputAlvo) {
+        window.trafficInputAlvo.blur();
+    }
+
+    window.trafficInputAlvo = null;
+    window.trafficLegAlvo   = null;
+
+});
+
+["f-cargo-weight", "f-cargo-Arm", "r-cargo-weight"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener("input", calcular_CargoControl);
+});
+
+/*>>>>>>>>>>>>FIM GENERAL<<<<<<<<<<<*/
+
+
+
+/*>>>>>>>>SCROLL<<<<<<<<<<*/
+let scrollYPos = 0; // Variável global para guardar o scroll
+
+function bloquearScroll() {
+    // 1. Guarda a posição atual do scroll
+    scrollYPos = window.scrollY;
+
+    // 2. Aplica o estilo "congelado" ao body
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollYPos}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll'; // Evita que a página "salte" ao esconder a scrollbar
+}
+
+function libertarScroll() {
+    // 1. Remove os estilos de bloqueio
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+
+    // 2. Devolve o utilizador à posição exata onde estava
+    window.scrollTo(0, scrollYPos);
+}
+
+window.popupTLoad.addEventListener("close", libertarScroll);
+window.popupTLoad.addEventListener("cancel", libertarScroll);
+/*>>>>>>>FIM SCROLL<<<<<<<*/
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -495,253 +782,6 @@ function calcular_CargoControl() {
 
 
 
-
-/*>>>>>>>>>GENERAL<<<<<<<<<<<*/
-
-// set all variaveias ao abrir o popup 
-window.setAndUpdatePopup = function () {
-    //01- set variaveis do popup
-    
-    counts = { men: 0, women: 0, children: 0, extra: 0};
-
-// TAB1 – PAYLOAD MANUAL
-    const manual_payload = window.trafficLegAlvo?.trafficLoad?.total ?? 0;
-    document.getElementById("manual-load").value = manual_payload;
-
-// TAB2 – MANUAL PAX
-    counts.men      = window.trafficLegAlvo?.trafficLoad?.homens   ?? 0;
-    document.getElementById('men-count').textContent = counts.men;
-
-    counts.women    = window.trafficLegAlvo?.trafficLoad?.mulheres ?? 0;
-    document.getElementById("women-count").textContent = counts.women;
-
-    counts.children = window.trafficLegAlvo?.trafficLoad?.criancas ?? 0;
-    document.getElementById("children-count").textContent = counts.children;
-
-    counts.extra    = window.trafficLegAlvo?.trafficLoad?.extra    ?? 0;
-    document.getElementById("extra").value = counts.extra;
-    
-    calcularTotal_Tab2();
-
-// TAB3 SEAT CONTROL
-
-    restoreSeatUIFromLeg();
-
-    // ligar listeners de inputs kg (1x) para guardar overrides
-    attachSeatKgInputListeners();
-
-    // recalcular totais
-    calcular_SeatControl_CargoControl();
-
-
-// TAB4 LOAD CONTROL    
-    const tl = window.trafficLegAlvo?.trafficLoad;
-
-    // restaurar valores
-    document.getElementById("f-cargo-weight").value = tl?.f_gab ?? 0;
-    document.getElementById("f-cargo-Arm").value    = tl?.f_gabArm ?? 2.560;
-    document.getElementById("r-cargo-weight").value = tl?.r_gab ?? 0;
-
-    const toggle = document.getElementById("toggleSeatType");
-    const isLarge =
-    tl?.r_gabType === "LARGE" ||
-    Number(tl?.r_gabArm) === 12.8;
-
-    toggle.checked = !!isLarge;
-
-    document.getElementById("r-cargo-Arm").value = isLarge ? 12.8 : 13.142;
-
-    // recalcular
-    calcular_CargoControl();
-
-    //imprime na console toda a info da leg alvo 
-        console.log(JSON.stringify(window.trafficLegAlvo, null, 2));
-    
-};
-
-// alternar separadores
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab' + tab.dataset.tab).classList.add('active');
-    });
-});
-
-
-//lê o ficheiro JSON e preenche os ARM
-document.addEventListener("DOMContentLoaded", () => {
-
-    // 1. Carrega TrafficLoad.json
-    const SCRIPT_BASE = new URL(".", document.currentScript.src); // .../js/
-    fetch(new URL("../data/TrafficLoad.json", SCRIPT_BASE))
-
-        .then(response => response.json())
-        .then(armValues => {
-
-            // 2. Selecciona todos os inputs da esquerda
-            const armInputs = document.querySelectorAll(".arm-input");
-
-            // 3. Preenche cada input pela ordem row1…row9
-            let index = 0;
-            for (const key in armValues) {
-                if (armInputs[index]) {
-                    armInputs[index].value = armValues[key];
-                }
-                index++;
-            }
-
-        })
-        .catch(err =>
-            console.error("Erro ao carregar TrafficLoad.json:", err)
-        );
-
-});
-
-// Obtém o toggle (switch) através do id "toggleSeatType"
-const toggleSeatType = document.getElementById("toggleSeatType");
-const cargoImage = document.getElementById("cargoImage");
-
-toggleSeatType.addEventListener("change", () => {
-  cargoImage.src = toggleSeatType.checked
-  ? new URL("../img/large-rear-cargo.png", SCRIPT_BASE)
-  : new URL("../img/small-rear-cargo.png", SCRIPT_BASE);
-
-  calcular_CargoControl();
-});
-
-
-// Fecha o popup ao clicar em qualquer ponto fora da caixa do popup
-window.popupTLoad.addEventListener("click", (event) => {
-    if (event.target === window.popupTLoad) {
-        window.popupTLoad.close();
-        if (window.trafficInputAlvo) window.trafficInputAlvo.blur();
-        window.trafficInputAlvo = null;
-        window.trafficLegAlvo = null;
-    }
-});
-
-//atualizar a leg que estou a usar com os novos dados
-function updateTragetLeg() {
-
-    // Actualizar os campos correctos
-    window.trafficLegAlvo.trafficLoad.total = weight;
-    window.trafficLegAlvo.trafficLoad.moment = moment;
-    window.trafficLegAlvo.trafficLoad.homens = counts.men;
-    window.trafficLegAlvo.trafficLoad.mulheres = counts.women;
-    window.trafficLegAlvo.trafficLoad.criancas = counts.children;
-    window.trafficLegAlvo.trafficLoad.extra = counts.extra;
-
-    //    
-    counts = { men: 0, women: 0, children: 0, extra: 0};
-}
-
-//Botão enter 
-const btnEnter = document.getElementById("enter-btn");
-btnEnter.addEventListener("click", () => {
-
-    // 1) Detectar tab ativa
-    const tabActive = document.querySelector(".tab.active");
-    const tabId = tabActive ? tabActive.dataset.tab : null;
-    
-
-    // TAB 1 — carga manual
-    if (tabId === "1") {
-        weight = Number(document.getElementById("manual-load").value) || 0;
-        moment = 0;
-    }
-
-    // TAB 2 — passageiros
-    if (tabId === "2") {
-        weight = Number(document.getElementById("total").textContent.trim()) || 0;
-        moment = 0;
-    }
-    // TAB 3 — passageiros
-    if (tabId === "3") {
-        calcular_SeatControl_CargoControl();
-        const tl = window.trafficLegAlvo?.trafficLoad;
-        weight = Number(tl?.total || 0);
-        moment = Number(tl?.moment || 0);
-    }
-    // TAB 4 — passageiros
-    if (tabId === "4") {
-        calcular_CargoControl();
-        const tl = window.trafficLegAlvo?.trafficLoad;
-        weight = Number(tl?.total || 0);
-        moment = Number(tl?.moment || 0);
-    }
-    const tlFinal = window.trafficLegAlvo?.trafficLoad;
-    if (tlFinal) {
-        weight = Number(tlFinal.total || 0);
-        moment = Number(tlFinal.moment || 0);
-    }
-    updateTragetLeg();
-
-
-    // Atualizar o input 
-    window.trafficInputAlvo.value = weight + " kg";
-
-    // Disparar evento input para recalcular e vai gravar por despara o evento em:
-    /* 
-        rotas.js
-        Guardar inputs e recalcular rota
-        container.addEventListener("input", (e) => {
-    */
-    window.trafficInputAlvo.dispatchEvent(new Event("input", { bubbles: true }));
-
-    
-    //fechar popup
-    dialog.close();
-
-    // Perder foco ao input na rota/leg input da leg que abriu o popup
-    if (window.trafficInputAlvo) {
-        window.trafficInputAlvo.blur();
-    }
-
-    window.trafficInputAlvo = null;
-    window.trafficLegAlvo   = null;
-
-});
-
-["f-cargo-weight", "f-cargo-Arm", "r-cargo-weight"].forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener("input", calcular_CargoControl);
-});
-
-/*>>>>>>>>>>>>FIM GENERAL<<<<<<<<<<<*/
-
-
-
-/*>>>>>>>>SCROLL<<<<<<<<<<*/
-let scrollYPos = 0; // Variável global para guardar o scroll
-
-function bloquearScroll() {
-    // 1. Guarda a posição atual do scroll
-    scrollYPos = window.scrollY;
-
-    // 2. Aplica o estilo "congelado" ao body
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollYPos}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflowY = 'scroll'; // Evita que a página "salte" ao esconder a scrollbar
-}
-
-function libertarScroll() {
-    // 1. Remove os estilos de bloqueio
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    document.body.style.overflowY = '';
-
-    // 2. Devolve o utilizador à posição exata onde estava
-    window.scrollTo(0, scrollYPos);
-}
-
-window.popupTLoad.addEventListener("close", libertarScroll);
-window.popupTLoad.addEventListener("cancel", libertarScroll);
-/*>>>>>>>FIM SCROLL<<<<<<<*/
 
 
 
