@@ -574,7 +574,9 @@ document.querySelectorAll('.tab').forEach(tab => {
 document.addEventListener("DOMContentLoaded", () => {
 
     // 1. Carrega TrafficLoad.json
-    fetch("data/TrafficLoad.json")
+    const SCRIPT_BASE = new URL(".", document.currentScript.src); // .../js/
+    fetch(new URL("../data/TrafficLoad.json", SCRIPT_BASE))
+
         .then(response => response.json())
         .then(armValues => {
 
@@ -602,7 +604,10 @@ const toggleSeatType = document.getElementById("toggleSeatType");
 const cargoImage = document.getElementById("cargoImage");
 
 toggleSeatType.addEventListener("change", () => {
-  cargoImage.src = toggleSeatType.checked ? "img/large-rear-cargo.png" : "img/small-rear-cargo.png";
+  cargoImage.src = toggleSeatType.checked
+  ? new URL("../img/large-rear-cargo.png", SCRIPT_BASE)
+  : new URL("../img/small-rear-cargo.png", SCRIPT_BASE);
+
   calcular_CargoControl();
 });
 
@@ -737,5 +742,6 @@ function libertarScroll() {
 window.popupTLoad.addEventListener("close", libertarScroll);
 window.popupTLoad.addEventListener("cancel", libertarScroll);
 /*>>>>>>>FIM SCROLL<<<<<<<*/
+
 
 
