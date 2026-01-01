@@ -195,6 +195,7 @@ btnEnter.addEventListener("click", () => {
     const tabId = tabActive ? tabActive.dataset.tab : null;
     
 
+    console.log("moment inicial: " + moment);
     // TAB 1 — carga manual
     if (tabId === "1") {
         weight = Number(document.getElementById("manual-load").value) || 0;
@@ -204,8 +205,9 @@ btnEnter.addEventListener("click", () => {
     // TAB 2 — passageiros
     if (tabId === "2") {
         weight = Number(document.getElementById("total").textContent.trim()) || 0;
+        moment = 0;
         window.trafficLegAlvo.trafficLoad.total = weight;
-        window.trafficLegAlvo.trafficLoad.moment = 0;
+        window.trafficLegAlvo.trafficLoad.moment = moment;
         window.trafficLegAlvo.trafficLoad.homens = counts.men;
         window.trafficLegAlvo.trafficLoad.mulheres = counts.women;
         window.trafficLegAlvo.trafficLoad.criancas = counts.children;
@@ -241,8 +243,10 @@ btnEnter.addEventListener("click", () => {
         container.addEventListener("input", (e) => {
     */
     window.trafficInputAlvo.dispatchEvent(new Event("input", { bubbles: true }));
+    console.log("a fechar popup traffic load...");
+    console.log("total weight: " + weight);
+    console.log("moment: " + moment);
 
-    
     //fechar popup
     dialog.close();
 

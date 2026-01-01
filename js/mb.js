@@ -46,9 +46,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (dadosGuardados.trafficLoad && typeof dadosGuardados.trafficLoad.total === "number")
             document.getElementById("manualPayload").value = dadosGuardados.trafficLoad.total || 0;
         
+        console.log ("verificar se momento é num... ");
         if (typeof dadosGuardados.trafficLoad?.moment === "number") {
             // se moment for diferente de 0
-            if (dadosGuardados.trafficLoad.moment !== 0) {
+            console.log ("é numero...");
+
+            console.log ("dados guardados (momento) = " + dadosGuardados.trafficLoad?.moment);
+
+            if (dadosGuardados.trafficLoad.moment > 0) {
                 document.getElementById("momentPayload").value = dadosGuardados.trafficLoad.moment;
             } else {
                 usarMomentoImportado = false; // em caso de que o momento venha "0" de localstorage o momento ira ser calculado                
@@ -132,6 +137,9 @@ async function exec_calculo() {
     const momentBasic = basicWeight * armBEW;
     const momentPilots = pilots * armPilots;
     let momentPayload = 0;
+
+    console.log ("usar momento importado? " + usarMomentoImportado);
+
     if (usarMomentoImportado) {
         const momImportado = parseFloat(document.getElementById("momentPayload").value) || 0;
         momentPayload = momImportado;

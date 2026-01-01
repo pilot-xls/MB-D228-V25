@@ -769,8 +769,10 @@ function attachEvents(container, estado, aircraft) {
             const total = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
             legData.trafficLoad = {
                 ...(legData.trafficLoad || {}),
-                total
+                total,
+                moment
             };            
+console.log("data teste... : " + legData.trafficLoad.moment);
 
         }
 
@@ -806,7 +808,6 @@ function attachEvents(container, estado, aircraft) {
         if (!legDataKg.trafficLoad) legDataKg.trafficLoad = {};//se nao tiver algum valor
         legDataKg.trafficLoad.total = Number(legData.trafficLoad?.total || 0);
         legDataKg.trafficLoad.moment = Number(legData.trafficLoad?.moment || 0);
-
 
         ["minFuel", "fuelOB", "tripFuel"].forEach((campo) => {
             if (legDataKg[campo]) {
