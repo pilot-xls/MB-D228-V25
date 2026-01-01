@@ -197,9 +197,11 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     const consumoHoraLb = toNum(aircraft.consumo) || 0;
     const pesoVazioKg = toNum(aircraft.BEW) || 0;
     const MRW = toNum(aircraft.MRW) || 0;
-    const MTOW = toNum(aircraft.MTOW) || 0;
-    const MZFW = toNum(aircraft.MZFW) || 0;
+    let MTOW = toNum(aircraft.MTOW) || 0;
+    let MZFW = toNum(aircraft.MZFW) || 0;
     const MLW = toNum(aircraft.MLW || aircraft.MLOW) || 0;
+
+    
 
     // Dados de configuração
     const pilotsKg = Number(localStorage.getItem("pilotsKg")) || 0;
@@ -233,7 +235,7 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     // --------------------
     const zfwKg = pesoVazioKg + pilotsKg + payloadKg;
     leg.zfw = zfwKg > 0 ? `${Math.round(zfwKg)} kg` : "";
-
+    
     const rampKg = zfwKg + fuelOBLb * LB_TO_KG;
     leg.rampWeight = rampKg > 0 ? `${Math.round(rampKg)} kg` : "";
 
@@ -242,6 +244,18 @@ function computeLegDerived(leg, prevLeg, aircraft) {
 
     const landingKg = towKg - tripFuelLb * LB_TO_KG;
     leg.landingWeight = isFinite(landingKg) ? `${Math.round(Math.max(landingKg, 0))} kg` : "";
+
+    // SET MAXIMOS PARA CS-ATH
+    if (aircraft.ID === "CS-ATH"){
+        if (zfwKg > 5400 && zfwKg <= 5590  ){
+            MZFW = zfwKg;
+            MTOW = csath_MTOW(zfwKg);
+        }
+        else if (zfwKg > 5590){
+            MZFW = 5590;
+            MTOW = 6200;
+        }
+    }
 
     // Fuel remanescente à aterragem (para encadear para a leg seguinte)
     const landingFuelLb = Math.max(fuelOBLb - tripFuelLb, 0);
@@ -254,6 +268,7 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     // --------------------
     // Cálculo de máximos de fuel
     // --------------------
+    
     const maxFuelByMRW = MRW - zfwKg;
     const maxFuelByMTOW = MTOW - zfwKg + fuelTaxiKg;
     const maxFuelByMLW = MLW - zfwKg + fuelTaxiKg + tripFuelLb * LB_TO_KG;
@@ -344,6 +359,10 @@ function recomputeRoute(rota, aircraft) {
     });
 }
 
+function csath_MTOW(zfw) {
+    //apenas para interpolação no intervalo entre ZFW = 5400 e 5590
+    return -1.05263 * zfw + 12084.21;
+}
 
 // -------------------------------------------------------
 // 5. RENDERIZAÇÃO DE LEGS E ROTAS
@@ -552,9 +571,9 @@ function validaFuelEmLb(legs, aircraft, pilotsKg, fuelTaxiKg, fuelLb) {
     const tolerance = 0.5;
 
     const MRW = toNum(aircraft.MRW);
-    const MTOW = toNum(aircraft.MTOW);
+    let MTOW = toNum(aircraft.MTOW);
     const MLW = toNum(aircraft.MLW || aircraft.MLOW);
-    const MZFW = toNum(aircraft.MZFW);
+    let MZFW = toNum(aircraft.MZFW);
     const BEW = toNum(aircraft.BEW);
 
     let fuelObKg = fuelLb * LB_TO_KG;
@@ -564,6 +583,18 @@ function validaFuelEmLb(legs, aircraft, pilotsKg, fuelTaxiKg, fuelLb) {
         const l = legs[i];
 
         const zfw = BEW + pilotsKg + l.payloadKg;
+
+        // SET MAXIMOS PARA CS-ATH
+        if (aircraft.ID === "CS-ATH"){
+            if (zfw > 5400 && zfw <= 5590  ){
+                MZFW = zfw;
+                MTOW = csath_MTOW(zfw);
+            }
+            else if (zfw > 5590){
+                MZFW = 5590;
+                MTOW = 6200;
+            }
+        }
 
         if (zfw > MZFW + tolerance) {
             return false;
@@ -982,8 +1013,8 @@ function attachEvents(container, estado, aircraft) {
         const toleranceKg = 0.5;
 
         const MRW = toNum(aircraftF.MRW);
-        const MTOW = toNum(aircraftF.MTOW);
-        const MZFW = toNum(aircraftF.MZFW);
+        let MTOW = toNum(aircraftF.MTOW);
+        let MZFW = toNum(aircraftF.MZFW);
         const MLW = toNum(aircraftF.MLW || aircraftF.MLOW);
         const BEW = toNum(aircraftF.BEW);
 
@@ -1000,6 +1031,19 @@ function attachEvents(container, estado, aircraft) {
         if (!legs.length) return alert("Rota sem legs.");
 
         const ZFW = legs.map(l => BEW + pilotsKg + l.payloadKg);
+
+        // SET MAXIMOS PARA CS-ATH
+        if (aircraft.ID === "CS-ATH"){
+            if (ZFW > 5400 && ZFW <= 5590  ){
+                MZFW = ZFW;
+                MTOW = csath_MTOW(ZFW);
+            }
+            else if (ZFW > 5590){
+                MZFW = 5590;
+                MTOW = 6200;
+            }
+        }
+
         const idxZfwExcede = ZFW.findIndex(z => z > MZFW);
         if (idxZfwExcede !== -1) {
             const nome = legs[idxZfwExcede].nome;

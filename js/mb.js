@@ -45,7 +45,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (dadosGuardados.nome) document.getElementById("nomeLeg").innerText = dadosGuardados.nome || "";
         if (dadosGuardados.trafficLoad && typeof dadosGuardados.trafficLoad.total === "number")
             document.getElementById("manualPayload").value = dadosGuardados.trafficLoad.total || 0;
+        
         if (typeof dadosGuardados.trafficLoad?.moment === "number") {
+            // se moment for diferente de 0
             if (dadosGuardados.trafficLoad.moment !== 0) {
                 document.getElementById("momentPayload").value = dadosGuardados.trafficLoad.moment;
             } else {
@@ -119,7 +121,7 @@ async function exec_calculo() {
     const basicWeight = parseFloat(ac.BEW) || 0;
     const armBEW = parseFloat(ac.armBEW) || 0;
     const armPilots = parseFloat(ac.armPilotos) || 0;
-    const armPayload = parseFloat(ac.armPayload) || 0;
+    let armPayload = parseFloat(ac.armPayload) || 0;
     const armFuel = parseFloat(ac.armFuel) || 0;
 
     // --- Constantes CG ---
@@ -133,6 +135,7 @@ async function exec_calculo() {
     if (usarMomentoImportado) {
         const momImportado = parseFloat(document.getElementById("momentPayload").value) || 0;
         momentPayload = momImportado;
+        armPayload = momentPayload / payload
     } else {
         momentPayload = payload * armPayload;//usa o braço standard em settings
     }
@@ -181,14 +184,31 @@ async function exec_calculo() {
     const macTakeoff = macVal(tow, mTO);
     const macLanding = macVal(lw, mLDG);
 
+    const toNum = v => Number(String(v ?? "").replace(",", "."));
+
+    let MZFW = toNum(ac.MZFW) || 0;
+    let MTOW = toNum(ac.MTOW) || 0;
+
+    // SET MAXIMOS PARA CS-ATH
+    if (ac.ID === "CS-ATH"){
+        if (zfw > 5400 && zfw <= 5590  ){
+            MZFW = zfw;
+            MTOW = csath_MTOW(zfw);
+        }
+        else if (zfw > 5590){
+            MZFW = 5590;
+            MTOW = 6200;
+        }
+    }
+
     // --- Infos cruzadas Payload/Fuel ---
     const maxFuelByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
-    const maxFuelByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + payload) + fuelTaxi;
+    const maxFuelByMTOW = (parseFloat(MTOW) || 0) - (basicWeight + pilots + payload) + fuelTaxi;
     const maxFuelByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
     const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
     const maxFuelLb = maxFuelKg * 2.20462;
 
-    const maxPayloadByMZFW = (parseFloat(ac.MZFW) || Infinity) - (basicWeight + pilots);
+    const maxPayloadByMZFW = (parseFloat(MZFW) || Infinity) - (basicWeight + pilots);
     const maxPayloadByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
     const maxPayloadByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + fuel);
     const maxPayloadByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
@@ -219,9 +239,9 @@ async function exec_calculo() {
                 infoCell.innerHTML += `<br><span class="info-warning">EXCEDE LIMITE (${limit} ${label})</span>`;
         }
     }
-    checkLimit("zfw", zfw, parseFloat(ac.MZFW) || Infinity, "kg");
+    checkLimit("zfw", zfw, parseFloat(MZFW) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
-    checkLimit("takeoffRow", tow, parseFloat(ac.MTOW) || Infinity, "kg");
+    checkLimit("takeoffRow", tow, parseFloat(MTOW) || Infinity, "kg");
     checkLimit("landingRow", lw, parseFloat(ac.MLOW) || Infinity, "kg");
 
     // --- Desenho das bolas CG ---
@@ -233,6 +253,11 @@ async function exec_calculo() {
             { mac: macLanding, peso: lw, cor: "orange", label: "LDG" }
         ]);
     }
+}
+
+function csath_MTOW(zfw) {
+    //apenas para interpolação no intervalo entre ZFW = 5400 e 5590
+    return -1.05263 * zfw + 12084.21;
 }
 
 // ============================================
