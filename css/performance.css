@@ -1,0 +1,405 @@
+/* =========================================================
+   THEME VARIABLES – AJUSTA AQUI O LOOK GLOBAL
+   ========================================================= */
+:root {
+    /* Backgrounds */
+    --bg-main: #e6e9ef;
+
+    /* fundo geral (cinza claro) */
+    --bg-panel: #eef1f6;
+
+    /* cartões */
+    --bg-panel-alt: #e9edf4;
+
+    /* inputs / pills */
+    --bg-tooltip: #f4f6fa;
+
+    /* tooltip (opaco) */
+    /* Texto */
+    --text-main: #1f2937;
+    --text-muted: #5b6475;
+
+    /* Linhas & sombras */
+    --line: rgba(31,41,55,.15);
+    --shadow-soft: 0 8px 20px rgba(31,41,55,.10);
+    --shadow-tooltip: 0 12px 28px rgba(31,41,55,.18);
+
+    /* Accent */
+    --accent: #3b82f6;
+    --accent-soft: #dbeafe;
+
+    /* Estados */
+    --ok: #16a34a;
+    --bad: #dc2626;
+
+    /* Layout */
+    --radius: 16px;
+    --gap: 14px;
+
+    /* iPad/iPhone tuning */
+    --content-max: 1020px;
+
+    /* limita o “spread” em ecrãs grandes */
+    --content-pad-x: 16px;
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+/* ========================================================= */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--text-main);
+    background: radial-gradient(1000px 600px at 10% 0%, #dde6f7 0%, transparent 55%),
+    radial-gradient(800px 500px at 100% 10%, #e4ebf9 0%, transparent 50%),
+    var(--bg-main);
+}
+
+/* =========================================================
+   WRAP + HEADERS
+   ========================================================= */
+.wrap {
+    max-width: var(--content-max);
+    margin: 24px auto 60px;
+    padding: 0 var(--content-pad-x);
+}
+
+header {
+    display: flex;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+h1 {
+    font-size: 26px;
+    margin: 0;
+    letter-spacing: .2px;
+}
+
+.sub {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.section-title {
+    margin: 22px 0 12px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: .2px;
+}
+
+/* =========================================================
+   GRID (CORRIGIDO) – iPhone 1 coluna, iPad 2 colunas, landscape 3 colunas
+   ========================================================= */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+}
+
+/* iPad portrait (e tablets): 2 colunas */
+@media (min-width: 720px){
+    .grid.takeoff {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+
+    /* Performance ocupa a largura toda para ficar legível */
+    .grid.takeoff #perfCard {
+        grid-column: 1 / -1;
+    }
+}
+
+/* iPad landscape / desktop: 3 colunas */
+@media (min-width: 980px){
+    .grid.takeoff {
+        grid-template-columns: 1.15fr 0.9fr 1.1fr;
+    }
+
+    .grid.takeoff #perfCard {
+        grid-column: auto;
+    }
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+.card {
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-alt));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+}
+
+.card h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+.form {
+    display: grid;
+    gap: 10px;
+}
+
+.row {
+    display: grid;
+    gap: 6px;
+}
+
+.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* iPhone SE e ecrãs muito estreitos */
+@media (max-width: 360px){
+    .two {
+        grid-template-columns: 1fr;
+    }
+}
+
+label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+input,
+select {
+    padding: 10px 11px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg-panel-alt);
+    color: var(--text-main);
+    font-size: 14px;
+}
+
+input::placeholder {
+    color: rgba(31,41,55,.35);
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+select:disabled,
+input:disabled {
+    opacity: .75;
+}
+
+.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   INFO ICON + TOOLTIP (OPACO + BEM POSICIONADO)
+   ========================================================= */
+.info {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    color: var(--accent);
+    background: var(--bg-panel-alt);
+    position: relative;
+    cursor: default;
+    user-select: none;
+}
+
+/* Tooltip */
+.tooltip {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 260px;
+    max-width: 360px;
+    padding: 10px 12px;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-tooltip);
+    font-size: 12px;
+    line-height: 1.4;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 100;
+}
+
+/* Arrow */
+.tooltip::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: 14px;
+    width: 10px;
+    height: 10px;
+    background: var(--bg-tooltip);
+    border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+    transform: rotate(45deg);
+}
+
+.info:hover .tooltip,
+.info:focus-within .tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tooltip .t-title {
+    font-weight: 900;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+
+.kv {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 10px;
+}
+
+.kv div {
+    border-bottom: 1px dashed rgba(31,41,55,.15);
+    padding-bottom: 2px;
+}
+
+.kv div:nth-last-child(-n+2) {
+    border-bottom: none;
+}
+
+/* =========================================================
+   OUTPUTS
+   ========================================================= */
+.output {
+    display: grid;
+    gap: 10px;
+}
+
+.pill {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 11px;
+    border-radius: 12px;
+    background: var(--bg-panel-alt);
+    border: 1px solid var(--line);
+}
+
+.pill .k {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text-muted);
+}
+
+.pill .v {
+    font-weight: 900;
+}
+
+.speeds {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 10px;
+}
+
+/* iPhone: speeds em 2x2 para não esmagar */
+@media (max-width: 420px){
+    .speeds {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.speed {
+    background: var(--bg-panel-alt);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.speed .k {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text-muted);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--bg-panel-alt);
+    font-weight: 900;
+    font-size: 12px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bad);
+}
+
+.ok .dot {
+    background: var(--ok);
+}
+
+.bad .dot {
+    background: var(--bad);
+}
+
+/* =========================================================
+   LANDING PLACEHOLDER
+   ========================================================= */
+.landing-placeholder {
+    color: rgba(91,100,117,.95);
+    line-height: 1.5;
+    font-size: 13px;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}

@@ -19,6 +19,12 @@ dialog::backdrop {
     --cor-crianca: #F0C000;
 }
 
+/* quando o popup está aberto */
+.no-zoom {
+  touch-action: manipulation;   /* reduz double-tap zoom */
+  overscroll-behavior: contain; /* evita bounce/scroll estranho */
+}
+
 .popup-TLoad {
     /* 1. Fixar no centro do ecrã */
     position: fixed;

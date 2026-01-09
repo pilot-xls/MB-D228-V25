@@ -1,24 +1,163 @@
-<!DOCTYPE html>
-<html lang="pt">
+<!doctype html>
+<html lang="pt-PT">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Performance</title>
         <!-- Tema global -->
         <link rel="stylesheet" href="css/theme.css">
         <!-- CSS específico da página Performance -->
         <link rel="stylesheet" href="css/performance.css">
         <!-- CSS comum ao header/menu -->
-        <link rel="stylesheet" href="css/menu.css">
+        <link rel="stylesheet" href="css/menu.css"> 
     </head>
     <body>
-        <header>
-            <div id="header"></div>
-        </header>
-        <main>
-            <h1 style="text-align: center;">Performance</h1>
-            <p style="text-align: center;">IN PROGRESS!</p>
-        </main>
+        <div class="wrap">
+            <header>
+                <div id="header"></div>
+                <div>
+                    <h1>Performance</h1>
+                    <div class="sub">Take-off e Landing</div>
+                </div>
+            </header>
+            <div class="section-title">Take-off</div>
+            <div class="grid takeoff">
+                <!-- CONDITIONS -->
+                <section class="card" id="conditionsCard">
+                    <h3> <span>Conditions <span class="hint">(airport/runway/meteo)</span></span> <!-- "i" com tooltip: conteúdos preparados para serem preenchidos via JS conforme airport/runway --> <span class="info" aria-label="Informação do aeródromo e pista" tabindex="0">
+            i <span class="tooltip" id="airportTooltip"> <div class="t-title">Aeródromo / Pista</div> <div class="kv" aria-label="Dados de pista">
+                                    <div class="muted">TORA</div>
+                                    <div class="mono" id="ttTora">—</div>
+                                    <div class="muted">TODA</div>
+                                    <div class="mono" id="ttToda">—</div>
+                                    <div class="muted">ASDA</div>
+                                    <div class="mono" id="ttAsda">—</div>
+                                    <div class="muted">Elevation</div>
+                                    <div class="mono" id="ttElev">—</div>
+                                    <div class="muted">Slope</div>
+                                    <div class="mono" id="ttSlope">—</div>
+                                </div> </span> </span> </h3>
+                    <div class="form">
+                        <div class="row">
+                            <label for="airport">Airport</label>
+                            <!-- opções serão injectadas via JS -->
+                            <select id="airport" name="airport" autocomplete="off">
+                                <option value="" selected disabled>— seleccionar —</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <label for="runway">Runway</label>
+                            <!-- opções dependem do airport, injectadas via JS -->
+                            <select id="runway" name="runway" autocomplete="off" disabled>
+                                <option value="" selected disabled>— seleccionar —</option>
+                            </select>
+                        </div>
+                        <div class="two">
+                            <div class="row">
+                                <label for="wind">Wind (graus/kt)</label>
+                                <!-- formato desejado: 270/15 -->
+                                <input id="wind" name="wind" class="mono" placeholder="270/15" inputmode="numeric" autocomplete="off" aria-describedby="windHelp"/>
+                                <span id="windHelp" class="sr-only">Formato esperado: 3 dígitos barra 1 ou 2 dígitos. Exemplo 270/15.</span>
+                            </div>
+                            <div class="row">
+                                <label for="surface">Surface conditions</label>
+                                <select id="surface" name="surface" autocomplete="off">
+                                    <option value="dry">Dry</option>
+                                    <option value="wet">Wet</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="two">
+                            <div class="row">
+                                <label for="oat">OAT (°C)</label>
+                                <input id="oat" name="oat" class="mono" placeholder="15" inputmode="numeric" autocomplete="off"/>
+                            </div>
+                            <div class="row">
+                                <label for="qnh">QNH</label>
+                                <input id="qnh" name="qnh" class="mono" placeholder="1013" inputmode="numeric" autocomplete="off"/>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- CONFIGURATION -->
+                <section class="card" id="configCard">
+                    <h3> <span>Configuration <span class="hint">(aircraft)</span></span> <span></span> </h3>
+                    <div class="form">
+                        <div class="row">
+                            <label for="tow">TOW (kg)</label>
+                            <input id="tow" name="tow" class="mono" placeholder="6200" inputmode="numeric" autocomplete="off"/>
+                        </div>
+                        <div class="two">
+                            <div class="row">
+                                <label for="flaps">Flaps</label>
+                                <select id="flaps" name="flaps" autocomplete="off">
+                                    <option value="up">UP</option>
+                                    <option value="1">1</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <label for="inlets">Inlet switches</label>
+                                <select id="inlets" name="inlets" autocomplete="off">
+                                    <option value="off">OFF</option>
+                                    <option value="on">ON</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- TAKE-OFF PERFORMANCE -->
+                <section class="card" id="perfCard">
+                    <h3> <span>Take-off Performance <span class="hint">(computed)</span></span> <span></span> </h3>
+                    <div class="output">
+                        <div class="pill" aria-label="TOR">
+                            <div class="k">TOR</div>
+                            <!-- preenchido via JS -->
+                            <div class="v mono" id="outTor">—</div>
+                        </div>
+                        <div class="speeds" aria-label="Speeds">
+                            <div class="speed">
+                                <div class="k">V1</div>
+                                <div class="v mono" id="outV1">—</div>
+                            </div>
+                            <div class="speed">
+                                <div class="k">Vr</div>
+                                <div class="v mono" id="outVr">—</div>
+                            </div>
+                            <div class="speed">
+                                <div class="k">V2</div>
+                                <div class="v mono" id="outV2">—</div>
+                            </div>
+                            <div class="speed">
+                                <div class="k">Vyse</div>
+                                <div class="v mono" id="outVyse">—</div>
+                            </div>
+                        </div>
+                        <div class="pill status" aria-label="Climb gradient status">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="k">Climb gradient</div>
+                                <!-- "i" com tooltip para Required vs Computed -->
+                                <span class="info" aria-label="Detalhe do climb gradient" tabindex="0">
+                i <span class="tooltip" id="cgTooltip"> <div class="t-title">Climb gradient</div> <div class="kv">
+                                            <div class="muted">Required</div>
+                                            <div class="mono" id="ttCgReq">—</div>
+                                            <div class="muted">Computed</div>
+                                            <div class="mono" id="ttCg">—</div>
+                                        </div> </span> </span>
+                            </div>
+                            <!-- badge preparado para JS alternar classes ok/bad e texto -->
+                            <span class="badge bad" id="cgBadge"> <span class="dot" aria-hidden="true"></span> <span id="cgText">—</span> </span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <div class="section-title">Landing</div>
+            <section class="card">
+                <h3><span>Landing <span class="hint">(a seguir)</span></span><span></span></h3>
+                <div class="landing-placeholder">
+                    Secção reservada.
+</div>
+            </section>
+        </div>
         <script src="js/general.js"></script>
     </body>
 </html>
