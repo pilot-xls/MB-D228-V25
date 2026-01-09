@@ -1,4 +1,4 @@
-const CACHE_NAME = 'd228-cache-v1.1.1';
+const CACHE_NAME = 'd228-cache-v1.1.2';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,6 @@ const ASSETS = [
   './settings.html',
   './header.html',
   './popup-fuel.html',
-  './Popup-TrafficLoad.html',
 
   /* CSS */
   './css/calculadora.css',
@@ -20,7 +19,6 @@ const ASSETS = [
   './css/performance.css',
   './css/popup-fuel.css',
   './css/popup-TLoad.css',
-  './css/popup-TrafficLoad.css',
   './css/rotas.css',
   './css/settings.css',
   './css/style.css',
@@ -66,7 +64,6 @@ const ASSETS = [
   './js/index.js',
   './js/mb.js',
   './js/popup-TLoad.js',
-  './js/Popup-TrafficLoad.js',
   './js/rotas.js',
   './js/settings.js'
 ];
