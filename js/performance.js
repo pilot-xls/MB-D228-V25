@@ -50,16 +50,16 @@ import MTOW_ASDA_FlapsUp from "./mtowASDA_FlapsUp.js";
 import MTOW_ASDA_Flaps1 from "./mtowASDA_Flaps1.js";
 
 // Importa a função de MTOW limitada por TORA para flaps UP
-import MTOW_TORA_FlapsUp from "./mtowTORA_flapsUp.js";
+import MTOW_TORA_FlapsUp from "./mtowTORA_FlapsUp.js";
 
 // Importa a função de MTOW limitada por TORA para flaps 1
-import MTOW_TORA_Flaps1 from "./mtowTORA_flaps1.js";
+import MTOW_TORA_Flaps1 from "./mtowTORA_Flaps1.js";
 
 // Importa a função de MTOW limitada por TODA para flaps UP
-import MTOW_TODA_FlapsUp from "./mtowTODA_flapsUp.js";
+import MTOW_TODA_FlapsUp from "./mtowTODA_FlapsUp.js";
 
 // Importa a função de MTOW limitada por TODA para flaps 1
-import MTOW_TODA_Flaps1 from "./mtowTODA_flaps1.js";
+import MTOW_TODA_Flaps1 from "./mtowTODA_Flaps1.js";
 
 // Guarda em memória os dados dos aeroportos para reutilização na página
 let airportData = [];
@@ -950,4 +950,5 @@ console.log("todaup ",runwayEntry.toda);
             }
         });
     });
+
 });
