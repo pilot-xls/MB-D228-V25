@@ -1,4 +1,4 @@
-const CACHE_NAME = 'd228-cache-v1.4.5';
+const CACHE_NAME = 'd228-cache-v1.1.1';
 const ASSETS = [
   './',
   './index.html',
@@ -17,8 +17,9 @@ const ASSETS = [
   './css/menu.css',
   './css/normalize.css',
   './css/performance.css',
-  './css/popup-fuel.css',
   './css/popup-TLoad.css',
+  './css/popup-TrafficLoad.css',
+  './css/popup-fuel.css',  
   './css/rotas.css',
   './css/settings.css',
   './css/style.css',
@@ -27,6 +28,7 @@ const ASSETS = [
   /* DATA (CRÍTICO PARA OFFLINE REAL) */
   './data/aircraft.json',
   './data/payload.json',
+  './data/airportsList.json',
   './data/rotas.json',
   './data/TrafficLoad.json',
 
@@ -57,15 +59,39 @@ const ASSETS = [
   './img/waypoint.png',
   './img/weather.png',
 
-  /* JS */
-  './js/calculadora.js',
-  './js/dataLoader.js',
-  './js/general.js',
-  './js/index.js',
-  './js/mb.js',
-  './js/popup-TLoad.js',
-  './js/rotas.js',
-  './js/settings.js'
+ /* JS */
+'./js/Popup-TrafficLoad.js',
+'./js/ToSpeeds.js',
+'./js/ToWAT.js',
+'./js/asdrFlaps1_CSATH.js',
+'./js/asdrFlapsUP_CSATH.js',
+'./js/calculadora.js',
+'./js/cg2segFlaps1_CSATH.js',
+'./js/cg2segFlapsUp_CSATH.js',
+'./js/cg3segFlaps1_CSATH.js',
+'./js/cg4segFlapsUp_CSATH.js',
+'./js/cgRequired2Seg_CSATH.js',
+'./js/cgRequired34Seg_CSATH.js',
+'./js/dataLoader.js',
+'./js/general.js',
+'./js/index.js',
+'./js/mb.js',
+'./js/mtowASDA_Flaps1.js',
+'./js/mtowASDA_FlapsUp.js',
+'./js/mtowTODA_Flaps1.js',
+'./js/mtowTODA_FlapsUp.js',
+'./js/mtowTORA_Flaps1.js',
+'./js/mtowTORA_FlapsUp.js',
+'./js/netGradient_CSATH.js',
+'./js/performance.js',
+'./js/popup-TLoad.js',
+'./js/rotas.js',
+'./js/settings.js',
+'./js/todrFlaps1_CSATH.js',
+'./js/todrFlapsUP_CSATH.js',
+'./js/torqueTakeoff_CSATH.js',
+'./js/torrFlaps1_CSATH.js',
+'./js/torrFlapsUP_CSATH.js'
 ];
 
 
