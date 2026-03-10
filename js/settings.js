@@ -20,27 +20,65 @@ const childInput = document.getElementById("std-child");
 
 // inicializar dados
 (async () => {
+  // vai buscar os dados actuais já tratados pela função
   const { aircraftData: acData, defaultId, payloadDefaults } = await ensureSettingsData();
-  aircraftData = acData;
 
+  // vai buscar o JSON original com os defaults
+  const aircraftJson = await fetch("data/aircraft.json").then(r => r.json());
+
+  // no teu JSON, os aviões estão dentro de "aircraft"
+  const defaultAircraftData = aircraftJson.aircraft || {};
+
+  // guarda os dados actuais na variável global
+  aircraftData = acData || {};
+
+  // começa pelos dados já guardados para não perder aviões criados manualmente
+  const mergedAircraftData = { ...aircraftData };
+
+  // para cada avião do ficheiro JSON
+  Object.keys(defaultAircraftData).forEach(key => {
+    // faz fusão:
+    // 1) campos do JSON entram todos, incluindo campos novos
+    // 2) dados já guardados do utilizador ficam por cima
+    mergedAircraftData[key] = {
+      ...defaultAircraftData[key],
+      ...(aircraftData[key] || {})
+    };
+  });
+
+  // substitui os dados globais pelos dados já fundidos
+  aircraftData = mergedAircraftData;
+
+  // guarda os dados actualizados no localStorage
+  localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
+
+  // se não houver avião por defeito guardado, usa o do JSON
+  const finalDefaultId = defaultId || aircraftJson.default || null;
+
+  if (finalDefaultId) {
+    localStorage.setItem("defaultAircraft", finalDefaultId);
+  }
+
+  // preenche o select com os aviões
   populateSelect();
 
-  if (defaultId && aircraftData[defaultId]) {
-    updateTable(select.value = defaultId);
+  // selecciona o avião por defeito ou o primeiro da lista
+  if (finalDefaultId && aircraftData[finalDefaultId]) {
+    updateTable(select.value = finalDefaultId);
   } else if (Object.keys(aircraftData).length > 0) {
     updateTable(select.value = Object.keys(aircraftData)[0]);
   }
 
-  // preencher payload defaults
+  // preenche os valores por defeito do payload
   manInput.value = payloadDefaults.man || "";
   womanInput.value = payloadDefaults.woman || "";
   childInput.value = payloadDefaults.child || "";
 
+  // guarda os payload defaults se ainda não existirem
   if (!localStorage.getItem("payloadDefaults")) {
     localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
-    }
+  }
 })();
-
 // preencher dropdown
 function populateSelect() {
   select.innerHTML = "";
@@ -66,11 +104,12 @@ function updateTable(key) {
   <tr><td>MRW</td><td>${ac.MRW || ""}</td></tr>
   <tr><td>MTOW</td><td>${ac.MTOW || ""}</td></tr>
   <tr><td>MLOW</td><td>${ac.MLOW || ""}</td></tr>
+  <tr><td>Fuel capacity (lb)</td><td>${ac.FuelTank || ""}</td></tr>
   <tr><td>Consumo (lb/h)</td><td>${ac.consumo || ""}</td></tr>
   <tr><td>Braço BEW</td><td>${ac.armBEW || "-"}</td></tr>
   <tr><td>Braço Pilotos</td><td>${ac.armPilotos || "-"}</td></tr>
   <tr><td>Braço Combustível</td><td>${ac.armFuel || "-"}</td></tr>
-  <tr><td>Braço Payload</td><td>${ac.armPayload || "-"}</td></tr>
+  <tr><td>Braço Médio Payload</td><td>${ac.armPayload || "-"}</td></tr>
 `;
 
 
@@ -81,6 +120,7 @@ function updateTable(key) {
   editForm["edit-mrw"].value = ac.MRW || "";
   editForm["edit-mtow"].value = ac.MTOW || "";
   editForm["edit-mlow"].value = ac.MLOW || "";
+  editForm["edit-fuelTank"].value = ac.FuelTank || "";
   editForm["edit-consumo"].value = ac.consumo || "";
   editForm["edit-armPilots"].value = ac.armPilotos || "";
   editForm["edit-armBEW"].value = ac.armBEW || "";
@@ -103,6 +143,7 @@ editForm.addEventListener("submit", e => {
   ac.MRW = editForm["edit-mrw"].value;
   ac.MTOW = editForm["edit-mtow"].value;
   ac.MLOW = editForm["edit-mlow"].value;
+  ac.FuelTank = editForm["edit-fuelTank"].value;
   ac.consumo = editForm["edit-consumo"].value;
   ac.armPilotos = editForm["edit-armPilots"].value;
   ac.armBEW = editForm["edit-armBEW"].value;
@@ -149,6 +190,7 @@ addForm.addEventListener("submit", e => {
         MRW: addForm["add-mrw"].value.trim(),
         MTOW: addForm["add-mtow"].value.trim(),
         MLOW: addForm["add-mlow"].value.trim(),
+        FuelTank: addForm["add-fuelTank"].value.trim(),
         consumo: addForm["add-consumo"].value.trim(),
         armBEW: addForm["add-armBEW"].value.trim(),
         armPilotos: addForm["add-armPilots"].value.trim(),

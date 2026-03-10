@@ -60,39 +60,39 @@ function novaLegData() {
         minFuel: "",
         fuelOB: "",
         trafficLoad: {
-                    // --- UI state (verdade para restaurar classes) ---
-                    seats: {},     // ex: { "1A":"man", "1C":"child", "9B":"woman" }
-                    seatKg: {},    // ex: { "1A":92, "1C":35, "9B":75 }
+            // --- UI state (verdade para restaurar classes) ---
+            seats: {},     // ex: { "1A":"man", "1C":"child", "9B":"woman" }
+            seatKg: {},    // ex: { "1A":92, "1C":35, "9B":75 }
 
-                    // --- Totais/derivados ---
-                    homens: 0,
-                    mulheres: 0,
-                    criancas: 0,
-                    extra: 0,
-                    total: 0,
-                    moment: 0,
+            // --- Totais/derivados ---
+            homens: 0,
+            mulheres: 0,
+            criancas: 0,
+            extra: 0,
+            total: 0,
+            moment: 0,
 
-                    // --- Arms fixos ---
-                    r1Arm: 5.43, r2Arm: 6.16, r3Arm: 6.96, r4Arm: 7.72, r5Arm: 8.46,
-                    r6Arm: 9.21, r7Arm: 9.96, r8Arm: 10.84, r9Arm: 11.58,
+            // --- Arms fixos ---
+            r1Arm: 5.43, r2Arm: 6.16, r3Arm: 6.96, r4Arm: 7.72, r5Arm: 8.46,
+            r6Arm: 9.21, r7Arm: 9.96, r8Arm: 10.84, r9Arm: 11.58,
 
-                    // --- (Opcional) derivados por seat em kg (se quiseres manter) ---
-                    // Se não precisares destes campos fora do popup, podes remover.
-                    /*
-                    r1_A: 0, r1_C: 0,
-                    r2_A: 0, r2_C: 0,
-                    r3_A: 0, r3_C: 0,
-                    r4_A: 0, r4_C: 0,
-                    r5_A: 0, r5_C: 0,
-                    r6_A: 0, r6_C: 0,
-                    r7_A: 0, r7_C: 0,
-                    r8_B: 0, r8_C: 0,
-                    r9_A: 0, r9_B: 0, r9_C: 0,
-                    */
+            // --- (Opcional) derivados por seat em kg (se quiseres manter) ---
+            // Se não precisares destes campos fora do popup, podes remover.
+            /*
+            r1_A: 0, r1_C: 0,
+            r2_A: 0, r2_C: 0,
+            r3_A: 0, r3_C: 0,
+            r4_A: 0, r4_C: 0,
+            r5_A: 0, r5_C: 0,
+            r6_A: 0, r6_C: 0,
+            r7_A: 0, r7_C: 0,
+            r8_B: 0, r8_C: 0,
+            r9_A: 0, r9_B: 0, r9_C: 0,
+            */
 
-                    // --- baggage/cargo ---
-                    f_gabArm: 2.560, f_gab: 0,
-                    r_gabArm: 13.142, r_gab: 0
+            // --- baggage/cargo ---
+            f_gabArm: 2.560, f_gab: 0,
+            r_gabArm: 13.142, r_gab: 0
         },
         tripFuel: "",
         endurance: "",
@@ -115,6 +115,24 @@ function novaLegData() {
 
 function cloneDeep(obj) {
     return JSON.parse(JSON.stringify(obj));
+}
+
+
+// AUX: obter capacidade máxima de combustível do avião
+function getAircraftMaxFuelLb(aircraft) {
+    // Se não houver avião, devolver 0
+    if (!aircraft) return 0;
+
+    // Converter o valor do tanque para número
+    const fuelTankLb = Number(String(aircraft.FuelTank ?? "").replace(",", "."));
+
+    // Se for válido, devolver o valor
+    if (Number.isFinite(fuelTankLb) && fuelTankLb > 0) {
+        return fuelTankLb;
+    }
+
+    // Caso não exista ou seja inválido
+    return 0;
 }
 
 // -------------------------------------------------------
@@ -201,7 +219,7 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     let MZFW = toNum(aircraft.MZFW) || 0;
     const MLW = toNum(aircraft.MLW || aircraft.MLOW) || 0;
 
-    
+
 
     // Dados de configuração
     const pilotsKg = Number(localStorage.getItem("pilotsKg")) || 0;
@@ -235,7 +253,7 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     // --------------------
     const zfwKg = pesoVazioKg + pilotsKg + payloadKg;
     leg.zfw = zfwKg > 0 ? `${Math.round(zfwKg)} kg` : "";
-    
+
     const rampKg = zfwKg + fuelOBLb * LB_TO_KG;
     leg.rampWeight = rampKg > 0 ? `${Math.round(rampKg)} kg` : "";
 
@@ -246,12 +264,12 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     leg.landingWeight = isFinite(landingKg) ? `${Math.round(Math.max(landingKg, 0))} kg` : "";
 
     // SET MAXIMOS PARA CS-ATH
-    if (aircraft.ID === "CS-ATH"){
-        if (zfwKg > 5400 && zfwKg <= 5590  ){
+    if (aircraft.ID === "CS-ATH") {
+        if (zfwKg > 5400 && zfwKg <= 5590) {
             MZFW = zfwKg;
             MTOW = csath_MTOW(zfwKg);
         }
-        else if (zfwKg > 5590){
+        else if (zfwKg > 5590) {
             MZFW = 5590;
             MTOW = 6200;
         }
@@ -268,13 +286,26 @@ function computeLegDerived(leg, prevLeg, aircraft) {
     // --------------------
     // Cálculo de máximos de fuel
     // --------------------
-    
     const maxFuelByMRW = MRW - zfwKg;
     const maxFuelByMTOW = MTOW - zfwKg + fuelTaxiKg;
     const maxFuelByMLW = MLW - zfwKg + fuelTaxiKg + tripFuelLb * LB_TO_KG;
 
-    const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
-    const maxFuelLb = Math.round(maxFuelKg / LB_TO_KG);
+    // Máximo permitido por limites de massa
+    const maxFuelKgByWeight = Math.max(
+        0,
+        Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW)
+    );
+
+    // Converter para lb
+    const maxFuelLbByWeight = Math.round(maxFuelKgByWeight / LB_TO_KG);
+
+    // Máximo físico do tanque do avião
+    const maxFuelTankLb = getAircraftMaxFuelLb(aircraft);
+
+    // Máximo final = menor entre peso e tanque
+    const maxFuelLb = maxFuelTankLb > 0
+        ? Math.min(maxFuelLbByWeight, maxFuelTankLb)
+        : maxFuelLbByWeight;
 
     if (maxFuelLb > 0) {
         leg.maxFuelInfo = `Max: ${Math.round(maxFuelLb)} lb (${Math.round(maxFuelLb * LB_TO_KG)} kg)`;
@@ -585,12 +616,12 @@ function validaFuelEmLb(legs, aircraft, pilotsKg, fuelTaxiKg, fuelLb) {
         const zfw = BEW + pilotsKg + l.payloadKg;
 
         // SET MAXIMOS PARA CS-ATH
-        if (aircraft.ID === "CS-ATH"){
-            if (zfw > 5400 && zfw <= 5590  ){
+        if (aircraft.ID === "CS-ATH") {
+            if (zfw > 5400 && zfw <= 5590) {
                 MZFW = zfw;
                 MTOW = csath_MTOW(zfw);
             }
-            else if (zfw > 5590){
+            else if (zfw > 5590) {
                 MZFW = 5590;
                 MTOW = 6200;
             }
@@ -758,7 +789,22 @@ function attachEvents(container, estado, aircraft) {
         }
 
         if (e.target.classList.contains("fuel-ob-input")) {
-            legData.fuelOB = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
+            // Ler o valor introduzido no input
+            let fuelValue = Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0;
+
+            // Obter o máximo físico de combustível do avião ativo
+            const maxFuelTankLb = getAircraftMaxFuelLb(aircraft);
+
+            // Se ultrapassar o máximo do tanque, limitar
+            if (maxFuelTankLb > 0 && fuelValue > maxFuelTankLb) {
+                fuelValue = maxFuelTankLb;
+            }
+
+            // Guardar o valor corrigido no estado
+            legData.fuelOB = fuelValue;
+
+            // Atualizar imediatamente o valor visível no input
+            e.target.value = fuelValue > 0 ? String(fuelValue) : "";
         }
 
         if (e.target.classList.contains("trip-fuel-input")) {
@@ -771,8 +817,8 @@ function attachEvents(container, estado, aircraft) {
                 ...(legData.trafficLoad || {}),
                 total,
                 moment
-            };            
-console.log("data teste... : " + legData.trafficLoad.moment);
+            };
+            console.log("data teste... : " + legData.trafficLoad.moment);
 
         }
 
@@ -853,13 +899,13 @@ console.log("data teste... : " + legData.trafficLoad.moment);
 
         // abrir popup
         bloquearScroll();
-        
+
         window.popupTLoad.showModal();
         window.popupTLoad.focus();
-        
+
         //em popup-TLoad.js update 
         window.setAndUpdatePopup();
-        
+
     });
 
     document.addEventListener("touchstart", event => {
@@ -1033,19 +1079,24 @@ console.log("data teste... : " + legData.trafficLoad.moment);
 
         const ZFW = legs.map(l => BEW + pilotsKg + l.payloadKg);
 
-        // SET MAXIMOS PARA CS-ATH
-        if (aircraft.ID === "CS-ATH"){
-            if (ZFW > 5400 && ZFW <= 5590  ){
-                MZFW = ZFW;
-                MTOW = csath_MTOW(ZFW);
-            }
-            else if (ZFW > 5590){
-                MZFW = 5590;
-                MTOW = 6200;
-            }
-        }
+        const idxZfwExcede = ZFW.findIndex((zfwLeg) => {
+            // Começar com o MZFW normal do avião
+            let mzfwLeg = MZFW;
 
-        const idxZfwExcede = ZFW.findIndex(z => z > MZFW);
+            // Ajuste especial para o CS-ATH
+            if (aircraftF.ID === "CS-ATH") {
+                if (zfwLeg > 5400 && zfwLeg <= 5590) {
+                    mzfwLeg = zfwLeg;
+                } else if (zfwLeg > 5590) {
+                    mzfwLeg = 5590;
+                }
+            }
+
+            // Verificar se esta leg excede o limite aplicável
+            return zfwLeg > mzfwLeg;
+        });
+
+
         if (idxZfwExcede !== -1) {
             const nome = legs[idxZfwExcede].nome;
             return alert(
@@ -1057,9 +1108,31 @@ console.log("data teste... : " + legData.trafficLoad.moment);
         }
 
         const limitTOkg = legs.map((l, i) => {
-            const f_mtow = Math.max(0, MTOW - ZFW[i] + toleranceKg);
+            // Começar com os limites normais do avião
+            let mtowLeg = MTOW;
+            let mzfwLeg = MZFW;
+
+            // Ajuste especial para o CS-ATH, por leg
+            if (aircraftF.ID === "CS-ATH") {
+                if (ZFW[i] > 5400 && ZFW[i] <= 5590) {
+                    mzfwLeg = ZFW[i];
+                    mtowLeg = csath_MTOW(ZFW[i]);
+                } else if (ZFW[i] > 5590) {
+                    mzfwLeg = 5590;
+                    mtowLeg = 6200;
+                }
+            }
+
+            // Limite por MTOW dessa leg
+            const f_mtow = Math.max(0, mtowLeg - ZFW[i] + toleranceKg);
+
+            // Limite por MLW dessa leg
             const f_mlw = Math.max(0, l.tripKg + (MLW - ZFW[i]) + toleranceKg);
+
+            // Limite por MRW dessa leg
             const f_mrw = Math.max(0, MRW - ZFW[i] - fuelTaxiKg + toleranceKg);
+
+            // Devolver o mais restritivo
             return Math.min(f_mtow, f_mlw, f_mrw);
         });
 
@@ -1076,41 +1149,79 @@ console.log("data teste... : " + legData.trafficLoad.moment);
         for (let i = 0; i < legs.length; i++) {
             const l = legs[i];
 
+            // MTOW aplicável a esta leg
+            let mtowLeg = MTOW;
+
+            // Ajuste especial para o CS-ATH nesta leg
+            if (aircraftF.ID === "CS-ATH") {
+                if (ZFW[i] > 5400 && ZFW[i] <= 5590) {
+                    mtowLeg = csath_MTOW(ZFW[i]);
+                } else if (ZFW[i] > 5590) {
+                    mtowLeg = 6200;
+                }
+            }
+
+            // Se já não chega ao min fuel desta leg, marcar como crítica
             if (fuelAtTOkg < l.minFuelKg) {
                 critIndex = i;
-                const f_mtow = Math.max(0, MTOW - ZFW[i]);
+
+                const f_mtow = Math.max(0, mtowLeg - ZFW[i]);
                 const f_mlw = Math.max(0, l.tripKg + (MLW - ZFW[i]));
                 const f_mrw = Math.max(0, MRW - ZFW[i] - fuelTaxiKg);
+
                 maxPermitidoLegKg = Math.min(f_mtow, f_mlw, f_mrw);
                 break;
             }
 
+            // Pesos desta leg
             const towKg = ZFW[i] + fuelAtTOkg;
             const landingKg = towKg - l.tripKg;
             const mrwChk = ZFW[i] + fuelAtTOkg + fuelTaxiKg;
 
+            // Verificar limites desta leg
             if (
-                towKg > (MTOW + toleranceKg) ||
+                towKg > (mtowLeg + toleranceKg) ||
                 mrwChk > (MRW + toleranceKg) ||
                 landingKg > (MLW + toleranceKg)
             ) {
-                const f_mtow = Math.max(0, MTOW - ZFW[i]);
+                const f_mtow = Math.max(0, mtowLeg - ZFW[i]);
                 const f_mlw = Math.max(0, l.tripKg + (MLW - ZFW[i]));
                 const f_mrw = Math.max(0, MRW - ZFW[i] - fuelTaxiKg);
+
                 maxPermitidoLegKg = Math.min(f_mtow, f_mlw, f_mrw);
                 critIndex = i;
                 break;
             }
 
+            // Combustível disponível para a próxima leg
             fuelAtTOkg = Math.max(0, fuelAtTOkg - l.tripKg);
         }
 
-        const maxFuelDepartureObKg = FmaxKg[0] + fuelTaxiKg;
-        const baseLb = Math.floor(maxFuelDepartureObKg * KG_TO_LB);
+        // Máximo estrutural de fuel O/B na partida
+        const maxFuelDepartureObKgByWeight = FmaxKg[0] + fuelTaxiKg;
+
+        // Converter para lb
+        const baseLbByWeight = Math.floor(maxFuelDepartureObKgByWeight * KG_TO_LB);
+
+        // Máximo físico do tanque
+        const maxFuelTankLb = getAircraftMaxFuelLb(aircraftF);
+
+        // Aplicar limite do tanque
+        const baseLb = maxFuelTankLb > 0
+            ? Math.min(baseLbByWeight, maxFuelTankLb)
+            : baseLbByWeight;
 
         let maxFuelDepartureLb = baseLb;
+
+        // Afinar mais alguns lb sem ultrapassar o tanque
         for (let add = 1; add <= 3; add++) {
             const cand = baseLb + add;
+
+            // Nunca passar o máximo do tanque
+            if (maxFuelTankLb > 0 && cand > maxFuelTankLb) {
+                break;
+            }
+
             const ok2 = validaFuelEmLb(legs, aircraftF, pilotsKg, fuelTaxiKg, cand);
             if (ok2) {
                 maxFuelDepartureLb = cand;
@@ -1279,34 +1390,34 @@ window.reporRotasParaOrigem = async function reporRotasParaOrigem() {
 // 10. limpar traffic load quando press "C" button
 // -------------------------------------------------------
 function createEmptyTrafficLoad() {
-  return {
-    // totais finais
-    total: 0,
-    moment: 0,
+    return {
+        // totais finais
+        total: 0,
+        moment: 0,
 
-    // pax
-    homens: 0,
-    mulheres: 0,
-    criancas: 0,
-    extra: 0,
+        // pax
+        homens: 0,
+        mulheres: 0,
+        criancas: 0,
+        extra: 0,
 
-    paxTotalKg: 0,
-    paxMoment: 0,
+        paxTotalKg: 0,
+        paxMoment: 0,
 
-    // seats
-    seats: {},
-    seatKg: {},
+        // seats
+        seats: {},
+        seatKg: {},
 
-    // cargo
-    f_gab: 0,
-    f_gabArm: 2.560,
+        // cargo
+        f_gab: 0,
+        f_gabArm: 2.560,
 
-    r_gab: 0,
-    r_gabArm: 13.142,
-    r_gabType: "SMALL",
+        r_gab: 0,
+        r_gabArm: 13.142,
+        r_gabType: "SMALL",
 
-    cargoTotalKg: 0,
-    cargoMoment: 0
-  };
+        cargoTotalKg: 0,
+        cargoMoment: 0
+    };
 }
 

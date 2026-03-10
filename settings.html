@@ -63,8 +63,7 @@
             </div>
         </main>
         <div id="edit-modal" class="modal">
-            <div class="modal-content">
-                <span id="close-edit" class="close">&times;</span>
+            <div class="modal-content"><span id="close-edit" class="close">&times;</span>
                 <form id="edit-form" class="aircraft-form">
                     <h3>Editar avião</h3>
                     <div class="form-grid">
@@ -97,6 +96,10 @@
                             <input type="text" inputmode="decimal" pattern="[0-9.]*" id="edit-mlow" name="edit-mlow">
                         </div>
                         <div class="input-group">
+                            <label for="edit-fuelTank">Fuel Capacity (lb)</label>
+                            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="edit-fuelTank" name="edit-fuelTank">
+                        </div>
+                        <div class="input-group">
                             <label for="edit-consumo">Consumo (lb/h)</label>
                             <input type="text" inputmode="decimal" pattern="[0-9.]*" id="edit-consumo" name="edit-consumo">
                         </div>
@@ -125,8 +128,7 @@
             </div>
         </div>
         <div id="add-modal" class="modal">
-            <div class="modal-content">
-                <span id="close-add" class="close">&times;</span>
+            <div class="modal-content"><span id="close-add" class="close">&times;</span>
                 <form id="add-form" class="aircraft-form">
                     <h3>Novo avião</h3>
                     <div class="form-grid">
@@ -157,6 +159,10 @@
                         <div class="input-group">
                             <label for="add-mlow">MLOW (kg)</label>
                             <input type="text" inputmode="decimal" pattern="[0-9.]*" id="add-mlow" name="add-mlow">
+                        </div>
+                        <div class="input-group">
+                            <label for="add-fuelTank">Fuel capacity (lb)</label>
+                            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="add-fuelTank" name="add-fuelTank" placeholder="ex: 4200">
                         </div>
                         <div class="input-group">
                             <label for="add-consumo">Consumo (lb/h)</label>

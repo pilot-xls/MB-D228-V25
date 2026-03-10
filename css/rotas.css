@@ -59,27 +59,22 @@ h2 {
    se não quiseres, apaga esta secção) */
 .fab-add-rota {
     position: fixed;
-    bottom: 1.4rem;
-    right: 1.4rem;
-    width: 54px;
-    height: 54px;
-    border-radius: 9999px;
-    background: var(--accent);
+    right: 16px;
+    bottom: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: #333;
     color: #fff;
     border: none;
-    font-size: 1.7rem;
+    font-size: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    /* line-height: 1 */
-    padding: 0;
     box-shadow: 0 6px 16px rgba(255, 255, 255, 0.45);
     cursor: pointer;
-    z-index: 50;
-}
-
-.fab-add-rota span {
+    z-index: 9999;
 }
 
 /* ==============================

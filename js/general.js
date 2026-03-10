@@ -85,24 +85,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Carrega o ficheiro header.html em todas as páginas e ativa a lógica de abrir/fechar o menu
 document.addEventListener('DOMContentLoaded', () => {
+    // Procura o elemento onde o header vai ser inserido
+    const headerContainer = document.getElementById('header');
+
+    // Se esta página não tiver esse elemento, termina sem erro
+    if (!headerContainer) {
+        return;
+    }
+
+    // Carrega o ficheiro do header
     fetch('header.html')
         .then(response => response.text())
         .then(data => {
-            document.getElementById('header').innerHTML = data;
+            // Insere o HTML do header no contentor
+            headerContainer.innerHTML = data;
 
-            // ativar o JS do menu depois de inserir o header
+            // Procura os elementos do menu já depois de inserir o header
             const menu = document.querySelector('.menu');
             const hamburger = document.querySelector('.hamburger');
 
+            // Se faltar algum elemento do menu, termina sem erro
+            if (!menu || !hamburger) {
+                return;
+            }
+
+            // Abre/fecha o menu ao clicar no botão hamburger
             hamburger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 menu.classList.toggle('active');
             });
 
+            // Fecha o menu ao clicar fora dele
             document.addEventListener('click', (e) => {
-                if (menu.classList.contains('active') &&
+                if (
+                    menu.classList.contains('active') &&
                     !menu.contains(e.target) &&
-                    !hamburger.contains(e.target)) {
+                    !hamburger.contains(e.target)
+                ) {
                     menu.classList.remove('active');
                 }
             });

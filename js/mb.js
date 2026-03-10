@@ -6,7 +6,7 @@ let usarMomentoImportado = true;
 
 document.addEventListener("DOMContentLoaded", async () => {
     const { aircraftData, defaultId } = await ensureSettingsData();
-    
+
     // --- 1. Preenche dados do avião default ---
     if (defaultId && aircraftData[defaultId]) {
         const aircraft = aircraftData[defaultId];
@@ -20,18 +20,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         const imgEl = document.querySelector("#loadsheet-img img");
         if (!imgEl || !ac) return;
         switch (ac.Serie) {
-            case "200": 
-                imgEl.setAttribute("src", "img/serie200.png"); 
+            case "200":
+                imgEl.setAttribute("src", "img/serie200.png");
                 break;
             case "212":
                 if (ac.ID === "CS-ATH") {
                     //CS-ATH TEM UMA FOLHA DE MB DIFERENTE DEVIDO AO ZFW VARIAVEL
-                    imgEl.setAttribute("src", "img/serie212.png"); 
+                    imgEl.setAttribute("src", "img/serie212.png");
                 } else {
                     imgEl.setAttribute("src", "img/serie212-Standard.png");
-                }                 
+                }
                 break;
-            default: 
+            default:
                 imgEl.setAttribute("src", "img/serieError.png");
         }
     }
@@ -40,25 +40,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // dados que vem de BOTÃO "MB" DE ROTAS.JS
     const dadosGuardados = JSON.parse(localStorage.getItem("mbLegSelecionada") || "null");
-    
+
     if (dadosGuardados) {
         if (dadosGuardados.nome) document.getElementById("nomeLeg").innerText = dadosGuardados.nome || "";
         if (dadosGuardados.trafficLoad && typeof dadosGuardados.trafficLoad.total === "number")
             document.getElementById("manualPayload").value = dadosGuardados.trafficLoad.total || 0;
-        
-        console.log ("verificar se momento é num... ");
-        if (typeof dadosGuardados.trafficLoad?.moment === "number") {
-            // se moment for diferente de 0
-            console.log ("é numero...");
 
-            console.log ("dados guardados (momento) = " + dadosGuardados.trafficLoad?.moment);
+        console.log("verificar momento guardado...");
 
-            if (dadosGuardados.trafficLoad.moment > 0) {
-                document.getElementById("momentPayload").value = dadosGuardados.trafficLoad.moment;
-            } else {
-                usarMomentoImportado = false; // em caso de que o momento venha "0" de localstorage o momento ira ser calculado                
+        const momentoGuardado = Number(dadosGuardados?.trafficLoad?.moment) || 0;
+        console.log("dados guardados (momento) =", momentoGuardado);
+
+        if (momentoGuardado > 0) {
+            const inputMom = document.getElementById("momentPayloadInput");
+            if (inputMom) {
+                inputMom.value = momentoGuardado;
             }
+            usarMomentoImportado = true;
+        } else {
+            usarMomentoImportado = false;
         }
+
         if (typeof dadosGuardados.fuelOB === "number")
             document.getElementById("fuel").value = dadosGuardados.fuelOB || 0;
         if (typeof dadosGuardados.tripFuel === "number")
@@ -75,17 +77,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- 4. Autosave em todos os inputs ---
     document.querySelectorAll("input").forEach(inp => {
-        inp.addEventListener("focus", function () { this.select(); });
+        inp.addEventListener("focus", function () {
+            if (typeof this.select === "function" && this.type !== "hidden") {
+                this.select();
+            }
+        });
+
         inp.addEventListener("input", () => {
+            const inputMom = document.getElementById("momentPayloadInput");
+            const momentoAtual = Number(inputMom?.value) || 0;
+
             const atualizado = {
-                ...(dadosGuardados || {}),
+                ...(JSON.parse(localStorage.getItem("mbLegSelecionada") || "null") || {}),
                 nome: document.getElementById("nomeLeg").innerText || "",
-                trafficLoad: { total: Number(document.getElementById("manualPayload").value) || 0 },
+                trafficLoad: {
+                    ...(JSON.parse(localStorage.getItem("mbLegSelecionada") || "null")?.trafficLoad || {}),
+                    total: Number(document.getElementById("manualPayload").value) || 0,
+                    moment: momentoAtual
+                },
                 fuelOB: Number(document.getElementById("fuel").value) || 0,
                 tripFuel: Number(document.getElementById("fuelDest").value) || 0,
                 pilots: Number(document.getElementById("pilots").value) || 0,
                 fuelTaxi: Number(document.getElementById("fuelTaxi").value) || 0
             };
+
             localStorage.setItem("mbLegSelecionada", JSON.stringify(atualizado));
             exec_calculo(); // recalcula imediatamente
         });
@@ -138,14 +153,28 @@ async function exec_calculo() {
     const momentPilots = pilots * armPilots;
     let momentPayload = 0;
 
-    console.log ("usar momento importado? " + usarMomentoImportado);
+    console.log("usar momento importado? " + usarMomentoImportado);
 
-    if (usarMomentoImportado) {
-        const momImportado = parseFloat(document.getElementById("momentPayload").value) || 0;
+    const inputMom = document.getElementById("momentPayloadInput");
+    const momImportado = Number(inputMom?.value) || 0;
+
+    console.log("usarMomentoImportado =", usarMomentoImportado);
+    console.log("payload =", payload);
+    console.log("momImportado =", momImportado);
+
+    if (usarMomentoImportado && momImportado > 0) {
+        // usa o momento vindo de fora
         momentPayload = momImportado;
-        armPayload = momentPayload / payload
+
+        // calcula o ARM real apenas se existir payload
+        if (payload > 0) {
+            armPayload = momentPayload / payload;
+        } else {
+            armPayload = parseFloat(ac.armPayload) || 0;
+        }
     } else {
-        momentPayload = payload * armPayload;//usa o braço standard em settings
+        // quando não há momento importado, calcula o momento usando o ARM standard
+        momentPayload = payload * armPayload;
     }
     const momentFuel = fuel * armFuel;
     const momentTaxi = fuelTaxi * armFuel;
@@ -165,6 +194,7 @@ async function exec_calculo() {
     const tow = rampWeight - fuelTaxi;
     const lw = tow - fuelDest;
 
+
     document.getElementById("zfw").innerText = zfw;
     document.getElementById("rampWeight").innerText = rampWeight;
     document.getElementById("takeoffWeight").innerText = tow;
@@ -178,7 +208,8 @@ async function exec_calculo() {
 
     // --- MAC% (seguro contra divisões inválidas) ---
     function macVal(peso, momento) {
-        if (!peso || !isFinite(peso)) return 0;
+        // evita divisões inválidas e valores infinitos
+        if (!peso || !isFinite(peso) || !isFinite(momento)) return 0;
         return ((momento / peso - MAC_ZERO) / MAC_DIV) * 100;
     }
 
@@ -198,15 +229,30 @@ async function exec_calculo() {
     let MTOW = toNum(ac.MTOW) || 0;
 
     // SET MAXIMOS PARA CS-ATH
-    if (ac.ID === "CS-ATH"){
-        if (zfw > 5400 && zfw <= 5590  ){
+    if (ac.ID === "CS-ATH") {
+        if (zfw > 5400 && zfw <= 5590) {
             MZFW = zfw;
             MTOW = csath_MTOW(zfw);
         }
-        else if (zfw > 5590){
+        else if (zfw > 5590) {
             MZFW = 5590;
             MTOW = 6200;
         }
+    }
+
+    const fuelTO = fuel - fuelTaxi; // fuel efetivo à descolagem
+
+    let mzfwInfo = MZFW; // por defeito mostra o MZFW atual
+
+    if (ac.ID === "CS-ATH") {
+        // calcula o MZFW máximo permitido com base no fuel atual
+        mzfwInfo = csath_MZFW_fromFuel(fuelTO);
+
+        // limita ao máximo estrutural do CS-ATH
+        if (mzfwInfo > 5590) mzfwInfo = 5590;
+
+        // evita valores inválidos
+        if (mzfwInfo < 0 || !isFinite(mzfwInfo)) mzfwInfo = 0;
     }
 
     // --- Infos cruzadas Payload/Fuel ---
@@ -217,34 +263,54 @@ async function exec_calculo() {
     const maxFuelLb = maxFuelKg * 2.20462;
 
     const maxPayloadByMZFW = (parseFloat(MZFW) || Infinity) - (basicWeight + pilots);
-    const maxPayloadByMTOW = (parseFloat(ac.MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
+    const maxPayloadByMTOW = (parseFloat(MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
     const maxPayloadByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + fuel);
     const maxPayloadByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
     const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW);
     const maxPayloadLb = maxPayloadKg * 2.20462;
 
     // --- Atualiza células INFO ---
-    document.getElementById("zfw").closest("tr").querySelector("td:last-child").innerHTML = `MAC: ${macZfw.toFixed(1)}%`;
-    document.getElementById("rampRow").querySelector("td:last-child").innerHTML = `MAC: ${macRamp.toFixed(1)}%`;
-    document.getElementById("takeoffRow").querySelector("td:last-child").innerHTML = `MAC: ${macTakeoff.toFixed(1)}%`;
-    document.getElementById("landingRow").querySelector("td:last-child").innerHTML = `MAC: ${macLanding.toFixed(1)}%`;
+    document.getElementById("zfw").closest("tr").querySelector("td:last-child").innerHTML =
+        `MAC: ${macZfw.toFixed(1)}%<br>MZFW: ${Math.round(mzfwInfo)} kg`;
+
+    document.getElementById("rampRow").querySelector("td:last-child").innerHTML =
+        `MAC: ${macRamp.toFixed(1)}%`;
+
+    document.getElementById("takeoffRow").querySelector("td:last-child").innerHTML =
+        `MAC: ${macTakeoff.toFixed(1)}%`;
+
+    document.getElementById("landingRow").querySelector("td:last-child").innerHTML =
+        `MAC: ${macLanding.toFixed(1)}%`;
 
     const payloadInfoCell = document.getElementById("manualPayload").closest("tr").querySelector("td:last-child");
-    payloadInfoCell.innerHTML = `ARM ${armPayload.toFixed(1)}<br>MAX Fuel: ${maxFuelKg >= 0 ? maxFuelKg.toFixed(0) : 0} kg (${maxFuelLb >= 0 ? maxFuelLb.toFixed(0) : 0} lb)`;
+    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Fuel: ${maxFuelKg >= 0 ? maxFuelKg.toFixed(0) : 0} kg (${maxFuelLb >= 0 ? maxFuelLb.toFixed(0) : 0} lb)`;
+
     const fuelInfoCell = document.getElementById("fuel").closest("tr").querySelector("td:last-child");
     fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Payload: ${maxPayloadKg >= 0 ? maxPayloadKg.toFixed(0) : 0} kg `;
 
     // --- Limites ---
     function checkLimit(rowId, value, limit, label = "") {
+
         const weightCell = document.getElementById(rowId);
-        if (!weightCell) return;
-        const row = weightCell.closest("tr");
-        const infoCell = row.querySelector("td:last-child");
-        row.classList.remove("limit-exceed");
-        if (value > limit) {
-            row.classList.add("limit-exceed");
-            if (infoCell)
-                infoCell.innerHTML += `<br><span class="info-warning">EXCEDE LIMITE (${limit} ${label})</span>`;
+        if (!weightCell) return; // sai se a célula não existir
+
+        const row = weightCell.closest("tr"); // encontra a linha da tabela
+        const infoCell = row.querySelector("td:last-child"); // última coluna (INFO)
+
+        row.classList.remove("limit-exceed"); // remove aviso anterior
+
+        // arredonda os valores para evitar problemas de casas decimais
+        const valueCmp = Math.round(value);
+        const limitCmp = Math.round(limit);
+
+        // compara já arredondado
+        if (valueCmp > limitCmp) {
+
+            row.classList.add("limit-exceed"); // pinta a linha a vermelho
+
+            if (infoCell) {
+                infoCell.innerHTML += `<br><span class="info-warning">EXCEDE LIMITE (${limitCmp} ${label})</span>`;
+            }
         }
     }
     checkLimit("zfw", zfw, parseFloat(MZFW) || Infinity, "kg");
@@ -266,6 +332,14 @@ async function exec_calculo() {
 function csath_MTOW(zfw) {
     //apenas para interpolação no intervalo entre ZFW = 5400 e 5590
     return -1.05263 * zfw + 12084.21;
+}
+
+function csath_MZFW_fromFuel(fuelTO) {
+    // inversa da reta do CS-ATH:
+    // MTOW = -1.05263 * ZFW + 12084.21
+    // no limite: ZFW + fuelTO = MTOW
+    // logo: ZFW = (12084.21 - fuelTO) / 2.05263
+    return (12084.21 - fuelTO) / 2.05263;
 }
 
 // ============================================
@@ -386,6 +460,14 @@ function desenharPontos(resultados) {
             // texto à esquerda da bola
             text.setAttribute("x", x - 8);
             text.setAttribute("y", y + 5);
+            text.setAttribute("text-anchor", "end");
+            svg.appendChild(text);
+            svg.appendChild(circle);
+
+        } else if (r.label === "ZFW") {
+            // texto à esquerda embaixo da bola
+            text.setAttribute("x", x - 8);
+            text.setAttribute("y", y + 15);
             text.setAttribute("text-anchor", "end");
             svg.appendChild(text);
             svg.appendChild(circle);
