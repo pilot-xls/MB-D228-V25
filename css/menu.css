@@ -87,7 +87,7 @@ body {
 }
 
 /* --- DESKTOP --- */
-@media (min-width: 769px) {
+@media (min-width: 1000px) {
     .navbar .menu {
         display: flex !important;
 
