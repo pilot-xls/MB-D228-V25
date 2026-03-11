@@ -642,7 +642,8 @@ function getClimbGradientFromY(y) {
 export function ThirdSegmentDistanceFlaps1({ pressureAltitude, oat, tow, inlet, obstacleDistance }) {
   // Limpa o relatório de debug antes de começar um novo cálculo
   DEBUG_REPORT = [];
-
+	
+	
   // STEP 1 — calcula o y_ref com base em Pressure Altitude e OAT
   const yRef = getYRefFromPAOAT(pressureAltitude, oat);
 
@@ -681,12 +682,20 @@ export function ThirdSegmentDistanceFlaps1({ pressureAltitude, oat, tow, inlet, 
   // Se o avião percorre MAIS distância do que a distância até ao obstáculo
   // significa que ainda está no 3º segmento quando chega ao obstáculo
   if (roundedDistance > obstacleDistance) {
-    // Regista no debug que falhou
+	  
+    // Se obstacleDistance = 0
+	  if (obstacleDistance == 0) {
+		  // Regista no debug que passou
+		reportFail(`3rd segment distance é 0m. Não existe obstacles.`);
+		return { distance: roundedDistance, status: "PASSED", report: DEBUG_REPORT };
+	  }
+	  
+	// Regista no debug que falhou
     reportFail(`3rd segment distance ${roundedDistance}m é MAIOR que a distância ao obstáculo ${obstacleDistance}m.`);
 
     // Devolve FAILED porque o obstáculo aparece antes do fim do 3º segmento
     return { distance: roundedDistance, status: "FAILED", report: DEBUG_REPORT };
-  } else {
+  } else {  
     // Regista no debug que passou
     reportFail(`3rd segment distance ${roundedDistance}m é MENOR ou igual à distância ao obstáculo ${obstacleDistance}m.`);
 

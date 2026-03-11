@@ -774,9 +774,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Calcula o gradiente requerido para cada obstáculo do 2º segmento
         for (const obs of filtered_2Seg) {
+
+            // Calcula a distância do obstáculo relativamente ao Reference Zero
+            const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
             // Calcula o gradiente requerido do obstáculo atual
             const gradientRequired2Seg = Gradient_Required2Seg({
-                obstacleDistance: obs.obstacle_dist,
+                obstacleDistance:obstacleDistanceFromREFZERO,
                 wind: wind,
                 obstacle_height_ft: obs.obstacle_ft
             });
@@ -793,6 +796,7 @@ document.addEventListener("DOMContentLoaded", async () => {
          */
         // Se os flaps estiverem em UP, calcula o gradiente do 2º segmento para flaps UP
         if (flaps === "up") {
+
             // Calcula o gradiente disponível do 2º segmento
             const gradient2Seg = Gradient_2segFlapsUp({
                 pressureAltitude: pa,
