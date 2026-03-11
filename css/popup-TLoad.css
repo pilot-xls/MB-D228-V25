@@ -21,8 +21,12 @@ dialog::backdrop {
 
 /* quando o popup está aberto */
 .no-zoom {
-  touch-action: manipulation;   /* reduz double-tap zoom */
-  overscroll-behavior: contain; /* evita bounce/scroll estranho */
+    touch-action: manipulation;
+
+    /* reduz double-tap zoom */
+    overscroll-behavior: contain;
+
+    /* evita bounce/scroll estranho */
 }
 
 .popup-TLoad {
@@ -877,3 +881,55 @@ dialog::backdrop {
     text-align: center;
     visibility: hidden;
 }
+
+/* Layout geral */
+.counter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0;
+    gap: 12px;
+}
+
+/* Texto das labels */
+.counter-row span {
+    width: 90px;
+    font-weight: 500;
+}
+
+/* Slider */
+.counter-row input[type="range"] {
+    flex: 1;
+    height: 6px;
+    background: #ddd;
+    border-radius: 5px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+/* Estilo do "track" */
+.counter-row input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #ccc;
+    border-radius: 5px;
+}
+
+/* Estilo do "thumb" */
+.counter-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #0078ff;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -6px;
+}
+
+/* Valor ao lado do slider */
+.counter-value {
+    width: 30px;
+    text-align: center;
+    font-weight: bold;
+}
+
+

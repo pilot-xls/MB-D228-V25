@@ -221,9 +221,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!defaultId || !aircraftData || !aircraftData[defaultId]) {
         // Substitui o conteúdo da página por uma mensagem simples
         const performanceContent = document.getElementById("performance-content");
-const calcBtn = document.getElementById("calc-btn");
+        const calcBtn = document.getElementById("calc-btn");
 
-performanceContent.innerHTML = `
+        performanceContent.innerHTML = `
 <div class="performance-alert">
     <div class="alert-icon">⚠</div>
     <div class="alert-text">
@@ -233,9 +233,9 @@ performanceContent.innerHTML = `
 </div>
 `;
 
-if (calcBtn) {
-    calcBtn.style.display = "none";
-}
+        if (calcBtn) {
+            calcBtn.style.display = "none";
+        }
         // Termina para impedir que o resto da página seja carregado
         return;
     }
@@ -247,9 +247,9 @@ if (calcBtn) {
     if (String(aircraft["Serie"] || "").trim() !== "212") {
         // Substitui o conteúdo da página por uma mensagem simples
         const performanceContent = document.getElementById("performance-content");
-const calcBtn = document.getElementById("calc-btn");
+        const calcBtn = document.getElementById("calc-btn");
 
-performanceContent.innerHTML = `
+        performanceContent.innerHTML = `
 <div class="performance-alert">
     <div class="alert-icon">⚠</div>
     <div class="alert-text">
@@ -259,12 +259,17 @@ performanceContent.innerHTML = `
 </div>
 `;
 
-if (calcBtn) {
-    calcBtn.style.display = "none";
-}
+        if (calcBtn) {
+            calcBtn.style.display = "none";
+        }
         // Termina para impedir que o resto da página seja carregado
         return;
     }
+
+    // Vai buscar o MTOW estrutural da aeronave selecionada nas settings
+    // Vai ser usado se MTOW calculado for menor que o introduzido
+    const aircraftMTOW = aircraft.MTOW;
+
 
     /**
      * Formata o vento no formato 000/00 e valida o mínimo de dígitos.
@@ -328,7 +333,7 @@ if (calcBtn) {
         this.value = v;
 
         // Se tiver menos de 3 dígitos, marca erro visual
-        if (v.length < 3) {
+        if (v.length < 3 || v.length > 4) {
             this.classList.add("input-error");
         } else {
             // Se estiver válido, remove a classe de erro
@@ -484,16 +489,16 @@ if (calcBtn) {
         // Se os flaps estiverem em UP, usa as tabelas/funções correspondentes
         if (flaps === "up") {
             // Calcula o limite WAT
-            const mtowWAT = getWAT("up", pa, oat);
+            let mtowWAT = getWAT("up", pa, oat);
             // Se os inlet ON -250kg
-            if (inlet === "on"){mtowWAT = mtowWAT - 250}; 
+            if (inlet === "on") { mtowWAT = mtowWAT - 250 };
 
             // Calcula o limite por ASDA
             const mtowASDA = MTOW_ASDA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
 
             // Calcula o limite por TORA
             const mtowTORA = MTOW_TORA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
-console.log("todaup ",runwayEntry.toda);
+
             // Calcula o limite por TODA
             const mtowTODA = MTOW_TODA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
 
@@ -536,10 +541,10 @@ console.log("todaup ",runwayEntry.toda);
         if (flaps === "1") {
             // Calcula o limite WAT
             let mtowWAT = getWAT("1", pa, oat);
-            
+
             // Se os inlet ON -250kg
-            if (inlet === "on"){mtowWAT = mtowWAT - 250};   
-            
+            if (inlet === "on") { mtowWAT = mtowWAT - 250 };
+
             // Calcula o limite por ASDA
             const mtowASDA = MTOW_ASDA_Flaps1({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
 
@@ -582,6 +587,24 @@ console.log("todaup ",runwayEntry.toda);
                 // Mostra o MTOW calculado
                 document.getElementById("outMTOW").textContent = mtow;
             }
+        }
+
+        // Escolhe o limite mais restritivo entre performance e estrutura
+        const mtowFinal = Math.min(mtow, aircraftMTOW);
+
+        // Mostra o MTOW final no output (assim evita que mostre um valor mais alto do que do próprio avião)
+        document.getElementById("outMTOW").textContent = mtowFinal;
+
+        // Vai buscar o campo TOW do formulário
+        const towInput = document.getElementById("tow");
+
+        // Se o TOW introduzido for maior que o limite permitido
+        if (tow > mtowFinal) {
+            // Marca o campo como erro (fica vermelho)
+            towInput.classList.add("input-error");
+        } else {
+            // Remove o erro se estiver dentro do limite
+            towInput.classList.remove("input-error");
         }
 
         /**
@@ -828,16 +851,18 @@ console.log("todaup ",runwayEntry.toda);
         /**
          * Flight Path to Clear Distant Obstacles - 3º/4º segmento
          */
-        // Filtra os obstáculos acima de 400 ft e dentro de 25000 m
-        const filtered_34Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft > 400 && o.obstacle_dist < 25000);
+        // Filtra os obstáculos acima de 400 ft e dentro de 2500 m
+        const filtered_34Seg = runwayEntry.obstacles.filter(
+            o => o.obstacle_ft > 400 && o.obstacle_dist < 2500
+        );
 
-        // Cria uma lista para guardar os gradientes requeridos do 3º/4º segmento
-        const gradients_34Seg = [];
+        // Cria uma lista para guardar a análise dos obstáculos do 3º/4º segmento
+        const obstacleAnalysis34 = [];
 
         // Percorre todos os obstáculos filtrados
         for (const obs of filtered_34Seg) {
             // Calcula a distância do obstáculo relativamente ao Reference Zero
-            const obstacleDistanceFromREFZERO = (obs.obstacle_dist - todr);
+            const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
 
             // Calcula o gradiente requerido para esse obstáculo
             const gradientRequired34Seg = Gradient_Required34Seg({
@@ -847,57 +872,68 @@ console.log("todaup ",runwayEntry.toda);
                 obstacle_height: obs.obstacle_ft
             });
 
-            // Guarda o gradiente, a distância e o obstáculo completo
-            gradients_34Seg.push({
-                gradient: gradientRequired34Seg.result_CG_required,
-                distance: obstacleDistanceFromREFZERO,
+            // Guarda os dados do obstáculo analisado
+            obstacleAnalysis34.push({
+                // Guarda o gradiente requerido para o 4º segmento
+                requiredGradient: gradientRequired34Seg.result_CG_required,
+
+                // Guarda a distância do obstáculo para o 3º segmento
+                obstacleDistance: obstacleDistanceFromREFZERO,
+
+                // Guarda o obstáculo completo para debug futuro
                 obstacle: obs
             });
         }
 
-        // Inicializa a variável que vai guardar o maior gradiente
-        let maxGradientObj = null;
+        // Inicializa a variável do obstáculo crítico para o 4º segmento
+        let criticalObstacle34 = null;
 
-        // Procura o objeto com o maior gradiente requerido
-        for (const g of gradients_34Seg) {
-            if (!maxGradientObj || g.gradient > maxGradientObj.gradient) {
-                maxGradientObj = g;
+        // Procura o obstáculo com maior gradiente requerido
+        for (const item of obstacleAnalysis34) {
+            // Se ainda não existir crítico, ou se este tiver gradiente maior, substitui
+            if (!criticalObstacle34 || item.requiredGradient > criticalObstacle34.requiredGradient) {
+                criticalObstacle34 = item;
             }
         }
 
-        // Guarda o maior gradiente requerido, ou 0 se não existir
-        const maxGradient_34seg = maxGradientObj ? maxGradientObj.gradient : 0;
+        // Guarda o gradiente requerido do obstáculo crítico, ou 0 se não existir
+        const requiredGradient4Seg = criticalObstacle34 ? criticalObstacle34.requiredGradient : 0;
 
-        // Guarda a distância associada ao maior gradiente, ou null se não existir
-        const maxGradientDistance_34seg = maxGradientObj ? maxGradientObj.distance : null;
+        // Guarda a distância do obstáculo crítico, ou 0 se não existir
+        const criticalObstacleDistance3Seg = criticalObstacle34 ? criticalObstacle34.obstacleDistance : 0;
 
         /**
          * Horizontal Distance - Single Engine - Third Segment
          */
-        // Calcula a performance do 3º segmento
-        const gradient3Seg = Gradient_3segFlaps1({
+        // Calcula a distância percorrida pelo avião no 3º segmento
+        const thirdSegment = Gradient_3segFlaps1({
             pressureAltitude: pa,
             oat: oat,
             tow: tow,
             inlet: inlet,
-            gradientRequired: maxGradientDistance_34seg
+            obstacleDistance: criticalObstacleDistance3Seg
         });
 
-        // Se falhar, mostra o estado Failed
-        if (gradient3Seg.status === "FAILED") {
-            document.getElementById("cgBadge").classList.remove("ok");
-            document.getElementById("cgBadge").classList.add("bad");
-            document.getElementById("cgText").textContent = "Failed";
-            document.getElementById("ttCg3").textContent = maxGradientDistance_34seg + "m / " + gradient3Seg.gradient + "m";
+        // Se o 3º segmento falhar
+        if (thirdSegment.status === "FAILED") {
+            // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
+            document.getElementById("ttCg3").textContent =
+                criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
+
+            // Remove a classe de sucesso
             document.getElementById("ttCg3").classList.remove("ok");
+
+            // Adiciona a classe de falha
             document.getElementById("ttCg3").classList.add("bad");
         } else {
-            // Se passar, mostra o estado Passed
-            document.getElementById("cgBadge").classList.remove("bad");
-            document.getElementById("cgBadge").classList.add("ok");
-            document.getElementById("cgText").textContent = "Passed";
-            document.getElementById("ttCg3").textContent = maxGradientDistance_34seg + "m / " + gradient3Seg.gradient + "m";
+            // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
+            document.getElementById("ttCg3").textContent =
+                criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
+
+            // Remove a classe de falha
             document.getElementById("ttCg3").classList.remove("bad");
+
+            // Adiciona a classe de sucesso
             document.getElementById("ttCg3").classList.add("ok");
         }
 
@@ -910,25 +946,54 @@ console.log("todaup ",runwayEntry.toda);
             oat: oat,
             tow: tow,
             inlet: inlet,
-            gradientRequired: maxGradient_34seg
+            gradientRequired: requiredGradient4Seg
         });
 
-        // Se falhar, mostra o estado Failed
+        // Se o 4º segmento falhar
         if (gradient4Seg.status === "FAILED") {
-            document.getElementById("cgBadge").classList.remove("ok");
-            document.getElementById("cgBadge").classList.add("bad");
-            document.getElementById("cgText").textContent = "Failed";
-            document.getElementById("ttCg4").textContent = maxGradient_34seg + "% / " + gradient4Seg.gradient + "%";
+            // Mostra o gradiente requerido e o gradiente calculado
+            document.getElementById("ttCg4").textContent =
+                requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
+
+            // Remove a classe de sucesso
             document.getElementById("ttCg4").classList.remove("ok");
+
+            // Adiciona a classe de falha
             document.getElementById("ttCg4").classList.add("bad");
         } else {
-            // Se passar, mostra o estado Passed
-            document.getElementById("cgBadge").classList.remove("bad");
-            document.getElementById("cgBadge").classList.add("ok");
-            document.getElementById("cgText").textContent = "Passed";
-            document.getElementById("ttCg4").textContent = maxGradient_34seg + "% / " + gradient4Seg.gradient + "%";
+            // Mostra o gradiente requerido e o gradiente calculado
+            document.getElementById("ttCg4").textContent =
+                requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
+
+            // Remove a classe de falha
             document.getElementById("ttCg4").classList.remove("bad");
+
+            // Adiciona a classe de sucesso
             document.getElementById("ttCg4").classList.add("ok");
+        }
+
+        /**
+         * Resultado geral do climb gradient
+         */
+        // Se o 3º ou o 4º segmento falharem, o resultado geral é Failed
+        if (thirdSegment.status === "FAILED" || gradient4Seg.status === "FAILED") {
+            // Remove a classe de sucesso do badge geral
+            document.getElementById("cgBadge").classList.remove("ok");
+
+            // Adiciona a classe de falha ao badge geral
+            document.getElementById("cgBadge").classList.add("bad");
+
+            // Mostra Failed no texto geral
+            document.getElementById("cgText").textContent = "Failed";
+        } else {
+            // Remove a classe de falha do badge geral
+            document.getElementById("cgBadge").classList.remove("bad");
+
+            // Adiciona a classe de sucesso ao badge geral
+            document.getElementById("cgBadge").classList.add("ok");
+
+            // Mostra Passed no texto geral
+            document.getElementById("cgText").textContent = "Passed";
         }
     });
 
@@ -950,5 +1015,4 @@ console.log("todaup ",runwayEntry.toda);
             }
         });
     });
-
 });

@@ -636,39 +636,64 @@ function getClimbGradientFromY(y) {
 }
 
 // ---------------------------------------------------------
-// 4) FUNÇÃO PRINCIPAL — CLIMB GRADIENTE 3º SEGMENTO
+// FUNÇÃO PRINCIPAL — DISTÂNCIA PERCORRIDA NO 3º SEGMENTO
 // ---------------------------------------------------------
 
-export function CLIMB_GRADIENTE_3SEG_Flaps1({ pressureAltitude, oat, tow, inlet, gradientRequired }) {
-  DEBUG_REPORT = []; // limpar relatório
-	// STEP 1 — y_ref via PA/OAT
-  const yRef = getYRefFromPAOAT(pressureAltitude, oat);
-  if (yRef == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
-  
-	// STEP 2/3 — ajustar via sections de referência + peso
-  const yAfterWeight = mapYThroughWeight(yRef, tow);
-  if (yAfterWeight == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
-  
-  // STEP 4 — inlet ON/OFF
-  const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
-  if (yAfterInlet == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
-  
-	// STEP 5 — resultado final
-  const gradient = getClimbGradientFromY(yAfterInlet);
-  if (gradient == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
+export function ThirdSegmentDistanceFlaps1({ pressureAltitude, oat, tow, inlet, obstacleDistance }) {
+  // Limpa o relatório de debug antes de começar um novo cálculo
+  DEBUG_REPORT = [];
 
-  const rounded = Math.round(gradient * 10) / 10;
-  
-  if (rounded < gradientRequired) {
-    reportFail(`Gradient ${rounded} está abaixo do mínimo (${gradientRequired}).`);
-    return { gradient: rounded, status: "PASSED", report: DEBUG_REPORT };
+  // STEP 1 — calcula o y_ref com base em Pressure Altitude e OAT
+  const yRef = getYRefFromPAOAT(pressureAltitude, oat);
+
+  // Se falhar o cálculo do y_ref devolve FAILED
+  if (yRef == null) {
+    return { distance: 0, status: "FAILED", report: DEBUG_REPORT };
   }
 
-  return {
-    gradient: rounded,
-    status: "PASSED",
-    report: DEBUG_REPORT
-  };
+  // STEP 2/3 — ajusta o y_ref com base no peso
+  const yAfterWeight = mapYThroughWeight(yRef, tow);
+
+  // Se falhar o ajuste por peso devolve FAILED
+  if (yAfterWeight == null) {
+    return { distance: 0, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // STEP 4 — ajusta o resultado conforme o estado dos inlets
+  const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
+
+  // Se falhar o ajuste por inlet devolve FAILED
+  if (yAfterInlet == null) {
+    return { distance: 0, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // STEP 5 — converte o Y final em distância percorrida no 3º segmento
+  const distanceTravelled = getClimbGradientFromY(yAfterInlet);
+
+  // Se falhar a conversão final devolve FAILED
+  if (distanceTravelled == null) {
+    return { distance: 0, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // Arredonda a distância a uma casa decimal
+  const roundedDistance = Math.round(distanceTravelled * 10) / 10;
+
+  // Se o avião percorre MAIS distância do que a distância até ao obstáculo
+  // significa que ainda está no 3º segmento quando chega ao obstáculo
+  if (roundedDistance > obstacleDistance) {
+    // Regista no debug que falhou
+    reportFail(`3rd segment distance ${roundedDistance}m é MAIOR que a distância ao obstáculo ${obstacleDistance}m.`);
+
+    // Devolve FAILED porque o obstáculo aparece antes do fim do 3º segmento
+    return { distance: roundedDistance, status: "FAILED", report: DEBUG_REPORT };
+  } else {
+    // Regista no debug que passou
+    reportFail(`3rd segment distance ${roundedDistance}m é MENOR ou igual à distância ao obstáculo ${obstacleDistance}m.`);
+
+    // Devolve PASSED porque o 3º segmento termina antes do obstáculo
+    return { distance: roundedDistance, status: "PASSED", report: DEBUG_REPORT };
+  }
 }
-// Export default
-export default CLIMB_GRADIENTE_3SEG_Flaps1;
+
+// Export default da função principal
+export default ThirdSegmentDistanceFlaps1;

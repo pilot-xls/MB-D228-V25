@@ -1,146 +1,539 @@
 [
-  {
-    "icao": "LPCS",
-    "rwy": "17",
-    "heading": 164,
-    "elevation": 326,
-    "tora": 1540,
-    "toda": 1690,
-    "asda": 1540,
-    "lda": 1210,
-    "slope": -1.0,
-    "threshold_displaced": 330,
-    "obstacles": [
-      { "name": "Colina Aboboda", "obstacle_ft": 450, "obstacle_dist": 1800 },
-      { "name": "Antena telecom Trajouce", "obstacle_ft": 380, "obstacle_dist": 2200 },
-      { "name": "Zona urbana Sao Domingos Rana", "obstacle_ft": 260, "obstacle_dist": 3000 },
-      { "name": "Edificios Carcavelos interior", "obstacle_ft": 240, "obstacle_dist": 4200 }
-    ]
-  },
-  {
-    "icao": "LPCS",
-    "rwy": "35",
-    "heading": 344,
-    "elevation": 326,
-    "tora": 1350,
-    "toda": 1540,
-    "asda": 1540,
-    "lda": 1400,
-    "slope": 1.0,
-    "threshold_displaced": 0,
-    "obstacles": [
-      { "name": "Monte VOR CAS", "obstacle_ft": 620, "obstacle_dist": 1700 },
-      { "name": "Antena telecom Tires", "obstacle_ft": 480, "obstacle_dist": 2100 },
-      { "name": "Colina Talaide", "obstacle_ft": 400, "obstacle_dist": 2600 },
-      { "name": "Edificios Taguspark", "obstacle_ft": 260, "obstacle_dist": 4200 }
-    ]
-  },
-  {
-    "icao": "LPPT",
-    "rwy": "02",
-    "heading": 26,
-    "elevation": 355,
-    "tora": 3707,
-    "toda": 3707,
-    "asda": 3707,
-    "lda": 3400,
-    "slope": 0,
-    "threshold_displaced": 90,
-    "obstacles": [
-      { "name": "Edificios Cidade Universitaria", "obstacle_ft": 450, "obstacle_dist": 1800 },
-      { "name": "Torres Campo Grande", "obstacle_ft": 430, "obstacle_dist": 2200 },
-      { "name": "Edificios Lumiar", "obstacle_ft": 380, "obstacle_dist": 2600 },
-      { "name": "Colina Monsanto", "obstacle_ft": 720, "obstacle_dist": 4800 }
-    ]
-  },
-  {
-    "icao": "LPPT",
-    "rwy": "20",
-    "heading": 206,
-    "elevation": 355,
-    "tora": 3707,
-    "toda": 3707,
-    "asda": 3707,
-    "lda": 3200,
-    "slope": 0,
-    "threshold_displaced": 500,
-    "obstacles": [
-      { "name": "Edificios Expo", "obstacle_ft": 320, "obstacle_dist": 1500 },
-      { "name": "Gruas zona ribeirinha", "obstacle_ft": 260, "obstacle_dist": 2000 },
-      { "name": "Edificios Moscavide", "obstacle_ft": 280, "obstacle_dist": 2200 },
-      { "name": "Estruturas Ponte Vasco da Gama", "obstacle_ft": 500, "obstacle_dist": 4500 }
-    ]
-  },
-  {
-    "icao": "LPFR",
-    "rwy": "10",
-    "heading": 100,
-    "elevation": 24,
-    "tora": 2490,
-    "toda": 2490,
-    "asda": 2490,
-    "lda": 2490,
-    "slope": 0,
-    "threshold_displaced": 0,
-    "obstacles": [
-      { "name": "Edificios Faro oeste", "obstacle_ft": 180, "obstacle_dist": 1400 },
-      { "name": "Gruas porto Faro", "obstacle_ft": 220, "obstacle_dist": 2000 },
-      { "name": "Hotel Faro alto", "obstacle_ft": 240, "obstacle_dist": 2600 },
-      { "name": "Antena telecom Montenegro", "obstacle_ft": 300, "obstacle_dist": 3200 }
-    ]
-  },
-  {
-    "icao": "LPFR",
-    "rwy": "28",
-    "heading": 280,
-    "elevation": 24,
-    "tora": 2490,
-    "toda": 2490,
-    "asda": 2490,
-    "lda": 2490,
-    "slope": 0,
-    "threshold_displaced": 0,
-    "obstacles": [
-      { "name": "Edificios Montenegro", "obstacle_ft": 200, "obstacle_dist": 1500 },
-      { "name": "Antena telecom Faro", "obstacle_ft": 260, "obstacle_dist": 2100 },
-      { "name": "Terreno elevado Faro norte", "obstacle_ft": 240, "obstacle_dist": 3000 },
-      { "name": "Hotel zona aeroporto", "obstacle_ft": 180, "obstacle_dist": 3400 }
-    ]
-  },
-  {
-    "icao": "LPPR",
-    "rwy": "17",
-    "heading": 168,
-    "elevation": 228,
-    "tora": 3480,
-    "toda": 3480,
-    "asda": 3480,
-    "lda": 3480,
-    "slope": 0,
-    "threshold_displaced": 0,
-    "obstacles": [
-      { "name": "Edificios Maia", "obstacle_ft": 320, "obstacle_dist": 2200 },
-      { "name": "Terreno elevado Crestins", "obstacle_ft": 350, "obstacle_dist": 2600 },
-      { "name": "Zona industrial Maia", "obstacle_ft": 240, "obstacle_dist": 3000 },
-      { "name": "Torres energia alta tensao", "obstacle_ft": 280, "obstacle_dist": 3500 }
-    ]
-  },
-  {
-    "icao": "LPPR",
-    "rwy": "35",
-    "heading": 348,
-    "elevation": 228,
-    "tora": 3480,
-    "toda": 3480,
-    "asda": 3480,
-    "lda": 3480,
-    "slope": 0,
-    "threshold_displaced": 0,
-    "obstacles": [
-      { "name": "Edificios Matosinhos", "obstacle_ft": 300, "obstacle_dist": 2200 },
-      { "name": "Gruas porto Leixoes", "obstacle_ft": 280, "obstacle_dist": 3500 },
-      { "name": "Torres telecom costa", "obstacle_ft": 320, "obstacle_dist": 4200 },
-      { "name": "Terreno elevado litoral", "obstacle_ft": 260, "obstacle_dist": 2800 }
-    ]
-  }
+    {
+        "icao": "LIRJ",
+        "rwy": "16",
+        "heading": 160,
+        "elevation": 29.6,
+        "tora": 1100,
+        "toda": 1220,
+        "asda": 1100,
+        "lda": 949,
+        "slope": -0.5,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina Norte",
+                "obstacle_ft": 350,
+                "obstacle_dist": 1800
+            },
+            {
+                "name": "Edificações Urbanas",
+                "obstacle_ft": 90,
+                "obstacle_dist": 900
+            },
+            {
+                "name": "Linha de Árvores",
+                "obstacle_ft": 55,
+                "obstacle_dist": 420
+            }
+        ]
+    },
+    {
+        "icao": "LIRJ",
+        "rwy": "34",
+        "heading": 340,
+        "elevation": 12.7,
+        "tora": 1095,
+        "toda": 1234,
+        "asda": 1095,
+        "lda": 949,
+        "slope": 0.5,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina Sul",
+                "obstacle_ft": 300,
+                "obstacle_dist": 1600
+            },
+            {
+                "name": "Edificações Costeiras",
+                "obstacle_ft": 70,
+                "obstacle_dist": 600
+            },
+            {
+                "name": "Vegetação Alta",
+                "obstacle_ft": 50,
+                "obstacle_dist": 350
+            }
+        ]
+    },
+    {
+        "icao": "LPBG",
+        "rwy": "02",
+        "heading": 20,
+        "elevation": 2278,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina NE",
+                "obstacle_ft": 420,
+                "obstacle_dist": 2100
+            },
+            {
+                "name": "Árvores Linha Aproximação",
+                "obstacle_ft": 60,
+                "obstacle_dist": 350
+            },
+            {
+                "name": "Edificações Dispersas",
+                "obstacle_ft": 80,
+                "obstacle_dist": 900
+            }
+        ]
+    },
+    {
+        "icao": "LPBG",
+        "rwy": "20",
+        "heading": 200,
+        "elevation": 2278,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina Sul",
+                "obstacle_ft": 380,
+                "obstacle_dist": 1900
+            },
+            {
+                "name": "Árvores",
+                "obstacle_ft": 55,
+                "obstacle_dist": 300
+            }
+        ]
+    },
+    {
+        "icao": "LPVR",
+        "rwy": "02",
+        "heading": 20,
+        "elevation": 1832,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina Norte",
+                "obstacle_ft": 520,
+                "obstacle_dist": 2400
+            },
+            {
+                "name": "Edificações Urbanas",
+                "obstacle_ft": 95,
+                "obstacle_dist": 700
+            },
+            {
+                "name": "Árvores Vale",
+                "obstacle_ft": 70,
+                "obstacle_dist": 400
+            }
+        ]
+    },
+    {
+        "icao": "LPVR",
+        "rwy": "20",
+        "heading": 200,
+        "elevation": 1832,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina SW",
+                "obstacle_ft": 450,
+                "obstacle_dist": 2000
+            },
+            {
+                "name": "Árvores",
+                "obstacle_ft": 60,
+                "obstacle_dist": 300
+            }
+        ]
+    },
+    {
+        "icao": "LPVZ",
+        "rwy": "18",
+        "heading": 180,
+        "elevation": 2061,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Edificações Urbanas",
+                "obstacle_ft": 85,
+                "obstacle_dist": 800
+            },
+            {
+                "name": "Árvores",
+                "obstacle_ft": 50,
+                "obstacle_dist": 300
+            }
+        ]
+    },
+    {
+        "icao": "LPVZ",
+        "rwy": "36",
+        "heading": 360,
+        "elevation": 2061,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina Norte",
+                "obstacle_ft": 410,
+                "obstacle_dist": 1700
+            },
+            {
+                "name": "Árvores",
+                "obstacle_ft": 55,
+                "obstacle_dist": 350
+            }
+        ]
+    },
+    {
+        "icao": "LPCS",
+        "rwy": "17",
+        "heading": 164,
+        "elevation": 326,
+        "tora": 1540,
+        "toda": 1690,
+        "asda": 1540,
+        "lda": 1210,
+        "slope": -1.0,
+        "threshold_displaced": 330,
+        "obstacles": [
+            {
+                "name": "Colina Aboboda",
+                "obstacle_ft": 450,
+                "obstacle_dist": 1800
+            },
+            {
+                "name": "Antena telecom Trajouce",
+                "obstacle_ft": 380,
+                "obstacle_dist": 2200
+            },
+            {
+                "name": "Zona urbana Sao Domingos Rana",
+                "obstacle_ft": 260,
+                "obstacle_dist": 3000
+            },
+            {
+                "name": "Edificios Carcavelos interior",
+                "obstacle_ft": 240,
+                "obstacle_dist": 4200
+            }
+        ]
+    },
+    {
+        "icao": "LPPM",
+        "rwy": "11",
+        "heading": 110,
+        "elevation": 5,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Arribas",
+                "obstacle_ft": 160,
+                "obstacle_dist": 1200
+            },
+            {
+                "name": "Edifícios Praia",
+                "obstacle_ft": 110,
+                "obstacle_dist": 800
+            },
+            {
+                "name": "Árvores",
+                "obstacle_ft": 45,
+                "obstacle_dist": 300
+            }
+        ]
+    },
+    {
+        "icao": "LPPM",
+        "rwy": "29",
+        "heading": 290,
+        "elevation": 5,
+        "tora": null,
+        "toda": null,
+        "asda": null,
+        "lda": null,
+        "slope": 0.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Colina Oeste",
+                "obstacle_ft": 220,
+                "obstacle_dist": 2000
+            },
+            {
+                "name": "Vegetação Alta",
+                "obstacle_ft": 50,
+                "obstacle_dist": 350
+            }
+        ]
+    },
+    {
+        "icao": "LPCS",
+        "rwy": "35",
+        "heading": 344,
+        "elevation": 326,
+        "tora": 1350,
+        "toda": 1540,
+        "asda": 1540,
+        "lda": 1400,
+        "slope": 1.0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Monte VOR CAS",
+                "obstacle_ft": 620,
+                "obstacle_dist": 1700
+            },
+            {
+                "name": "Antena telecom Tires",
+                "obstacle_ft": 480,
+                "obstacle_dist": 2100
+            },
+            {
+                "name": "Colina Talaide",
+                "obstacle_ft": 400,
+                "obstacle_dist": 2600
+            },
+            {
+                "name": "Edificios Taguspark",
+                "obstacle_ft": 260,
+                "obstacle_dist": 4200
+            }
+        ]
+    },
+    {
+        "icao": "LPPT",
+        "rwy": "02",
+        "heading": 26,
+        "elevation": 355,
+        "tora": 3707,
+        "toda": 3707,
+        "asda": 3707,
+        "lda": 3400,
+        "slope": 0,
+        "threshold_displaced": 90,
+        "obstacles": [
+            {
+                "name": "Edificios Cidade Universitaria",
+                "obstacle_ft": 450,
+                "obstacle_dist": 1800
+            },
+            {
+                "name": "Torres Campo Grande",
+                "obstacle_ft": 430,
+                "obstacle_dist": 2200
+            },
+            {
+                "name": "Edificios Lumiar",
+                "obstacle_ft": 380,
+                "obstacle_dist": 2600
+            },
+            {
+                "name": "Colina Monsanto",
+                "obstacle_ft": 720,
+                "obstacle_dist": 4800
+            }
+        ]
+    },
+    {
+        "icao": "LPPT",
+        "rwy": "20",
+        "heading": 206,
+        "elevation": 355,
+        "tora": 3707,
+        "toda": 3707,
+        "asda": 3707,
+        "lda": 3200,
+        "slope": 0,
+        "threshold_displaced": 500,
+        "obstacles": [
+            {
+                "name": "Edificios Expo",
+                "obstacle_ft": 320,
+                "obstacle_dist": 1500
+            },
+            {
+                "name": "Gruas zona ribeirinha",
+                "obstacle_ft": 260,
+                "obstacle_dist": 2000
+            },
+            {
+                "name": "Edificios Moscavide",
+                "obstacle_ft": 280,
+                "obstacle_dist": 2200
+            },
+            {
+                "name": "Estruturas Ponte Vasco da Gama",
+                "obstacle_ft": 500,
+                "obstacle_dist": 4500
+            }
+        ]
+    },
+    {
+        "icao": "LPFR",
+        "rwy": "10",
+        "heading": 100,
+        "elevation": 24,
+        "tora": 2490,
+        "toda": 2490,
+        "asda": 2490,
+        "lda": 2490,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Edificios Faro oeste",
+                "obstacle_ft": 180,
+                "obstacle_dist": 1400
+            },
+            {
+                "name": "Gruas porto Faro",
+                "obstacle_ft": 220,
+                "obstacle_dist": 2000
+            },
+            {
+                "name": "Hotel Faro alto",
+                "obstacle_ft": 240,
+                "obstacle_dist": 2600
+            },
+            {
+                "name": "Antena telecom Montenegro",
+                "obstacle_ft": 300,
+                "obstacle_dist": 3200
+            }
+        ]
+    },
+    {
+        "icao": "LPFR",
+        "rwy": "28",
+        "heading": 280,
+        "elevation": 24,
+        "tora": 2490,
+        "toda": 2490,
+        "asda": 2490,
+        "lda": 2490,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Edificios Montenegro",
+                "obstacle_ft": 200,
+                "obstacle_dist": 1500
+            },
+            {
+                "name": "Antena telecom Faro",
+                "obstacle_ft": 260,
+                "obstacle_dist": 2100
+            },
+            {
+                "name": "Terreno elevado Faro norte",
+                "obstacle_ft": 240,
+                "obstacle_dist": 3000
+            },
+            {
+                "name": "Hotel zona aeroporto",
+                "obstacle_ft": 180,
+                "obstacle_dist": 3400
+            }
+        ]
+    },
+    {
+        "icao": "LPPR",
+        "rwy": "17",
+        "heading": 168,
+        "elevation": 228,
+        "tora": 3480,
+        "toda": 3480,
+        "asda": 3480,
+        "lda": 3480,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Edificios Maia",
+                "obstacle_ft": 320,
+                "obstacle_dist": 2200
+            },
+            {
+                "name": "Terreno elevado Crestins",
+                "obstacle_ft": 350,
+                "obstacle_dist": 2600
+            },
+            {
+                "name": "Zona industrial Maia",
+                "obstacle_ft": 240,
+                "obstacle_dist": 3000
+            },
+            {
+                "name": "Torres energia alta tensao",
+                "obstacle_ft": 280,
+                "obstacle_dist": 3500
+            }
+        ]
+    },
+    {
+        "icao": "LPPR",
+        "rwy": "35",
+        "heading": 348,
+        "elevation": 228,
+        "tora": 3480,
+        "toda": 3480,
+        "asda": 3480,
+        "lda": 3480,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Edificios Matosinhos",
+                "obstacle_ft": 300,
+                "obstacle_dist": 2200
+            },
+            {
+                "name": "Gruas porto Leixoes",
+                "obstacle_ft": 280,
+                "obstacle_dist": 3500
+            },
+            {
+                "name": "Torres telecom costa",
+                "obstacle_ft": 320,
+                "obstacle_dist": 4200
+            },
+            {
+                "name": "Terreno elevado litoral",
+                "obstacle_ft": 260,
+                "obstacle_dist": 2800
+            }
+        ]
+    }
 ]
