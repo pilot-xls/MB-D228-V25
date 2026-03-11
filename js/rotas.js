@@ -836,7 +836,32 @@ function attachEvents(container, estado, aircraft) {
     });
 
 
+    // Botão performance
+    container.addEventListener("click", (e) => {
 
+        // verifica se o elemento clicado tem a classe btn-perf
+        if (!e.target.classList.contains("btn-perf")) return;
+
+        // encontra o card da rota e a leg clicada
+        const rotaCard = e.target.closest(".rota-card");
+        const legEl = e.target.closest(".rota-leg");
+
+        // descobre os índices da rota e da leg
+        const rotaIndex = [...container.querySelectorAll(".rota-card")].indexOf(rotaCard);
+        const legIndex = [...rotaCard.querySelectorAll(".rota-leg")].indexOf(legEl);
+
+        // obtém diretamente os dados da leg
+        const legData = estado.rotas[rotaIndex].legs[legIndex];
+
+        // extrai o valor numérico do TOW
+        const tow = parseFloat(String(legData.tow).replace(",", ".")) || 0;
+
+        // guarda apenas o TOW no localStorage
+        localStorage.setItem("perfTOW", tow);
+
+        // muda para a página de performance
+        window.location.href = "performance.html";
+    });
 
     // Botão MB (envia leg atual para mb.html em kg)
     container.addEventListener("click", (e) => {

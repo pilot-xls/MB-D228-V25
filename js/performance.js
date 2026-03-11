@@ -266,10 +266,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+
+    // lê o TOW guardado no localStorage (proveniente btn-perf da leg)
+    // lê o TOW do localStorage
+    const towFromRotas = Number(localStorage.getItem("perfTOW")) || 0;
+
+    //introduz o valor de towFromRotas no input
+    document.getElementById("tow").value = towFromRotas;
+
     // Vai buscar o MTOW estrutural da aeronave selecionada nas settings
     // Vai ser usado se MTOW calculado for menor que o introduzido
     const aircraftMTOW = aircraft.MTOW;
-
 
     /**
      * Formata o vento no formato 000/00 e valida o mínimo de dígitos.
@@ -779,7 +786,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
             // Calcula o gradiente requerido do obstáculo atual
             const gradientRequired2Seg = Gradient_Required2Seg({
-                obstacleDistance:obstacleDistanceFromREFZERO,
+                obstacleDistance: obstacleDistanceFromREFZERO,
                 wind: wind,
                 obstacle_height_ft: obs.obstacle_ft
             });
