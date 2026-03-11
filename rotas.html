@@ -36,31 +36,20 @@
                 </div>
                 <!-- Tab 2 -->
                 <div class="tab-content" id="tab2">
-                    <div class="counter-row"> <span>Homens</span>
-                        <div>
-                            <button class="counter-btn" onclick="updateCount('men', -1)">−</button><span id="men-count" class="counter-value">0</span>
-                            <button class="counter-btn" onclick="updateCount('men', 1)">+</button>
-                        </div>
+                    <div class="counter-row"><span>Homens</span>
+                        <input type="range" min="0" max="19" value="0" id="men" oninput="updateSlider('men')"><span id="men-count" class="counter-value">0</span>
                     </div>
                     <div class="counter-row"><span>Mulheres</span>
-                        <div>
-                            <button class="counter-btn" onclick="updateCount('women', -1)">−</button><span id="women-count" class="counter-value">0</span>
-                            <button class="counter-btn" onclick="updateCount('women', 1)">+</button>
-                        </div>
+                        <input type="range" min="0" max="19" value="0" id="women" oninput="updateSlider('women')"><span id="women-count" class="counter-value">0</span>
                     </div>
                     <div class="counter-row"><span>Crianças</span>
-                        <div>
-                            <button class="counter-btn" onclick="updateCount('children', -1)">−</button><span id="children-count" class="counter-value">0</span>
-                            <button class="counter-btn" onclick="updateCount('children', 1)">+</button>
-                        </div>
+                        <input type="range" min="0" max="19" value="0" id="children" oninput="updateSlider('children')"><span id="children-count" class="counter-value">0</span>
                     </div>
                     <div id="Total-Man-Pax">
                         <div><span>Extra</span>
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="extra"></input>
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="extra">
                         </div>
-                        <div>
-                            <span>Total</span>
-                            <span id="total">100</span>
+                        <div><span>Total</span><span id="total">100</span>
                         </div>
                     </div>
                 </div>

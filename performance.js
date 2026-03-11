@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         this.value = v;
 
         // Se tiver menos de 3 dígitos, marca erro visual
-        if (v.length < 3) {
+        if (v.length < 3 || v.length > 4) {
             this.classList.add("input-error");
         } else {
             // Se estiver válido, remove a classe de erro
