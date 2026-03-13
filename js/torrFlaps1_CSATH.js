@@ -84,6 +84,15 @@ const reflineWeightData = [
 ];
 
 const weightSectionData = [
+
+  
+  { "Weight": 4500, "Section": 1, "Y_Ref_Down": 585, "Y_Ref_Up": 562 },
+  { "Weight": 4500, "Section": 2, "Y_Ref_Down": 562, "Y_Ref_Up": 533 },
+  { "Weight": 4500, "Section": 3, "Y_Ref_Down": 533, "Y_Ref_Up": 511 },
+  { "Weight": 4500, "Section": 4, "Y_Ref_Down": 511, "Y_Ref_Up": 495 },
+  { "Weight": 4500, "Section": 5, "Y_Ref_Down": 495, "Y_Ref_Up": 475 },
+  { "Weight": 4500, "Section": 6, "Y_Ref_Down": 475, "Y_Ref_Up": 456 },  
+  
   { "Weight": 4600, "Section": 1, "Y_Ref_Down": 584, "Y_Ref_Up": 560 },
   { "Weight": 4600, "Section": 2, "Y_Ref_Down": 560, "Y_Ref_Up": 533 },
   { "Weight": 4600, "Section": 3, "Y_Ref_Down": 533, "Y_Ref_Up": 507 },

@@ -166,11 +166,13 @@ async function getPressureAltitude(qnh, airportICAO) {
     // Vai buscar a elevação do aeroporto em pés
     const elevation = airport.elevation;
 
-    // Calcula a Pressure Altitude usando a fórmula pretendida
-    const pressureAltitude = elevation + (1013 - qnh) * 30;
+    // Calcula a Pressure Altitude
+    const pressureAltitude = elevation + (1013 - qnh) * 27;
 
-    // Devolve o valor arredondado
-    return Math.round(pressureAltitude);
+
+
+    // Devolve o valor arredondado (nunca menor do zero)
+    return Math.max(0, Math.round(pressureAltitude));
 }
 
 /**
@@ -198,9 +200,143 @@ function windComponent(wind, runwayEntry) {
     // Calcula a componente de vento usando o cosseno do ângulo
     const component = windSpeed * Math.cos(diff * Math.PI / 180);
 
+    //add wind fild info of wind component
+    /*
+    if (component > 0) {
+        document.getElementById("windLabel").textContent = "Wind (degrees/kt) (H+"+ Math.round(component)+ ")";
+    } else {
+        document.getElementById("windLabel").textContent = "Wind (degrees/kt) (T"+ Math.round(component)+ ")";
+    }
+    */
     // Devolve a componente arredondada
     return Math.round(component);
 }
+
+
+// Nome da chave usada no localStorage para guardar os dados do formulário
+const PERFORMANCE_FORM_KEY = "performanceFormData";
+
+/**
+ * Guarda os valores atuais do formulário no localStorage.
+ */
+function savePerformanceForm() {
+    // Cria um objeto com os valores atuais dos campos
+    const formData = {
+        airport: document.getElementById("airport")?.value || "",
+        runway: document.getElementById("runway")?.value || "",
+        wind: document.getElementById("wind")?.value || "",
+        surface: document.getElementById("surface")?.value || "",
+        oat: document.getElementById("oat")?.value || "",
+        qnh: document.getElementById("qnh")?.value || "",
+        tow: document.getElementById("tow")?.value || "",
+        flaps: document.getElementById("flaps")?.value || "",
+        inlets: document.getElementById("inlets")?.value || ""
+    };
+
+    // Guarda o objeto convertido em JSON
+    localStorage.setItem(PERFORMANCE_FORM_KEY, JSON.stringify(formData));
+}
+
+/**
+ * Lê os dados guardados no localStorage.
+ */
+function getSavedPerformanceForm() {
+    // Vai buscar o texto JSON guardado
+    const raw = localStorage.getItem(PERFORMANCE_FORM_KEY);
+
+    // Se não existir nada guardado, devolve null
+    if (!raw) return null;
+
+    try {
+        // Converte o JSON novamente para objeto
+        return JSON.parse(raw);
+    } catch (error) {
+        // Se o conteúdo estiver inválido, limpa e devolve null
+        localStorage.removeItem(PERFORMANCE_FORM_KEY);
+        return null;
+    }
+}
+
+/**
+ * Preenche o select de pistas com base no aeroporto selecionado.
+ */
+function populateRunwaySelect(selectedICAO) {
+    // Vai buscar o select das pistas
+    const runwaySelect = document.getElementById("runway");
+
+    // Se não existir, termina
+    if (!runwaySelect) return;
+
+    // Repõe a opção inicial
+    runwaySelect.innerHTML = '<option value="" disabled selected>— seleccionar —</option>';
+
+    // Se não houver aeroporto selecionado, desativa o select e termina
+    if (!selectedICAO) {
+        runwaySelect.disabled = true;
+        return;
+    }
+
+    // Ativa o select
+    runwaySelect.disabled = false;
+
+    // Filtra as pistas do aeroporto selecionado
+    const runways = airportData
+        .filter(a => a.icao === selectedICAO)
+        .map(a => a.rwy);
+
+    // Remove pistas duplicadas
+    const uniqueRunways = [...new Set(runways)];
+
+    // Cria uma option para cada pista
+    uniqueRunways.forEach(rwy => {
+        // Cria uma nova option
+        const option = document.createElement("option");
+
+        // Define o value da pista
+        option.value = rwy;
+
+        // Define o texto visível da pista
+        option.textContent = rwy;
+
+        // Adiciona a option ao select
+        runwaySelect.appendChild(option);
+    });
+}
+
+/**
+ * Restaura os dados do formulário guardados no localStorage.
+ */
+function restorePerformanceForm() {
+    // Vai buscar os dados guardados
+    const saved = getSavedPerformanceForm();
+
+    // Se não existir nada guardado, termina
+    if (!saved) return;
+
+    // Repõe primeiro o aeroporto
+    if (saved.airport) {
+        document.getElementById("airport").value = saved.airport;
+    }
+
+    // Preenche o select das pistas com base no aeroporto restaurado
+    populateRunwaySelect(saved.airport);
+
+    // Repõe depois a pista
+    if (saved.runway) {
+        document.getElementById("runway").value = saved.runway;
+    }
+
+    // Repõe os restantes campos
+    if (saved.wind) document.getElementById("wind").value = saved.wind;
+    if (saved.surface) document.getElementById("surface").value = saved.surface;
+    if (saved.oat) document.getElementById("oat").value = saved.oat;
+    if (saved.qnh) document.getElementById("qnh").value = saved.qnh;
+    if (saved.tow) document.getElementById("tow").value = saved.tow;
+    if (saved.flaps) document.getElementById("flaps").value = saved.flaps;
+    if (saved.inlets) document.getElementById("inlets").value = saved.inlets;
+}
+
+
 
 /**
  * Arranque da página Performance.
@@ -267,12 +403,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    // lê o TOW guardado no localStorage (proveniente btn-perf da leg)
+    // lê o TOW guardado no localStorage (vindo de btn-perf da route-leg)
     // lê o TOW do localStorage
     const towFromRotas = Number(localStorage.getItem("perfTOW")) || 0;
 
-    //introduz o valor de towFromRotas no input
-    document.getElementById("tow").value = towFromRotas;
+    // se existir um valor vindo da outra página
+    if (towFromRotas > 0) {
+        // apaga os dados antigos do formulário guardados
+        localStorage.removeItem("performanceFormData");
+
+        // coloca o valor no campo TOW
+        document.getElementById("tow").value = towFromRotas;
+
+        // remove a chave temporária
+        localStorage.removeItem("perfTOW");
+
+        // guarda imediatamente o novo estado do formulário
+        savePerformanceForm();
+
+    }
 
     // Vai buscar o MTOW estrutural da aeronave selecionada nas settings
     // Vai ser usado se MTOW calculado for menor que o introduzido
@@ -372,6 +521,28 @@ document.addEventListener("DOMContentLoaded", async () => {
      */
     await populateAirportSelect();
 
+    // Restaura os dados guardados do formulário
+    restorePerformanceForm();
+
+    // Lista dos campos que devem ficar guardados
+    const fieldIds = ["airport", "runway", "wind", "surface", "oat", "qnh", "tow", "flaps", "inlets"];
+
+    // Adiciona listeners para guardar automaticamente quando o utilizador altera os campos
+    fieldIds.forEach(id => {
+        // Vai buscar o elemento pelo id
+        const el = document.getElementById(id);
+
+        // Se o elemento não existir, passa ao próximo
+        if (!el) return;
+
+        // Guarda quando o utilizador escreve
+        el.addEventListener("input", savePerformanceForm);
+
+        // Guarda quando o utilizador muda selects
+        el.addEventListener("change", savePerformanceForm);
+    });
+
+
     /**
      * Quando o aeroporto muda, preenche as pistas disponíveis.
      */
@@ -379,37 +550,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Vai buscar o ICAO selecionado
         const selectedICAO = document.getElementById("airport").value;
 
-        // Vai buscar o select das pistas
-        const runwaySelect = document.getElementById("runway");
+        // Preenche o select de pistas para o aeroporto escolhido
+        populateRunwaySelect(selectedICAO);
 
-        // Repõe a option inicial do select de pistas
-        runwaySelect.innerHTML = '<option value="" disabled selected>— seleccionar —</option>';
+        // Limpa a pista selecionada quando o aeroporto muda
+        document.getElementById("runway").value = "";
 
-        // Ativa o select das pistas
-        runwaySelect.disabled = false;
-
-        // Filtra as pistas do aeroporto selecionado
-        const runways = airportData
-            .filter(a => a.icao === selectedICAO)
-            .map(a => a.rwy);
-
-        // Remove pistas duplicadas
-        const uniqueRunways = [...new Set(runways)];
-
-        // Cria uma option por cada pista encontrada
-        uniqueRunways.forEach(rwy => {
-            // Cria uma nova option
-            const option = document.createElement("option");
-
-            // Define o value da pista
-            option.value = rwy;
-
-            // Define o texto visível da pista
-            option.textContent = rwy;
-
-            // Adiciona a pista ao select
-            runwaySelect.appendChild(option);
-        });
+        // Guarda o estado atual do formulário
+        savePerformanceForm();
     });
 
     /**
@@ -675,6 +823,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Se falhar, mostra failed
             if (torrflps1Calculated.status === "failed") {
                 document.getElementById("outTor").textContent = " failed ";
+                console.log("torrflps1Calculated ", torrflps1Calculated);
             } else {
                 // Se resultar, mostra a distância calculada
                 document.getElementById("outTor").textContent = torrflps1Calculated.result.toFixed(0) + " m ";
@@ -685,7 +834,7 @@ document.addEventListener("DOMContentLoaded", async () => {
          * Takeoff Distance
          */
         // Define um valor alto por defeito para referência no cálculo do climb gradient
-        let todr = 25000;
+        let todr = 2500;
 
         // Se os flaps estiverem em UP, calcula o TODR correspondente
         if (flaps === "up") {

@@ -27,7 +27,7 @@
                     <div class="tab active" data-tab="1">Manual Load</div>
                     <div class="tab" data-tab="2">Manual Pax</div>
                     <div class="tab" data-tab="3">Seat Control</div>
-                    <div class="tab" data-tab="4">Cargo Control</div>
+                    <div class="tab" data-tab="4">Baggage Control</div>
                 </div>
                 <!-- Tab 1 -->
                 <div class="tab-content active" id="tab1">
@@ -36,36 +36,44 @@
                 </div>
                 <!-- Tab 2 -->
                 <div class="tab-content" id="tab2">
-                    <div class="counter-row"><span>Homens</span>
-                        <input type="range" min="0" max="19" value="0" id="men" oninput="updateSlider('men')"><span id="men-count" class="counter-value">0</span>
+                    <div class="counter-row">
+                        <span>Homens</span>
+                        <input type="range" min="0" max="19" value="0" id="men" oninput="updateSlider('men')">
+                        <span id="men-count" class="counter-value">0</span>
                     </div>
-                    <div class="counter-row"><span>Mulheres</span>
-                        <input type="range" min="0" max="19" value="0" id="women" oninput="updateSlider('women')"><span id="women-count" class="counter-value">0</span>
+                    <div class="counter-row">
+                        <span>Mulheres</span>
+                        <input type="range" min="0" max="19" value="0" id="women" oninput="updateSlider('women')">
+                        <span id="women-count" class="counter-value">0</span>
                     </div>
-                    <div class="counter-row"><span>Crianças</span>
-                        <input type="range" min="0" max="19" value="0" id="children" oninput="updateSlider('children')"><span id="children-count" class="counter-value">0</span>
+                    <div class="counter-row">
+                        <span>Crianças</span>
+                        <input type="range" min="0" max="19" value="0" id="children" oninput="updateSlider('children')">
+                        <span id="children-count" class="counter-value">0</span>
                     </div>
                     <div id="Total-Man-Pax">
-                        <div><span>Extra</span>
+                        <div>
+                            <span>Extra</span>
                             <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="extra">
                         </div>
-                        <div><span>Total</span><span id="total">100</span>
+                        <div>
+                            <span>Total</span>
+                            <span id="total">100</span>
                         </div>
                     </div>
                 </div>
                 <!-- Tab 3 -->
                 <div class="tab-content" id="tab3">
                     <h2>Select seat occupancy:</h2>
-                    <div id="Total-weight-seat-control"><span>Total Weight</span>
+                    <div id="Total-weight-seat-control">
+                        <span>Total Weight</span>
                         <p id="totalWeight">0Kg</p>
                     </div>
-                    <div id="moments"><span>Total Moments</span>
+                    <div id="moments">
+                        <span>Total Moments</span>
                         <p id="totalMoment">0Kg</p>
                     </div>
-                    <div class="seat-map">
-                        <strong class="inputData" id="txt-Arm">Arm</strong>
-                        <strong class="inputData" id="txt-kg">Kg</strong>
-                        <strong class="inputData" id="txt-Right-kg">Kg</strong>
+                    <div class="seat-map"><strong class="inputData" id="txt-Arm">Arm</strong><strong class="inputData" id="txt-kg">Kg</strong><strong class="inputData" id="txt-Right-kg">Kg</strong>
                         <div class="inputData">
                             <div id="rowC1">
                                 <input type="number" inputmode="numeric" pattern="[0-9]*" min="0">
@@ -167,9 +175,9 @@
                         <button class="seat-btn" data-seat="B" data-row="9" id="btn-RowB9"></button>
                         <button class="seat-btn" data-seat="C" data-row="9" id="btn-RowC9"></button>
                     </div>
-                    <div class="legenda"><span id="Leg-Press">Press any seat to set passenger type</span><span class="homem">Man</span>
-                        <span class="mulher">Woman</span>
-                        <span class="crianca">Child</span>
+                    <div class="legenda">
+                        <span id="Leg-Press">Press any seat to set passenger type</span>
+                        <span class="homem">Man</span><span class="mulher">Woman</span><span class="crianca">Child</span>
                     </div>
                     <button class="floating-edit" id="edit-btn">✎</button>
                 </div>
@@ -179,29 +187,32 @@
                         <div id="grid">
                             <img src="img/front-cargo.png" loading="lazy" width="145">
                             <div id="fwd-values">
-                                <div><strong>Weight</strong>
+                                <div>
+                                    <strong>Weight</strong>
                                     <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0" id="f-cargo-weight" required="true">
                                 </div>
-                                <div><strong>Arm</strong>
+                                <div>
+                                    <strong>Arm</strong>
                                     <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="f-cargo-Arm" value="2.560" required="true">
                                 </div>
                             </div>
-                            <div id="Warning"><strong id="msg">WARNING!<br>     Front baggage compartment exceeds limits!</strong>
+                            <div id="Warning">
+                                <strong id="msg">WARNING!<br>     Front baggage compartment exceeds limits!</strong>
                             </div>
                             <img src="img/small-rear-cargo.png" width="145" loading="lazy" id="cargoImage" style="border-top-style: none;">
                             <div id="aft-values">
-                                <div><strong>Weight</strong>
+                                <div>
+                                    <strong>Weight</strong>
                                     <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="0" id="r-cargo-weight" required="true">
                                 </div>
-                                <div><strong>Arm</strong>
+                                <div>
+                                    <strong>Arm</strong>
                                     <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="r-cargo-Arm" required="true">
                                 </div>
                                 <div class="toggle-row">
                                     <label class="toggle">
-                                        <input type="checkbox" id="toggleSeatType">
-                                        <span class="slider"></span>
-                                    </label>
-                                    <strong style="font-size: 12px;">Large Baggage compartment</strong>
+                                        <input type="checkbox" id="toggleSeatType"><span class="slider"></span>
+                                    </label><strong style="font-size: 12px;">Large Baggage compartment</strong>
                                 </div>
                             </div>
                         </div>

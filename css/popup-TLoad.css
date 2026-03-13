@@ -917,14 +917,18 @@ dialog::backdrop {
 /* Estilo do "thumb" */
 .counter-row input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 34px;/* aumenta a bolinha */
+    width: 34px;
 
-    height: 34px;/* aumenta a bolinha */
+    /* aumenta a bolinha */
+    height: 34px;
 
+    /* aumenta a bolinha */
     background: #0078ff;
     border-radius: 50%;
     cursor: pointer;
-    margin-top: -14px;/* ajustar para centrar no track */
+    margin-top: -14px;
+
+    /* ajustar para centrar no track */
 }
 
 /* Valor ao lado do slider */
