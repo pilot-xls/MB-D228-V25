@@ -12,19 +12,24 @@
         "threshold_displaced": 0,
         "obstacles": [
             {
-                "name": "Colina Norte",
-                "obstacle_ft": 350,
-                "obstacle_dist": 1800
+                "name": "TREE",
+                "obstacle_ft": 49,
+                "obstacle_dist": 1100
             },
             {
-                "name": "Edificações Urbanas",
-                "obstacle_ft": 90,
-                "obstacle_dist": 900
+                "name": "TREE",
+                "obstacle_ft": 84,
+                "obstacle_dist": 1300
             },
             {
-                "name": "Linha de Árvores",
-                "obstacle_ft": 55,
-                "obstacle_dist": 420
+                "name": "TREE",
+                "obstacle_ft": 94,
+                "obstacle_dist": 1650
+            },
+            {
+                "name": "TREE",
+                "obstacle_ft": 212,
+                "obstacle_dist": 2000
             }
         ]
     },
@@ -41,19 +46,29 @@
         "threshold_displaced": 0,
         "obstacles": [
             {
-                "name": "Colina Sul",
-                "obstacle_ft": 300,
-                "obstacle_dist": 1600
+                "name": "TREE",
+                "obstacle_ft": 118,
+                "obstacle_dist": 1190
             },
             {
-                "name": "Edificações Costeiras",
-                "obstacle_ft": 70,
-                "obstacle_dist": 600
+                "name": "TREE",
+                "obstacle_ft": 169,
+                "obstacle_dist": 1780
             },
             {
-                "name": "Vegetação Alta",
-                "obstacle_ft": 50,
-                "obstacle_dist": 350
+                "name": "TREE",
+                "obstacle_ft": 326,
+                "obstacle_dist": 2085
+            },
+            {
+                "name": "TREE",
+                "obstacle_ft": 509,
+                "obstacle_dist": 2250
+            },
+            {
+                "name": "TREE",
+                "obstacle_ft": 819,
+                "obstacle_dist": 2500
             }
         ]
     },

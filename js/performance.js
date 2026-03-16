@@ -922,6 +922,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         /**
          * Net Climb Gradient Required to Clear Obstacles - 2º segmento
          */
+
+        // Guarda se o 2º segmento falhou
+        let cgFailed2Seg = false;
+
+        // Guarda se o 3º segmento falhou
+        let cgFailed3Seg = false;
+
+        // Guarda se o 4º segmento falhou
+        let cgFailed4Seg = false;
+
         // Filtra os obstáculos que pertencem ao 2º segmento
         const filtered_2Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft < 400 && o.obstacle_dist < 5000);
 
@@ -933,13 +943,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Calcula a distância do obstáculo relativamente ao Reference Zero
             const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
+            console.log("obstacle_dist ", obs.obstacle_dist," - ", todr);            
+            console.log("obsc dist =", obstacleDistanceFromREFZERO);
             // Calcula o gradiente requerido do obstáculo atual
             const gradientRequired2Seg = Gradient_Required2Seg({
                 obstacleDistance: obstacleDistanceFromREFZERO,
                 wind: wind,
                 obstacle_height_ft: obs.obstacle_ft
             });
-
+            console.log("gradientRequired2Seg ", gradientRequired2Seg);
             // Guarda apenas o valor numérico do gradiente requerido
             gradients_2Seg.push(gradientRequired2Seg.result_CG_required);
         }
@@ -961,22 +973,31 @@ document.addEventListener("DOMContentLoaded", async () => {
                 inlet: inlet,
                 gradientRequired: maxGradient_2seg
             });
-
-            // Se falhar, mostra o estado Failed
+            console.log(gradient2Seg);
+            /// Se falhar, marca a flag do 2º segmento como falhada
             if (gradient2Seg.status === "FAILED") {
-                document.getElementById("cgBadge").classList.remove("ok");
-                document.getElementById("cgBadge").classList.add("bad");
-                document.getElementById("cgText").textContent = "Failed";
+                // Marca o 2º segmento como failed
+                cgFailed2Seg = true;
+
+                // Mostra o detalhe do 2º segmento
                 document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
+
+                // Remove a classe de sucesso
                 document.getElementById("ttCg2").classList.remove("ok");
+
+                // Adiciona a classe de falha
                 document.getElementById("ttCg2").classList.add("bad");
             } else {
-                // Se passar, mostra o estado Passed
-                document.getElementById("cgBadge").classList.remove("bad");
-                document.getElementById("cgBadge").classList.add("ok");
-                document.getElementById("cgText").textContent = "Passed";
+                // Marca o 2º segmento como passed
+                cgFailed2Seg = false;
+
+                // Mostra o detalhe do 2º segmento
                 document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
+
+                // Remove a classe de falha
                 document.getElementById("ttCg2").classList.remove("bad");
+
+                // Adiciona a classe de sucesso
                 document.getElementById("ttCg2").classList.add("ok");
             }
         } else if (flaps === "1") {
@@ -988,22 +1009,31 @@ document.addEventListener("DOMContentLoaded", async () => {
                 inlet: inlet,
                 gradientRequired: maxGradient_2seg
             });
-
-            // Se falhar, mostra o estado Failed
+            console.log(gradient2Seg);
+            // Se falhar, marca a flag do 2º segmento como falhada
             if (gradient2Seg.status === "FAILED") {
-                document.getElementById("cgBadge").classList.remove("ok");
-                document.getElementById("cgBadge").classList.add("bad");
-                document.getElementById("cgText").textContent = "Failed";
+                // Marca o 2º segmento como failed
+                cgFailed2Seg = true;
+
+                // Mostra o detalhe do 2º segmento
                 document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
+
+                // Remove a classe de sucesso
                 document.getElementById("ttCg2").classList.remove("ok");
+
+                // Adiciona a classe de falha
                 document.getElementById("ttCg2").classList.add("bad");
             } else {
-                // Se passar, mostra o estado Passed
-                document.getElementById("cgBadge").classList.remove("bad");
-                document.getElementById("cgBadge").classList.add("ok");
-                document.getElementById("cgText").textContent = "Passed";
+                // Marca o 2º segmento como passed
+                cgFailed2Seg = false;
+
+                // Mostra o detalhe do 2º segmento
                 document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
+
+                // Remove a classe de falha
                 document.getElementById("ttCg2").classList.remove("bad");
+
+                // Adiciona a classe de sucesso
                 document.getElementById("ttCg2").classList.add("ok");
             }
         }
@@ -1031,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 wind: wind,
                 obstacle_height: obs.obstacle_ft
             });
-
+console.log(gradientRequired34Seg);
             // Guarda os dados do obstáculo analisado
             obstacleAnalysis34.push({
                 // Guarda o gradiente requerido para o 4º segmento
@@ -1073,9 +1103,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             inlet: inlet,
             obstacleDistance: criticalObstacleDistance3Seg
         });
-
+        console.log(thirdSegment);
         // Se o 3º segmento falhar
         if (thirdSegment.status === "FAILED") {
+            // Marca a flag do 3º segmento como failed
+            cgFailed3Seg = true;
+
             // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
             document.getElementById("ttCg3").textContent =
                 criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
@@ -1086,6 +1119,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Adiciona a classe de falha
             document.getElementById("ttCg3").classList.add("bad");
         } else {
+            // Marca a flag do 3º segmento como passed
+            cgFailed3Seg = false;
+
             // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
             document.getElementById("ttCg3").textContent =
                 criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
@@ -1108,9 +1144,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             inlet: inlet,
             gradientRequired: requiredGradient4Seg
         });
-
+        console.log(gradient4Seg);
         // Se o 4º segmento falhar
         if (gradient4Seg.status === "FAILED") {
+            // Marca a flag do 4º segmento como failed
+            cgFailed4Seg = true;
+
             // Mostra o gradiente requerido e o gradiente calculado
             document.getElementById("ttCg4").textContent =
                 requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
@@ -1121,6 +1160,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Adiciona a classe de falha
             document.getElementById("ttCg4").classList.add("bad");
         } else {
+            // Marca a flag do 4º segmento como passed
+            cgFailed4Seg = false;
+
             // Mostra o gradiente requerido e o gradiente calculado
             document.getElementById("ttCg4").textContent =
                 requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
@@ -1132,11 +1174,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("ttCg4").classList.add("ok");
         }
 
+
         /**
          * Resultado geral do climb gradient
          */
-        // Se o 3º ou o 4º segmento falharem, o resultado geral é Failed
-        if (thirdSegment.status === "FAILED" || gradient4Seg.status === "FAILED") {
+        // Guarda se o resultado geral do climb gradient falhou
+        const cgOverallFailed = cgFailed2Seg || cgFailed3Seg || cgFailed4Seg;
+
+        // Se qualquer segmento falhou, o resultado geral é Failed
+        if (cgOverallFailed) {
             // Remove a classe de sucesso do badge geral
             document.getElementById("cgBadge").classList.remove("ok");
 

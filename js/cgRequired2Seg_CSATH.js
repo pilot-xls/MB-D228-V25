@@ -692,16 +692,18 @@ function computeCGFromHeight(x, obstacle_height_ft, debug) {
   const debugStep3 = { inputObstacleHeightFt: obstacle_height_ft, x };
 
   // 1) Filtrar todas as linhas com a altura exata
+    
   const rowsSameHeight = Obstacle_height.filter(
-    r => r.obstacle_height_ft === obstacle_height_ft
-  );
+  r => r.obstacle_height_ft === obstacle_height_ft
+);
 
-  if (rowsSameHeight.length === 0) {
-    debugStep3.status = "failed";
-    debugStep3.reason = "Não existem dados para este obstacle_height_ft";
-    debug.step3 = debugStep3;
-    return null;
-  }
+if (rowsSameHeight.length === 0) {
+  debugStep3.status = "clamped";
+  debugStep3.reason = "Obstacle height fora do gráfico — assumido CG > 7%";
+  debugStep3.CG = 7;
+  debug.step3 = debugStep3;
+  return 7;
+}
 
 	      // Range global do gráfico (para esta altura)
   const minX = Math.min(...rowsSameHeight.map(r => r.x_ref_left));
@@ -843,6 +845,14 @@ export default function Gradient_Required({
 	  return {
 		status: "failed",
 		result_CG_required: null,
+		debug
+	  };
+	}
+	// verificar se foi um clamp para CG=7
+	if (debug.step3?.status === "clamped" && debug.step3?.CG === 7) {
+	  return {
+		status: "failed",
+		result_CG_required: 7,
 		debug
 	  };
 	}
