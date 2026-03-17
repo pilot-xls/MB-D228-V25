@@ -26,16 +26,24 @@ import { getTakeoffData } from "./ToSpeeds.js";
 import { getWAT } from "./ToWAT.js";
 
 // Importa a função do gradiente 2º segmento para flaps UP
-import Gradient_2segFlapsUp from "./cg2segFlapsUp_CSATH.js";
+import Gradient_2segFlapsUp, {
+    CLIMB_GRADIENTE_2SEG_FlapsUp_MTOW
+} from "./cg2segFlapsUp_CSATH.js";
 
 // Importa a função do gradiente 2º segmento para flaps 1
-import Gradient_2segFlaps1 from "./cg2segFlaps1_CSATH.js";
+import Gradient_2segFlaps1, {
+    CLIMB_GRADIENTE_2SEG_Flaps1_MTOW
+} from "./cg2segFlaps1_CSATH.js";
 
 // Importa a função do 3º segmento para flaps 1
-import Gradient_3segFlaps1 from "./cg3segFlaps1_CSATH.js";
+import Gradient_3segFlaps1, {
+    ThirdSegmentDistanceFlaps1_MTOW
+} from "./cg3segFlaps1_CSATH.js";
 
 // Importa a função do 4º segmento para flaps UP
-import Gradient_4segFlapsUp from "./cg4segFlapsUp_CSATH.js";
+import Gradient_4segFlapsUp, {
+    CLIMB_GRADIENTE_4SEG_FlapsUp_MTOW
+} from "./cg4segFlapsUp_CSATH.js";
 
 // Importa a função que calcula o gradiente requerido do 2º segmento
 import Gradient_Required2Seg from "./cgRequired2Seg_CSATH.js";
@@ -647,16 +655,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             let mtowWAT = getWAT("up", pa, oat);
             // Se os inlet ON -250kg
             if (inlet === "on") { mtowWAT = mtowWAT - 250 };
-
+            console.log("mtowWAT ", mtowWAT);
             // Calcula o limite por ASDA
             const mtowASDA = MTOW_ASDA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
-
+            console.log("mtowASDA ", mtowASDA);
             // Calcula o limite por TORA
             const mtowTORA = MTOW_TORA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
-
+            console.log("mtowTORA ", mtowTORA);
             // Calcula o limite por TODA
             const mtowTODA = MTOW_TODA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
-
+            console.log("mtowTODA ", mtowTODA);
             // Junta todos os limites numa lista
             const limits = [mtowWAT, mtowASDA.result, mtowTORA.result, mtowTODA.result];
 
@@ -699,16 +707,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Se os inlet ON -250kg
             if (inlet === "on") { mtowWAT = mtowWAT - 250 };
-
+            console.log("mtowWAT ", mtowWAT);
             // Calcula o limite por ASDA
             const mtowASDA = MTOW_ASDA_Flaps1({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
-
+            console.log("mtowASDA ", mtowASDA);
             // Calcula o limite por TORA
             const mtowTORA = MTOW_TORA_Flaps1({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
-
+            console.log("mtowTORA ", mtowTORA);
             // Calcula o limite por TODA
             const mtowTODA = MTOW_TODA_Flaps1({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
-
+            console.log("mtowTODA ", mtowTODA);
             // Junta todos os limites numa lista
             const limits = [mtowWAT, mtowASDA.result, mtowTORA.result, mtowTODA.result];
 
@@ -745,16 +753,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         // Escolhe o limite mais restritivo entre performance e estrutura
-        const mtowFinal = Math.min(mtow, aircraftMTOW);
+        const mtowLimited = Math.min(mtow, aircraftMTOW);
 
         // Mostra o MTOW final no output (assim evita que mostre um valor mais alto do que do próprio avião)
-        document.getElementById("outMTOW").textContent = mtowFinal;
+        document.getElementById("outMTOW").textContent = mtowLimited;
 
         // Vai buscar o campo TOW do formulário
         const towInput = document.getElementById("tow");
 
         // Se o TOW introduzido for maior que o limite permitido
-        if (tow > mtowFinal) {
+        if (tow > mtowLimited) {
             // Marca o campo como erro (fica vermelho)
             towInput.classList.add("input-error");
         } else {
@@ -802,7 +810,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-
+            console.log("torrflpsupCalculated ", torrflpsupCalculated);
             // Se falhar, mostra failed
             if (torrflpsupCalculated.status === "failed") {
                 document.getElementById("outTor").textContent = " failed ";
@@ -819,7 +827,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-
+            console.log("torrflps1Calculated ", torrflps1Calculated);
             // Se falhar, mostra failed
             if (torrflps1Calculated.status === "failed") {
                 document.getElementById("outTor").textContent = " failed ";
@@ -846,7 +854,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-
+            console.log("todrflpsupCalculated ", todrflpsupCalculated);
             // Se falhar, mostra failed
             if (todrflpsupCalculated.status === "failed") {
                 document.getElementById("outTakeoffDistance").textContent = " failed ";
@@ -866,7 +874,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-
+            console.log("todrflps1Calculated ", todrflps1Calculated);
             // Se falhar, mostra failed
             if (todrflps1Calculated.status === "failed") {
                 document.getElementById("outTakeoffDistance").textContent = " failed ";
@@ -943,7 +951,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Calcula a distância do obstáculo relativamente ao Reference Zero
             const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
-            console.log("obstacle_dist ", obs.obstacle_dist," - ", todr);            
+            console.log("obstacle_dist ", obs.obstacle_dist, " - ", todr);
             console.log("obsc dist =", obstacleDistanceFromREFZERO);
             // Calcula o gradiente requerido do obstáculo atual
             const gradientRequired2Seg = Gradient_Required2Seg({
@@ -962,6 +970,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         /**
          * Net Climb Gradient - Single Engine - Second Segment
          */
+        let mtowCG2 = mtowLimited;
+
+
         // Se os flaps estiverem em UP, calcula o gradiente do 2º segmento para flaps UP
         if (flaps === "up") {
 
@@ -987,6 +998,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 // Adiciona a classe de falha
                 document.getElementById("ttCg2").classList.add("bad");
+
             } else {
                 // Marca o 2º segmento como passed
                 cgFailed2Seg = false;
@@ -1000,6 +1012,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Adiciona a classe de sucesso
                 document.getElementById("ttCg2").classList.add("ok");
             }
+            /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW)CLIMB_GRADIENTE_2SEG_FlapsUp_MTOW         */
+            const resultCG2 = CLIMB_GRADIENTE_2SEG_FlapsUp_MTOW({
+                pressureAltitude: pa,
+                oat: oat,
+                inlet: inlet,
+                gradientRequired: maxGradient_2seg
+            });
+            // Guarda apenas o maxTow
+            mtowCG2 = mtowCG2 = resultCG2?.maxTow ?? mtowCG2;
         } else if (flaps === "1") {
             // Calcula o gradiente disponível do 2º segmento para flaps 1
             const gradient2Seg = Gradient_2segFlaps1({
@@ -1023,6 +1044,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 // Adiciona a classe de falha
                 document.getElementById("ttCg2").classList.add("bad");
+
             } else {
                 // Marca o 2º segmento como passed
                 cgFailed2Seg = false;
@@ -1036,6 +1058,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Adiciona a classe de sucesso
                 document.getElementById("ttCg2").classList.add("ok");
             }
+            /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW) */
+            const resultCG2 = CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
+                pressureAltitude: pa,
+                oat: oat,
+                inlet: inlet,
+                gradientRequired: maxGradient_2seg
+            });
+            // Guarda apenas o maxTow
+            mtowCG2 = mtowCG2 = resultCG2?.maxTow ?? mtowCG2;
         }
 
         /**
@@ -1061,7 +1092,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 wind: wind,
                 obstacle_height: obs.obstacle_ft
             });
-console.log(gradientRequired34Seg);
+            console.log(gradientRequired34Seg);
             // Guarda os dados do obstáculo analisado
             obstacleAnalysis34.push({
                 // Guarda o gradiente requerido para o 4º segmento
@@ -1118,6 +1149,7 @@ console.log(gradientRequired34Seg);
 
             // Adiciona a classe de falha
             document.getElementById("ttCg3").classList.add("bad");
+
         } else {
             // Marca a flag do 3º segmento como passed
             cgFailed3Seg = false;
@@ -1132,10 +1164,23 @@ console.log(gradientRequired34Seg);
             // Adiciona a classe de sucesso
             document.getElementById("ttCg3").classList.add("ok");
         }
+        /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW)*/
+        let mtowCG3 = mtowLimited;
+        const resultCG3 = ThirdSegmentDistanceFlaps1_MTOW({
+            pressureAltitude: pa,
+            oat: oat,
+            inlet: inlet,
+            obstacleDistance: criticalObstacleDistance3Seg
+        });
+        // Guarda apenas o maxTow se não for null
+        mtowCG3 = resultCG3?.maxTow ?? mtowCG3;
 
         /**
          * Net Climb Gradient - Single Engine - 4º Final Segment
          */
+
+        let mtowCG4 = mtowLimited;
+
         // Calcula a performance do 4º segmento
         const gradient4Seg = Gradient_4segFlapsUp({
             pressureAltitude: pa,
@@ -1159,6 +1204,7 @@ console.log(gradientRequired34Seg);
 
             // Adiciona a classe de falha
             document.getElementById("ttCg4").classList.add("bad");
+
         } else {
             // Marca a flag do 4º segmento como passed
             cgFailed4Seg = false;
@@ -1172,8 +1218,18 @@ console.log(gradientRequired34Seg);
 
             // Adiciona a classe de sucesso
             document.getElementById("ttCg4").classList.add("ok");
+
         }
 
+        /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW)*/
+        const resultCG4 = CLIMB_GRADIENTE_4SEG_FlapsUp_MTOW({
+            pressureAltitude: pa,
+            oat: oat,
+            inlet: inlet,
+            gradientRequired: requiredGradient4Seg
+        });
+        // Guarda apenas o maxTow
+        mtowCG4 = mtowCG4 = resultCG4?.maxTow ?? mtowCG4;
 
         /**
          * Resultado geral do climb gradient
@@ -1191,6 +1247,7 @@ console.log(gradientRequired34Seg);
 
             // Mostra Failed no texto geral
             document.getElementById("cgText").textContent = "Failed";
+
         } else {
             // Remove a classe de falha do badge geral
             document.getElementById("cgBadge").classList.remove("bad");
@@ -1201,6 +1258,19 @@ console.log(gradientRequired34Seg);
             // Mostra Passed no texto geral
             document.getElementById("cgText").textContent = "Passed";
         }
+
+        console.log("mtowCG2", mtowCG2);
+        console.log("mtowCG3", mtowCG3);
+        console.log("mtowCG4", mtowCG4);
+        // MTOW by CGR
+        const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
+
+        document.getElementById("outMTOW").textContent = mtowByCG;
+
+        console.log("mtowLimited ", mtowLimited);
+        console.log("mtowByCG ", mtowByCG);
+        console.log("MTOW ", mtowByCG);
+
     });
 
     /**

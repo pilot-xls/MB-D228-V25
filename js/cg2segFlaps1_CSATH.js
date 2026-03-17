@@ -682,3 +682,101 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
 }
 // Export default
 export default CLIMB_GRADIENTE_2SEG_Flaps1;
+
+
+
+
+
+
+
+
+
+
+
+// ---------------------------------------------------------
+// FUNÇÃO — MTOW COMPATÍVEL COM O CLIMB GRADIENT REQUERIDO
+// ---------------------------------------------------------
+
+export function CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
+  pressureAltitude,
+  oat,
+  inlet,
+  gradientRequired
+}) {
+
+  // limpa o relatório de debug
+  DEBUG_REPORT = [];
+
+  // STEP 1 — calcular y_ref base através de PA e OAT
+  const yRef = getYRefFromPAOAT(pressureAltitude, oat);
+
+  // se falhar aborta
+  if (yRef == null) {
+    return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // ordenar pesos
+  const weights = [...WEIGHT_TABLE].sort((a, b) => a.weight - b.weight);
+
+  let lastPassing = null;
+  let firstFailing = null;
+
+  // testar cada peso
+  for (const row of weights) {
+
+    const tow = row.weight;
+
+    // STEP 2/3 — aplicar peso
+    const yAfterWeight = mapYThroughWeight(yRef, tow);
+    if (yAfterWeight == null) continue;
+
+    // STEP 4 — aplicar inlet
+    const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
+    if (yAfterInlet == null) continue;
+
+    // STEP 5 — converter para gradient
+    const gradient = getClimbGradientFromY(yAfterInlet);
+    if (gradient == null) continue;
+
+    // verificar se cumpre o requisito
+    if (gradient >= gradientRequired) {
+      lastPassing = { tow, gradient };
+    } else if (lastPassing != null) {
+      firstFailing = { tow, gradient };
+      break;
+    }
+  }
+
+  // nenhum peso cumpre
+  if (!lastPassing) {
+    reportFail(`Nenhum peso cumpre o gradient mínimo (${gradientRequired}%).`);
+    return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // se não houver falha depois → limite da tabela
+  if (!firstFailing) {
+    return {
+      maxTow: lastPassing.tow,
+      gradient: Math.round(lastPassing.gradient * 10) / 10,
+      status: "PASSED",
+      report: DEBUG_REPORT
+    };
+  }
+
+  // interpolação do peso limite
+  const towExact = lerp(
+    gradientRequired,
+    lastPassing.gradient, lastPassing.tow,
+    firstFailing.gradient, firstFailing.tow
+  );
+
+  // arredondamento conservador para 50 lb
+  const mtow = Math.floor(towExact / 50) * 50;
+
+  return {
+    maxTow: mtow,
+    gradient: gradientRequired,
+    status: "PASSED",
+    report: DEBUG_REPORT
+  };
+}

@@ -1612,3 +1612,119 @@ export function CLIMB_GRADIENTE_4SEG_FlapsUp({ pressureAltitude, oat, tow, inlet
 }
 // Export default
 export default CLIMB_GRADIENTE_4SEG_FlapsUp;
+
+
+
+
+
+
+
+// ---------------------------------------------------------
+// FUNÇÃO — MTOW COMPATÍVEL COM O CLIMB GRADIENTE DO 4º SEG
+// ---------------------------------------------------------
+
+export function CLIMB_GRADIENTE_4SEG_FlapsUp_MTOW({
+  pressureAltitude,
+  oat,
+  inlet,
+  gradientRequired
+}) {
+  // limpa o relatório de debug antes de começar um novo cálculo
+  DEBUG_REPORT = [];
+
+  // calcula o y_ref base a partir da pressure altitude e da temperatura
+  const yRef = getYRefFromPAOAT(pressureAltitude, oat);
+
+  // se não for possível calcular o y_ref base, devolve falha
+  if (yRef == null) {
+    return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // cria uma cópia da tabela de pesos ordenada por ordem crescente
+  const weights = [...WEIGHT_TABLE].sort((a, b) => a.weight - b.weight);
+
+  // guarda o último peso que ainda cumpre o gradient requerido
+  let lastPassing = null;
+
+  // guarda o primeiro peso seguinte que já não cumpre o gradient requerido
+  let firstFailing = null;
+
+  // percorre todos os pesos disponíveis na tabela
+  for (const row of weights) {
+    // lê o peso actual da linha
+    const tow = row.weight;
+
+    // aplica a transformação do y_ref pela tabela de peso
+    const yAfterWeight = mapYThroughWeight(yRef, tow);
+
+    // se falhar a transformação pelo peso, ignora este peso
+    if (yAfterWeight == null) continue;
+
+    // aplica a transformação do inlet ao y já corrigido pelo peso
+    const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
+
+    // se falhar a transformação do inlet, ignora este peso
+    if (yAfterInlet == null) continue;
+
+    // converte o y final em climb gradient
+    const gradient = getClimbGradientFromY(yAfterInlet);
+
+    // se falhar a conversão final, ignora este peso
+    if (gradient == null) continue;
+
+    // verifica se este peso ainda cumpre o gradient mínimo requerido
+    if (gradient >= gradientRequired) {
+      // guarda este peso como o último peso que ainda passa
+      lastPassing = {
+        tow,
+        gradient
+      };
+    } else if (lastPassing != null) {
+      // assim que encontrar o primeiro peso a falhar depois de um que passa,
+      // guarda-o e termina a procura
+      firstFailing = {
+        tow,
+        gradient
+      };
+      break;
+    }
+  }
+
+  // se nenhum peso cumprir o critério, devolve falha
+  if (!lastPassing) {
+    // regista no relatório a razão da falha
+    reportFail(`Nenhum peso cumpre o gradient mínimo (${gradientRequired}%).`);
+
+    // devolve o resultado de falha
+    return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
+  }
+
+  // se todos os pesos da tabela ainda passarem, devolve o maior peso disponível
+  if (!firstFailing) {
+    // devolve o maior peso válido encontrado
+    return {
+      maxTow: lastPassing.tow,
+      gradient: Math.round(lastPassing.gradient * 10) / 10,
+      status: "PASSED",
+      report: DEBUG_REPORT
+    };
+  }
+
+  // interpola o peso exacto correspondente ao gradient requerido
+  const towExact = lerp(
+    gradientRequired,
+    lastPassing.gradient, lastPassing.tow,
+    firstFailing.gradient, firstFailing.tow
+  );
+
+  // arredonda o peso exacto para o múltiplo de 50 lb mais próximo
+  const maxTow = Math.round(towExact / 50) * 50;
+
+  // devolve o resultado final
+  return {
+    maxTow,
+    gradient: gradientRequired,
+    status: "PASSED",
+    report: DEBUG_REPORT
+  };
+}
