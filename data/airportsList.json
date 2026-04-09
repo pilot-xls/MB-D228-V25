@@ -46,29 +46,14 @@
         "threshold_displaced": 0,
         "obstacles": [
             {
-                "name": "TREE",
-                "obstacle_ft": 118,
-                "obstacle_dist": 1190
+                "name": "casa",
+                "obstacle_ft": 60,
+                "obstacle_dist": 1830
             },
             {
-                "name": "TREE",
-                "obstacle_ft": 169,
-                "obstacle_dist": 1780
-            },
-            {
-                "name": "TREE",
-                "obstacle_ft": 326,
-                "obstacle_dist": 2085
-            },
-            {
-                "name": "TREE",
-                "obstacle_ft": 509,
-                "obstacle_dist": 2250
-            },
-            {
-                "name": "TREE",
-                "obstacle_ft": 819,
-                "obstacle_dist": 2500
+                "name": "vale",
+                "obstacle_ft": 200,
+                "obstacle_dist": 2700
             }
         ]
     }
