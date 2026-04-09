@@ -12,24 +12,24 @@
         "threshold_displaced": 0,
         "obstacles": [
             {
-                "name": "TREE",
-                "obstacle_ft": 49,
-                "obstacle_dist": 1100
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
             },
             {
-                "name": "TREE",
-                "obstacle_ft": 84,
-                "obstacle_dist": 1300
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
             },
             {
-                "name": "TREE",
-                "obstacle_ft": 94,
-                "obstacle_dist": 1650
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
             },
             {
-                "name": "TREE",
-                "obstacle_ft": 212,
-                "obstacle_dist": 2000
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
             }
         ]
     },
