@@ -1721,7 +1721,7 @@ export function CLIMB_GRADIENTE_4SEG_FlapsUp_MTOW({
 
   // devolve o resultado final
   return {
-    maxTow,
+    towExact,
     gradient: gradientRequired,
     status: "PASSED",
     report: DEBUG_REPORT
