@@ -664,19 +664,20 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
   
 	// STEP 5 — resultado final
   const gradient = getClimbGradientFromY(yAfterInlet);
+	console.log("CG performed for 2º segment flaps 1 ", gradient);
+	console.log("CG performed for 2º segment flaps 1 - Turn 15º ", (gradient-0.5));
   if (gradient == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
   
 
-  const rounded = Math.round(gradient * 10) / 10;
+  const rounded = Math.round((gradient-5) * 10) / 10;
   
   if (rounded < gradientRequired) {
     reportFail(`Gradient ${rounded}% está abaixo do mínimo (${gradientRequired}%).`);
     return { gradient: rounded, status: "FAILED", report: DEBUG_REPORT };
   }
-console.log("CG performed for 2º segment flaps 1 ", rounded);
-console.log("CG performed for 2º segment flaps 1 - Turn 15º ", (rounded-0.5));
+	
   return {
-    gradient: (rounded-0.5),
+    gradient: rounded,
     status: "PASSED",
     report: DEBUG_REPORT
   };
