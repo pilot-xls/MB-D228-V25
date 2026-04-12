@@ -242,6 +242,9 @@ function interpolate2D(table, pa, oat) {
 
 export function getWAT(flaps, pressureAltitude, oat) {
 
+  // 👉 1. LOG DOS INPUTS (logo no início)
+  console.log("INPUT getWAT", { flaps, pressureAltitude, oat });
+
   if (flaps !== "up" && flaps !== "1") {
     throw new Error('Configuração de flaps inválida ["up" ou "1"]');
   }
@@ -254,8 +257,23 @@ export function getWAT(flaps, pressureAltitude, oat) {
     flaps = "flaps_1";
   }
 
+  // 👉 2. VER QUE TABELA ESTÁ A SER USADA
+  console.log("TABLE NAME", flaps);
+
   const table = WAT_TABLE[flaps];
+
+  // 👉 3. VER AS LINHAS COM A MESMA PRESSURE ALTITUDE
+  const samePA = table.filter(r => r.pressure_altitude === Number(pressureAltitude));
+  console.log("samePA", samePA);
+
+  // 👉 4. VER SE EXISTE MATCH EXATO DE OAT
+  const exactRow = samePA.find(r => r.oat === Number(oat));
+  console.log("exactRow", exactRow);
+
   const { wat } = interpolate2D(table, pressureAltitude, oat);
-	console.log("WAT inside", wat);
+
+  // 👉 5. RESULTADO FINAL
+  console.log("WAT inside", wat);
+
   return wat;
 }
