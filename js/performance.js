@@ -691,7 +691,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (flaps === "1") {
             // Calcula o limite WAT
             let mtowWAT = getWAT("1", pa, oat);
-
+console.log("mtowWAT ====== ",mtowWAT);
             // Se os inlet ON -250kg
             if (inlet === "on") { mtowWAT = mtowWAT - 250 };
             console.log("mtowWAT ", mtowWAT);
