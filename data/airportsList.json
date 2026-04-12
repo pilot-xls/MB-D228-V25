@@ -56,5 +56,64 @@
                 "obstacle_dist": 2700
             }
         ]
-    }
+    },
+    {
+        "icao": "LIRQ",
+        "rwy": "5",
+        "heading": 048,
+        "elevation": 122,
+        "tora": 1605,
+        "toda": 1719,
+        "asda": 1605,
+        "lda": 1455,
+        "slope": 0.4,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRQ",
+        "rwy": "23",
+        "heading": 340,
+        "elevation": 12.7,
+        "tora": 1560,
+        "toda": 1665,
+        "asda": 1560,
+        "lda": 977,
+        "slope": -0.4,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "casa",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "vale",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    
 ]
