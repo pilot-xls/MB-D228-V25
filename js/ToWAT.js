@@ -241,9 +241,7 @@ function interpolate2D(table, pa, oat) {
 // =====================================
 
 export function getWAT(flaps, pressureAltitude, oat) {
-	console.log("flaps, pressureAltitude, oat ", flaps, pressureAltitude, oat);
-	//>>>>>>>>>>>>>>>>>>>se o inlet swith estiver ON, wat -250kg (falta adicionar)<<<<<<<<<<<<<<<<<<<<<<<<<<
-	
+
   if (flaps !== "up" && flaps !== "1") {
     throw new Error('Configuração de flaps inválida ["up" ou "1"]');
   }
@@ -258,5 +256,6 @@ export function getWAT(flaps, pressureAltitude, oat) {
 
   const table = WAT_TABLE[flaps];
   const { wat } = interpolate2D(table, pressureAltitude, oat);
+	console.log("WAT inside", wat);
   return wat;
 }
