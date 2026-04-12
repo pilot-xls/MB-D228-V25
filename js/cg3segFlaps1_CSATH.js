@@ -815,7 +815,7 @@ export function ThirdSegmentDistanceFlaps1_MTOW({
 
   // devolve o resultado final
   return {
-    maxTow,
+    towExact,
     distance: obstacleDistance,
     status: "PASSED",
     report: DEBUG_REPORT
