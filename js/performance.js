@@ -1259,13 +1259,16 @@ mtowCG4 = getMaxTow4Seg({
         // MTOW by CGR
 
         // Calcula o menor valor entre os três MTOW
-        const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
-        
-        // Arredonda sempre para baixo (parte inteira inferior)
-        const mtowRounded = Math.floor(mtowByCG);
-        
-        // Mostra o resultado no elemento HTML
-        document.getElementById("outMTOW").textContent = mtowRounded;
+       const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
+
+// O resultado final nunca pode ser maior que o MTOW já limitado
+const mtowFinal = Math.min(mtowByCG, mtowLimited);
+
+// Arredonda sempre para baixo
+const mtowRounded = Math.floor(mtowFinal);
+
+// Mostra o resultado no elemento HTML
+document.getElementById("outMTOW").textContent = mtowRounded;
     
         
         console.log("mtowLimited ", mtowLimited);
