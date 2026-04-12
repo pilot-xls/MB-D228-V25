@@ -114,5 +114,131 @@
                 "obstacle_dist": 0
             }
         ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "03L",
+        "heading": 036,
+        "elevation": 1,
+        "tora": 2736,
+        "toda": 3011,
+        "asda": 2736,
+        "lda": 2495,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "03R",
+        "heading": 036,
+        "elevation": 3,
+        "tora": 2992,
+        "toda": 3291,
+        "asda": 2992,
+        "lda": 2849,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "21L",
+        "heading": 216,
+        "elevation": 6,
+        "tora": 2992,
+        "toda": 3148,
+        "asda": 2992,
+        "lda": 2735,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "21L",
+        "heading": 216,
+        "elevation": 5,
+        "tora": 2736,
+        "toda": 2853,
+        "asda": 2736,
+        "lda": 2736,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "casa",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "vale",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
     }
 ]
