@@ -677,7 +677,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
   }
 	
   return {
-    gradient: rounded,
+    gradient: (gradient-0.5),
     status: "PASSED",
     report: DEBUG_REPORT
   };
