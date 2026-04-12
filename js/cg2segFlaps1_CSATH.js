@@ -701,84 +701,83 @@ export default CLIMB_GRADIENTE_2SEG_Flaps1;
 // ---------------------------------------------------------
 // FUNÇÃO — MTOW COMPATÍVEL COM O CLIMB GRADIENT REQUERIDO
 // ---------------------------------------------------------
-
 export function CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
   pressureAltitude,
   oat,
   inlet,
   gradientRequired
 }) {
-console.log("CLIMB_GRADIENTE_2SEG_Flaps1_MTOW.gradientRequired ", gradientRequired);
-	
-  // limpa o relatório de debug
+  // Limpa o relatório de debug antes de começar
   DEBUG_REPORT = [];
 
-  // STEP 1 — calcular y_ref base através de PA e OAT
+  // Calcula o y_ref base a partir de PA e OAT
   const yRef = getYRefFromPAOAT(pressureAltitude, oat);
 
-  // se falhar aborta
+  // Se falhar, aborta e devolve erro
   if (yRef == null) {
     return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
   }
 
-  // ordenar pesos
+  // Ordena os pesos por ordem crescente
   const weights = [...WEIGHT_TABLE].sort((a, b) => a.weight - b.weight);
 
+  // Guarda o último peso que passa e o primeiro que falha
   let lastPassing = null;
   let firstFailing = null;
 
-  // testar cada peso
+  // Testa todos os pesos disponíveis na tabela
   for (const row of weights) {
-
+    // Peso a testar
     const tow = row.weight;
 
-    // STEP 2/3 — aplicar peso
+    // Aplica o efeito do peso
     const yAfterWeight = mapYThroughWeight(yRef, tow);
     if (yAfterWeight == null) continue;
 
-    // STEP 4 — aplicar inlet
+    // Aplica o efeito do inlet
     const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
     if (yAfterInlet == null) continue;
 
-    // STEP 5 — converter para gradient
-    const gradient = getClimbGradientFromY(yAfterInlet);
-    if (gradient == null) continue;
+    // Converte o Y final em climb gradient bruto
+    const gradientRaw = getClimbGradientFromY(yAfterInlet);
+    if (gradientRaw == null) continue;
 
-    // verificar se cumpre o requisito
-    if (gradient >= gradientRequired) {
-      lastPassing = { tow, gradient };
+    // Aplica a mesma correção usada na função principal
+    const gradientEffective = gradientRaw - 0.5;
+
+    // Verifica se cumpre o requisito
+    if (gradientEffective >= gradientRequired) {
+      lastPassing = { tow, gradient: gradientEffective };
     } else if (lastPassing != null) {
-      firstFailing = { tow, gradient };
+      firstFailing = { tow, gradient: gradientEffective };
       break;
     }
   }
 
-  // nenhum peso cumpre
+  // Se nenhum peso cumprir, devolve falha
   if (!lastPassing) {
     reportFail(`Nenhum peso cumpre o gradient mínimo (${gradientRequired}%).`);
     return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
   }
 
-  // se não houver falha depois → limite da tabela
+  // Se todos os pesos até ao fim passarem, devolve o maior da tabela
   if (!firstFailing) {
     return {
       maxTow: lastPassing.tow,
-      gradient: lastPassing,
+      gradient: lastPassing.gradient,
       status: "PASSED",
       report: DEBUG_REPORT
     };
   }
 
-  // interpolação do peso limite
+  // Interpola o peso exato onde o requisito é exatamente atingido
   const towExact = lerp(
     gradientRequired,
     lastPassing.gradient, lastPassing.tow,
     firstFailing.gradient, firstFailing.tow
   );
 
-  // arredondamento conservador para 50 lb
-  const mtow = Math.floor(towExact / 50) * 50;
-
+  // Devolve o MTOW final
   return {
     maxTow: towExact,
     gradient: gradientRequired,
