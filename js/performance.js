@@ -69,6 +69,8 @@ import MTOW_TODA_FlapsUp from "./mtowTODA_FlapsUp.js";
 // Importa a função de MTOW limitada por TODA para flaps 1
 import MTOW_TODA_Flaps1 from "./mtowTODA_Flaps1.js";
 
+import { getMaxTow2Seg, getMaxTow3Seg, getMaxTow4Seg } from "./cgMTOWSearch.js";
+
 // Guarda em memória os dados dos aeroportos para reutilização na página
 let airportData = [];
 
@@ -1012,15 +1014,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Adiciona a classe de sucesso
                 document.getElementById("ttCg2").classList.add("ok");
             }
-            /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW)CLIMB_GRADIENTE_2SEG_FlapsUp_MTOW         */
-            const resultCG2 = CLIMB_GRADIENTE_2SEG_FlapsUp_MTOW({
-                pressureAltitude: pa,
-                oat: oat,
-                inlet: inlet,
-                gradientRequired: maxGradient_2seg
-            });
-            // Guarda apenas o maxTow
-            mtowCG2 = mtowCG2 = resultCG2?.maxTow ?? mtowCG2;
+            
         } else if (flaps === "1") {
             // Calcula o gradiente disponível do 2º segmento para flaps 1
             const gradient2Seg = Gradient_2segFlaps1({
@@ -1058,17 +1052,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Adiciona a classe de sucesso
                 document.getElementById("ttCg2").classList.add("ok");
             }
-            /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW) */
-            const resultCG2 = CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
-                pressureAltitude: pa,
-                oat: oat,
-                inlet: inlet,
-                gradientRequired: maxGradient_2seg
-            });
-            // Guarda apenas o maxTow
-            mtowCG2 = mtowCG2 = resultCG2?.maxTow ?? mtowCG2;
+            
         }
-
+mtowCG2 = getMaxTow2Seg({
+    flaps: flaps,
+    pa: pa,
+    oat: oat,
+    inlet: inlet,
+    wind: wind,
+    slope: runwayEntry.slope,
+    obstacles: filtered_2Seg
+}) ?? mtowCG2;
         /**
          * Flight Path to Clear Distant Obstacles - 3º/4º segmento
          */
@@ -1164,17 +1158,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Adiciona a classe de sucesso
             document.getElementById("ttCg3").classList.add("ok");
         }
-        /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW)*/
-        let mtowCG3 = mtowLimited;
-        const resultCG3 = ThirdSegmentDistanceFlaps1_MTOW({
-            pressureAltitude: pa,
-            oat: oat,
-            inlet: inlet,
-            obstacleDistance: criticalObstacleDistance3Seg
-        });
-        // Guarda apenas o maxTow se não for null
-        mtowCG3 = resultCG3?.maxTow ?? mtowCG3;
-
+        
+mtowCG3 = getMaxTow3Seg({
+    pa: pa,
+    oat: oat,
+    inlet: inlet,
+    wind: wind,
+    slope: runwayEntry.slope,
+    obstacles: filtered_34Seg
+}) ?? mtowCG3;
         /**
          * Net Climb Gradient - Single Engine - 4º Final Segment
          */
@@ -1220,16 +1212,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("ttCg4").classList.add("ok");
 
         }
-
-        /**CG > CGR entao reduce weight until CG = CGR. then set on element (outMTOW)*/
-        const resultCG4 = CLIMB_GRADIENTE_4SEG_FlapsUp_MTOW({
-            pressureAltitude: pa,
-            oat: oat,
-            inlet: inlet,
-            gradientRequired: requiredGradient4Seg
-        });
-        // Guarda apenas o maxTow
-        mtowCG4 = mtowCG4 = resultCG4?.maxTow ?? mtowCG4;
+mtowCG4 = getMaxTow4Seg({
+    pa: pa,
+    oat: oat,
+    inlet: inlet,
+    wind: wind,
+    slope: runwayEntry.slope,
+    obstacles: filtered_34Seg
+}) ?? mtowCG4;
 
         /**
          * Resultado geral do climb gradient
