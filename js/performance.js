@@ -707,6 +707,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Junta todos os limites numa lista
             const limits = [mtowWAT, mtowASDA.result, mtowTORA.result, mtowTODA.result];
 
+
+console.log("DEBUG MTOW");
+console.log("WAT:", mtowWAT);
+console.log("ASDA:", mtowASDA);
+console.log("TORA:", mtowTORA);
+console.log("TODA:", mtowTODA);
+
+            
             // Verifica se existe algum valor inválido
             const invalid = limits.some(v => !v || !Number.isFinite(v));
 
