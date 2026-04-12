@@ -677,7 +677,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
   }
 	
   return {
-    gradient: (gradient-0.5),
+    gradient: rounded,
     status: "PASSED",
     report: DEBUG_REPORT
   };
@@ -776,7 +776,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
   const mtow = Math.floor(towExact / 50) * 50;
 
   return {
-    maxTow: mtow,
+    maxTow: towExact,
     gradient: gradientRequired,
     status: "PASSED",
     report: DEBUG_REPORT
