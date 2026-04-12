@@ -118,7 +118,7 @@
     {
         "icao": "LIRP",
         "rwy": "03L",
-        "heading": 036,
+        "heading": 36,
         "elevation": 1,
         "tora": 2736,
         "toda": 3011,
@@ -152,7 +152,7 @@
     {
         "icao": "LIRP",
         "rwy": "03R",
-        "heading": 036,
+        "heading": 36,
         "elevation": 3,
         "tora": 2992,
         "toda": 3291,
@@ -219,7 +219,7 @@
     },
     {
         "icao": "LIRP",
-        "rwy": "21L",
+        "rwy": "21R",
         "heading": 216,
         "elevation": 5,
         "tora": 2736,
