@@ -1603,7 +1603,8 @@ export function CLIMB_GRADIENTE_4SEG_FlapsUp({ pressureAltitude, oat, tow, inlet
     reportFail(`Gradient ${rounded}% está abaixo do mínimo (${gradientRequired}%).`);
     return { gradient: rounded, status: "FAILED", report: DEBUG_REPORT };
   }
-
+console.log("CG performed for 4º segment flaps 1 ", rounded);
+console.log("CG performed for 4º segment flaps 1 - Turn 15º ", (rounded-0.5));
   return {
     gradient: rounded,
     status: "PASSED",
