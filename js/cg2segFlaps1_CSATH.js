@@ -737,7 +737,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
     if (yAfterInlet == null) continue;
 
     // STEP 5 — converter para gradient
-    const gradient = getClimbGradientFromY(yAfterInlet);
+    const gradient = (getClimbGradientFromY(yAfterInlet)-0.5);
     if (gradient == null) continue;
 
     // verificar se cumpre o requisito
@@ -759,7 +759,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
   if (!firstFailing) {
     return {
       maxTow: lastPassing.tow,
-      gradient: Math.round(lastPassing.gradient * 10) / 10,
+      gradient: lastPassing,
       status: "PASSED",
       report: DEBUG_REPORT
     };
