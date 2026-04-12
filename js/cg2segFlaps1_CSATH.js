@@ -668,7 +668,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
 	// STEP 5 — resultado final
   const gradient = getClimbGradientFromY(yAfterInlet);
 	console.log("CG performed for 2º segment flaps 1 ", gradient);
-	console.log("CG performed for 2º segment flaps 1 - Turn 15º ", (gradient-0.5));
+	console.log("CG performed for 2º segment flaps 1 - Turn 15º (-0.5)", (gradient-0.5));
   if (gradient == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
   
 
