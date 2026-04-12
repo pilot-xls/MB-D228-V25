@@ -1264,9 +1264,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("mtowCG4", mtowCG4);
         // MTOW by CGR
         const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
+        
+        document.getElementById("outMTOW").textContent = mtowByCG.toFixed(0);
 
-        document.getElementById("outMTOW").textContent = mtowByCG;
-
+        
         console.log("mtowLimited ", mtowLimited);
         console.log("mtowByCG ", mtowByCG);
         console.log("MTOW ", mtowByCG);
