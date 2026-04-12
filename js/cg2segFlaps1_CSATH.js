@@ -669,7 +669,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
   if (gradient == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
   
 
-  const rounded = Math.round((gradient-5) * 10) / 10;
+  const rounded = Math.round((gradient-0.5) * 10) / 10;
   
   if (rounded < gradientRequired) {
     reportFail(`Gradient ${rounded}% está abaixo do mínimo (${gradientRequired}%).`);
