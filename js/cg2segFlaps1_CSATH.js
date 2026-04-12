@@ -676,7 +676,7 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
 console.log("CG performed for 2º segment flaps 1 ", rounded);
 console.log("CG performed for 2º segment flaps 1 - Turn 15º ", (rounded-0.5));
   return {
-    gradient: rounded,
+    gradient: (rounded-0.5),
     status: "PASSED",
     report: DEBUG_REPORT
   };
