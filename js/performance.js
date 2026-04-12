@@ -1263,10 +1263,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("mtowCG3", mtowCG3);
         console.log("mtowCG4", mtowCG4);
         // MTOW by CGR
+
+        // Calcula o menor valor entre os três MTOW
         const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
         
-        document.getElementById("outMTOW").textContent = String(Math.floor(mtowByCG)); 
-//mtowByCG.toFixed(0);
+        // Arredonda sempre para baixo (parte inteira inferior)
+        const mtowRounded = Math.floor(mtowByCG);
+        
+        // Mostra o resultado no elemento HTML
+        document.getElementById("outMTOW").textContent = mtowRounded;
+    
         
         console.log("mtowLimited ", mtowLimited);
         console.log("mtowByCG ", mtowByCG);
