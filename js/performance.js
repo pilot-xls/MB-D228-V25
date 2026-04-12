@@ -25,25 +25,10 @@ import { getTakeoffData } from "./ToSpeeds.js";
 // Importa a função que calcula o limite WAT
 import { getWAT } from "./ToWAT.js";
 
-// Importa a função do gradiente 2º segmento para flaps UP
-import Gradient_2segFlapsUp, {
-    CLIMB_GRADIENTE_2SEG_FlapsUp_MTOW
-} from "./cg2segFlapsUp_CSATH.js";
-
-// Importa a função do gradiente 2º segmento para flaps 1
-import Gradient_2segFlaps1, {
-    CLIMB_GRADIENTE_2SEG_Flaps1_MTOW
-} from "./cg2segFlaps1_CSATH.js";
-
-// Importa a função do 3º segmento para flaps 1
-import Gradient_3segFlaps1, {
-    ThirdSegmentDistanceFlaps1_MTOW
-} from "./cg3segFlaps1_CSATH.js";
-
-// Importa a função do 4º segmento para flaps UP
-import Gradient_4segFlapsUp, {
-    CLIMB_GRADIENTE_4SEG_FlapsUp_MTOW
-} from "./cg4segFlapsUp_CSATH.js";
+import Gradient_2segFlapsUp from "./cg2segFlapsUp_CSATH.js";
+import Gradient_2segFlaps1 from "./cg2segFlaps1_CSATH.js";
+import Gradient_3segFlaps1 from "./cg3segFlaps1_CSATH.js";
+import Gradient_4segFlapsUp from "./cg4segFlapsUp_CSATH.js";
 
 // Importa a função que calcula o gradiente requerido do 2º segmento
 import Gradient_Required2Seg from "./cgRequired2Seg_CSATH.js";
@@ -972,88 +957,90 @@ document.addEventListener("DOMContentLoaded", async () => {
         /**
          * Net Climb Gradient - Single Engine - Second Segment
          */
-        let mtowCG2 = mtowLimited;
+        /**
+ * Net Climb Gradient - Single Engine - Second Segment
+ */
+let mtowCG2 = mtowLimited;
 
+// Se os flaps estiverem em UP, calcula o gradiente do 2º segmento para flaps UP
+if (flaps === "up") {
+    // Calcula o gradiente disponível do 2º segmento
+    const gradient2Seg = Gradient_2segFlapsUp({
+        pressureAltitude: pa,
+        oat: oat,
+        tow: tow,
+        inlet: inlet,
+        gradientRequired: maxGradient_2seg
+    });
+    console.log(gradient2Seg);
 
-        // Se os flaps estiverem em UP, calcula o gradiente do 2º segmento para flaps UP
-        if (flaps === "up") {
+    // Se falhar, marca a flag do 2º segmento como falhada
+    if (gradient2Seg.status === "FAILED") {
+        // Marca o 2º segmento como failed
+        cgFailed2Seg = true;
 
-            // Calcula o gradiente disponível do 2º segmento
-            const gradient2Seg = Gradient_2segFlapsUp({
-                pressureAltitude: pa,
-                oat: oat,
-                tow: tow,
-                inlet: inlet,
-                gradientRequired: maxGradient_2seg
-            });
-            console.log(gradient2Seg);
-            /// Se falhar, marca a flag do 2º segmento como falhada
-            if (gradient2Seg.status === "FAILED") {
-                // Marca o 2º segmento como failed
-                cgFailed2Seg = true;
+        // Mostra o detalhe do 2º segmento
+        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
 
-                // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
+        // Remove a classe de sucesso
+        document.getElementById("ttCg2").classList.remove("ok");
 
-                // Remove a classe de sucesso
-                document.getElementById("ttCg2").classList.remove("ok");
+        // Adiciona a classe de falha
+        document.getElementById("ttCg2").classList.add("bad");
+    } else {
+        // Marca o 2º segmento como passed
+        cgFailed2Seg = false;
 
-                // Adiciona a classe de falha
-                document.getElementById("ttCg2").classList.add("bad");
+        // Mostra o detalhe do 2º segmento
+        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
 
-            } else {
-                // Marca o 2º segmento como passed
-                cgFailed2Seg = false;
+        // Remove a classe de falha
+        document.getElementById("ttCg2").classList.remove("bad");
 
-                // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg  + "% / " + gradient2Seg.gradient  + "%";
+        // Adiciona a classe de sucesso
+        document.getElementById("ttCg2").classList.add("ok");
+    }
 
-                // Remove a classe de falha
-                document.getElementById("ttCg2").classList.remove("bad");
+} else if (flaps === "1") {
+    // Calcula o gradiente disponível do 2º segmento para flaps 1
+    const gradient2Seg = Gradient_2segFlaps1({
+        pressureAltitude: pa,
+        oat: oat,
+        tow: tow,
+        inlet: inlet,
+        gradientRequired: maxGradient_2seg
+    });
+    console.log(gradient2Seg);
 
-                // Adiciona a classe de sucesso
-                document.getElementById("ttCg2").classList.add("ok");
-            }
-            
-        } else if (flaps === "1") {
-            // Calcula o gradiente disponível do 2º segmento para flaps 1
-            const gradient2Seg = Gradient_2segFlaps1({
-                pressureAltitude: pa,
-                oat: oat,
-                tow: tow,
-                inlet: inlet,
-                gradientRequired: maxGradient_2seg
-            });
-            console.log(gradient2Seg);
-            // Se falhar, marca a flag do 2º segmento como falhada
-            if (gradient2Seg.status === "FAILED") {
-                // Marca o 2º segmento como failed
-                cgFailed2Seg = true;
+    // Se falhar, marca a flag do 2º segmento como falhada
+    if (gradient2Seg.status === "FAILED") {
+        // Marca o 2º segmento como failed
+        cgFailed2Seg = true;
 
-                // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient  + "%";
+        // Mostra o detalhe do 2º segmento
+        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
 
-                // Remove a classe de sucesso
-                document.getElementById("ttCg2").classList.remove("ok");
+        // Remove a classe de sucesso
+        document.getElementById("ttCg2").classList.remove("ok");
 
-                // Adiciona a classe de falha
-                document.getElementById("ttCg2").classList.add("bad");
+        // Adiciona a classe de falha
+        document.getElementById("ttCg2").classList.add("bad");
+    } else {
+        // Marca o 2º segmento como passed
+        cgFailed2Seg = false;
 
-            } else {
-                // Marca o 2º segmento como passed
-                cgFailed2Seg = false;
+        // Mostra o detalhe do 2º segmento
+        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
 
-                // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
+        // Remove a classe de falha
+        document.getElementById("ttCg2").classList.remove("bad");
 
-                // Remove a classe de falha
-                document.getElementById("ttCg2").classList.remove("bad");
+        // Adiciona a classe de sucesso
+        document.getElementById("ttCg2").classList.add("ok");
+    }
+}
 
-                // Adiciona a classe de sucesso
-                document.getElementById("ttCg2").classList.add("ok");
-            }
-            
-        }
+// Calcula o MTOW real do 2º segmento, recalculando required e performed para cada peso
 mtowCG2 = getMaxTow2Seg({
     flaps: flaps,
     pa: pa,
@@ -1063,6 +1050,7 @@ mtowCG2 = getMaxTow2Seg({
     slope: runwayEntry.slope,
     obstacles: filtered_2Seg
 }) ?? mtowCG2;
+        
         /**
          * Flight Path to Clear Distant Obstacles - 3º/4º segmento
          */
@@ -1120,45 +1108,53 @@ mtowCG2 = getMaxTow2Seg({
         /**
          * Horizontal Distance - Single Engine - Third Segment
          */
-        // Calcula a distância percorrida pelo avião no 3º segmento
-        const thirdSegment = Gradient_3segFlaps1({
-            pressureAltitude: pa,
-            oat: oat,
-            tow: tow,
-            inlet: inlet,
-            obstacleDistance: criticalObstacleDistance3Seg
-        });
-        console.log(thirdSegment);
-        // Se o 3º segmento falhar
-        if (thirdSegment.status === "FAILED") {
-            // Marca a flag do 3º segmento como failed
-            cgFailed3Seg = true;
 
-            // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
-            document.getElementById("ttCg3").textContent =
-                criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
+/**
+ * Horizontal Distance - Single Engine - Third Segment
+ */
+let mtowCG3 = mtowLimited;
 
-            // Remove a classe de sucesso
-            document.getElementById("ttCg3").classList.remove("ok");
+// Calcula a distância percorrida pelo avião no 3º segmento
+const thirdSegment = Gradient_3segFlaps1({
+    pressureAltitude: pa,
+    oat: oat,
+    tow: tow,
+    inlet: inlet,
+    obstacleDistance: criticalObstacleDistance3Seg
+});
+console.log(thirdSegment);
 
-            // Adiciona a classe de falha
-            document.getElementById("ttCg3").classList.add("bad");
+// Se o 3º segmento falhar
+if (thirdSegment.status === "FAILED") {
+    // Marca a flag do 3º segmento como failed
+    cgFailed3Seg = true;
 
-        } else {
-            // Marca a flag do 3º segmento como passed
-            cgFailed3Seg = false;
+    // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
+    document.getElementById("ttCg3").textContent =
+        criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
 
-            // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
-            document.getElementById("ttCg3").textContent =
-                criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
+    // Remove a classe de sucesso
+    document.getElementById("ttCg3").classList.remove("ok");
 
-            // Remove a classe de falha
-            document.getElementById("ttCg3").classList.remove("bad");
+    // Adiciona a classe de falha
+    document.getElementById("ttCg3").classList.add("bad");
 
-            // Adiciona a classe de sucesso
-            document.getElementById("ttCg3").classList.add("ok");
-        }
-        
+} else {
+    // Marca a flag do 3º segmento como passed
+    cgFailed3Seg = false;
+
+    // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
+    document.getElementById("ttCg3").textContent =
+        criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
+
+    // Remove a classe de falha
+    document.getElementById("ttCg3").classList.remove("bad");
+
+    // Adiciona a classe de sucesso
+    document.getElementById("ttCg3").classList.add("ok");
+}
+
+// Calcula o MTOW real do 3º segmento, recalculando a distância crítica para cada peso
 mtowCG3 = getMaxTow3Seg({
     pa: pa,
     oat: oat,
@@ -1167,51 +1163,57 @@ mtowCG3 = getMaxTow3Seg({
     slope: runwayEntry.slope,
     obstacles: filtered_34Seg
 }) ?? mtowCG3;
+        
         /**
          * Net Climb Gradient - Single Engine - 4º Final Segment
          */
 
-        let mtowCG4 = mtowLimited;
+        /**
+ * Net Climb Gradient - Single Engine - 4º Final Segment
+ */
+let mtowCG4 = mtowLimited;
 
-        // Calcula a performance do 4º segmento
-        const gradient4Seg = Gradient_4segFlapsUp({
-            pressureAltitude: pa,
-            oat: oat,
-            tow: tow,
-            inlet: inlet,
-            gradientRequired: requiredGradient4Seg
-        });
-        console.log(gradient4Seg);
-        // Se o 4º segmento falhar
-        if (gradient4Seg.status === "FAILED") {
-            // Marca a flag do 4º segmento como failed
-            cgFailed4Seg = true;
+// Calcula a performance do 4º segmento
+const gradient4Seg = Gradient_4segFlapsUp({
+    pressureAltitude: pa,
+    oat: oat,
+    tow: tow,
+    inlet: inlet,
+    gradientRequired: requiredGradient4Seg
+});
+console.log(gradient4Seg);
 
-            // Mostra o gradiente requerido e o gradiente calculado
-            document.getElementById("ttCg4").textContent =
-                requiredGradient4Seg  + "% / " + gradient4Seg.gradient  + "%";
+// Se o 4º segmento falhar
+if (gradient4Seg.status === "FAILED") {
+    // Marca a flag do 4º segmento como failed
+    cgFailed4Seg = true;
 
-            // Remove a classe de sucesso
-            document.getElementById("ttCg4").classList.remove("ok");
+    // Mostra o gradiente requerido e o gradiente calculado
+    document.getElementById("ttCg4").textContent =
+        requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
 
-            // Adiciona a classe de falha
-            document.getElementById("ttCg4").classList.add("bad");
+    // Remove a classe de sucesso
+    document.getElementById("ttCg4").classList.remove("ok");
 
-        } else {
-            // Marca a flag do 4º segmento como passed
-            cgFailed4Seg = false;
+    // Adiciona a classe de falha
+    document.getElementById("ttCg4").classList.add("bad");
 
-            // Mostra o gradiente requerido e o gradiente calculado
-            document.getElementById("ttCg4").textContent =
-                requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
+} else {
+    // Marca a flag do 4º segmento como passed
+    cgFailed4Seg = false;
 
-            // Remove a classe de falha
-            document.getElementById("ttCg4").classList.remove("bad");
+    // Mostra o gradiente requerido e o gradiente calculado
+    document.getElementById("ttCg4").textContent =
+        requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
 
-            // Adiciona a classe de sucesso
-            document.getElementById("ttCg4").classList.add("ok");
+    // Remove a classe de falha
+    document.getElementById("ttCg4").classList.remove("bad");
 
-        }
+    // Adiciona a classe de sucesso
+    document.getElementById("ttCg4").classList.add("ok");
+}
+
+// Calcula o MTOW real do 4º segmento, recalculando o required crítico para cada peso
 mtowCG4 = getMaxTow4Seg({
     pa: pa,
     oat: oat,
@@ -1221,6 +1223,8 @@ mtowCG4 = getMaxTow4Seg({
     obstacles: filtered_34Seg
 }) ?? mtowCG4;
 
+
+        
         /**
          * Resultado geral do climb gradient
          */
