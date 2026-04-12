@@ -14,12 +14,10 @@ import Gradient_Required2Seg from "./cgRequired2Seg_CSATH.js";
 import Gradient_Required34Seg from "./cgRequired34Seg_CSATH.js";
 
 // Lista de pesos a testar
-const WEIGHTS = [
-  4500, 4600, 4700, 4800, 4900,
-  5000, 5100, 5200, 5300, 5400,
-  5500, 5600, 5700, 5800, 5900,
-  6000, 6100, 6200, 6300, 6400, 6500
-];
+const WEIGHTS = Array.from(
+  { length: 6500 - 4500 + 1 },
+  (_, i) => 4500 + i
+);
 
 /**
  * Calcula o TODR para um peso específico.
