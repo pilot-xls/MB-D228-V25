@@ -991,7 +991,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 cgFailed2Seg = true;
 
                 // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient.toFixed(1)  + "% / " + gradient2Seg.gradient.gradient.toFixed(1)  + "%";
+                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient + "% / " + gradient2Seg.gradient.gradient + "%";
 
                 // Remove a classe de sucesso
                 document.getElementById("ttCg2").classList.remove("ok");
@@ -1004,7 +1004,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 cgFailed2Seg = false;
 
                 // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient.toFixed(1)  + "% / " + gradient2Seg.gradient.gradient.toFixed(1)  + "%";
+                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient  + "% / " + gradient2Seg.gradient.gradient  + "%";
 
                 // Remove a classe de falha
                 document.getElementById("ttCg2").classList.remove("bad");
@@ -1037,7 +1037,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 cgFailed2Seg = true;
 
                 // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient.toFixed(1)  + "% / " + gradient2Seg.gradient.gradient.toFixed(1)  + "%";
+                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient + "% / " + gradient2Seg.gradient.gradient  + "%";
 
                 // Remove a classe de sucesso
                 document.getElementById("ttCg2").classList.remove("ok");
@@ -1050,7 +1050,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 cgFailed2Seg = false;
 
                 // Mostra o detalhe do 2º segmento
-                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient.toFixed(1)  + "% / " + gradient2Seg.gradient.toFixed(1) + "%";
+                document.getElementById("ttCg2").textContent = maxGradient_2seg.gradient + "% / " + gradient2Seg.gradient + "%";
 
                 // Remove a classe de falha
                 document.getElementById("ttCg2").classList.remove("bad");
@@ -1197,7 +1197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Mostra o gradiente requerido e o gradiente calculado
             document.getElementById("ttCg4").textContent =
-                requiredGradient4Seg.gradient.toFixed(1)  + "% / " + gradient4Seg.gradient.gradient.toFixed(1)  + "%";
+                requiredGradient4Seg.gradient  + "% / " + gradient4Seg.gradient.gradient  + "%";
 
             // Remove a classe de sucesso
             document.getElementById("ttCg4").classList.remove("ok");
@@ -1211,7 +1211,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Mostra o gradiente requerido e o gradiente calculado
             document.getElementById("ttCg4").textContent =
-                requiredGradient4Seg.gradient.toFixed(1)  + "% / " + gradient4Seg.gradient.gradient.toFixed(1)  + "%";
+                requiredGradient4Seg.gradient + "% / " + gradient4Seg.gradient.gradient + "%";
 
             // Remove a classe de falha
             document.getElementById("ttCg4").classList.remove("bad");
