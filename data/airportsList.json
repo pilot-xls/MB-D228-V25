@@ -60,7 +60,7 @@
     {
         "icao": "LIRQ",
         "rwy": "5",
-        "heading": 048,
+        "heading": 48,
         "elevation": 122,
         "tora": 1605,
         "toda": 1719,
@@ -114,6 +114,5 @@
                 "obstacle_dist": 0
             }
         ]
-    },
-    
+    }
 ]
