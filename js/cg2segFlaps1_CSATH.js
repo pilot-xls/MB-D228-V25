@@ -741,7 +741,7 @@ console.log("CLIMB_GRADIENTE_2SEG_Flaps1_MTOW.gradientRequired ", gradientRequir
     if (yAfterInlet == null) continue;
 
     // STEP 5 — converter para gradient
-    const gradient = (getClimbGradientFromY(yAfterInlet)-0.5);
+    const gradient = getClimbGradientFromY(yAfterInlet);
     if (gradient == null) continue;
 
     // verificar se cumpre o requisito
