@@ -649,6 +649,9 @@ function getClimbGradientFromY(y) {
 // ---------------------------------------------------------
 
 export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet, gradientRequired }) {
+	
+	console.log("CG performed for 2º segment flaps 1 gradientRequired ", gradientRequired);
+	
   DEBUG_REPORT = []; // limpar relatório
 	// STEP 1 — y_ref via PA/OAT
   const yRef = getYRefFromPAOAT(pressureAltitude, oat);
@@ -672,12 +675,12 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
   //const rounded = Math.round((gradient-0.5) * 10) / 10;
   
   if ((gradient-0.5) < gradientRequired) {
-    reportFail(`Gradient ${rounded}% está abaixo do mínimo (${gradientRequired}%).`);
+    reportFail(`Gradient ${(gradient-0.5)}% está abaixo do mínimo (${gradientRequired}%).`);
     return { gradient: (gradient-0.5), status: "FAILED", report: DEBUG_REPORT };
   }
 	
   return {
-    gradient: rounded,
+    gradient: (gradient-0.5),
     status: "PASSED",
     report: DEBUG_REPORT
   };
