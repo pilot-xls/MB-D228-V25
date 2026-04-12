@@ -708,7 +708,8 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1_MTOW({
   inlet,
   gradientRequired
 }) {
-
+console.log("CLIMB_GRADIENTE_2SEG_Flaps1_MTOW.gradientRequired ", gradientRequired);
+	
   // limpa o relatório de debug
   DEBUG_REPORT = [];
 
