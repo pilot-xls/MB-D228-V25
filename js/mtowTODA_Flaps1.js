@@ -864,11 +864,15 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
     if (OAT < tR.min || OAT > tR.max) return this._fail(base, "range", outOfRange("OAT", OAT, tR)); // Range OAT
     if (wind < wiR.min || wind > wiR.max) return this._fail(base, "range", outOfRange("Wind", wind, wiR)); // Range wind
     if (slope < slopeR.min || slope > slopeR.max) return this._fail(base, "range", outOfRange("slope", slope, slopeR)); // Range slope
-    if (TORA < toraR.min || TORA > toraR.max) return this._fail(base, "range", outOfRange("TORA", TORA, toraR)); // Range TORA
+    if (TORA < toraR.min) return this._fail(base, "range", outOfRange("TORA", TORA, toraR)); // Range TORA (low => fail)
+    const TORA_used = (TORA > toraR.max) ? toraR.max : TORA; // TORA (high => clamp)
 
     const debug = {}; // Debug acumulado
+    if (TORA_used !== TORA) { // Registrar clamp de TORA no debug
+      debug.toraClamp = { requested: TORA, used: TORA_used, range: { min: toraR.min, max: toraR.max } }; // Info clamp
+    } // Fechar if
 
-    try { debug.step1 = this.getYFromTORA(TORA); } catch (e) { return this._fail(base, "step1", e?.message ?? String(e), { ...debug }); } // Step1
+    try { debug.step1 = this.getYFromTORA(TORA_used); } catch (e) { return this._fail(base, "step1", e?.message ?? String(e), { ...debug }); } // Step1
     try { debug.step2 = this.getYBeforeSlope(slope, debug.step1.y); } catch (e) { return this._fail(base, "step2", e?.message ?? String(e), { ...debug }); } // Step2
     try { debug.step3 = this.getYBeforeWind(wind, debug.step2.y_beforeSlope); } catch (e) { return this._fail(base, "step3", e?.message ?? String(e), { ...debug }); } // Step3
     try { debug.step4 = this.getYRef1({ PA, OAT }); } catch (e) { return this._fail(base, "step4", e?.message ?? String(e), { ...debug }); } // Step4
