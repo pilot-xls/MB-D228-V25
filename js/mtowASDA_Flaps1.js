@@ -767,12 +767,19 @@ const TO_ENGINE_MTOW = {
     if (PA < paR.min || PA > paR.max) return this._fail(base, "range", outOfRange("PA", PA, paR)); // Range PA
     if (OAT < tR.min || OAT > tR.max) return this._fail(base, "range", outOfRange("OAT", OAT, tR)); // Range OAT
     if (wind < wiR.min || wind > wiR.max) return this._fail(base, "range", outOfRange("Wind", wind, wiR)); // Range Wind
-    if (ASDA < asdaR.min || ASDA > asdaR.max) return this._fail(base, "range", outOfRange("ASDA", ASDA, asdaR)); // Range ASDA
+    // ASDA:
+    // - abaixo do mínimo do dataset => falha
+    // - acima do máximo do dataset => usa ASDA max (retorna MTOW máximo permitido pelo gráfico)
+    if (ASDA < asdaR.min) return this._fail(base, "range", outOfRange("ASDA", ASDA, asdaR)); // Range ASDA (low => fail)
+    const ASDA_used = (ASDA > asdaR.max) ? asdaR.max : ASDA; // Apenas clamp no limite superior
 
     const debug = {}; // Debug acumulado
+    if (ASDA_used !== ASDA) { // Registrar clamp de ASDA no debug
+      debug.asdaClamp = { requested: ASDA, used: ASDA_used, range: { min: asdaR.min, max: asdaR.max } }; // Info clamp
+    } // Fechar if
 
     try { // Step1
-      debug.step1 = this.getYFromASDA(ASDA); // ASDA -> y
+      debug.step1 = this.getYFromASDA(ASDA_used); // ASDA -> y (com clamp)
     } catch (e) {
       return this._fail(base, "step1", e?.message ?? String(e), { ...debug }); // Falha
     } // Fechar try/catch
