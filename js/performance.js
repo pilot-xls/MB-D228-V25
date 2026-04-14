@@ -299,6 +299,31 @@ function populateRunwaySelect(selectedICAO) {
 }
 
 /**
+ * Atualiza os dados do tooltip da pista selecionada.
+ */
+function updateRunwayTooltip(icao, rwy) {
+    // Procura a entrada correspondente ao aeroporto e pista
+    const entry = airportData.find(a => a.icao === icao && a.rwy == rwy);
+
+    // Se não encontrar entrada, repõe os placeholders
+    if (!entry) {
+        document.getElementById("ttTora").textContent = "—";
+        document.getElementById("ttToda").textContent = "—";
+        document.getElementById("ttAsda").textContent = "—";
+        document.getElementById("ttElev").textContent = "—";
+        document.getElementById("ttSlope").textContent = "—";
+        return;
+    }
+
+    // Preenche os dados da pista no tooltip
+    document.getElementById("ttTora").textContent = entry.tora;
+    document.getElementById("ttToda").textContent = entry.toda;
+    document.getElementById("ttAsda").textContent = entry.asda;
+    document.getElementById("ttElev").textContent = entry.elevation;
+    document.getElementById("ttSlope").textContent = entry.slope + "%";
+}
+
+/**
  * Restaura os dados do formulário guardados no localStorage.
  */
 function restorePerformanceForm() {
@@ -320,6 +345,9 @@ function restorePerformanceForm() {
     if (saved.runway) {
         document.getElementById("runway").value = saved.runway;
     }
+
+    // Atualiza também os dados do tooltip para a pista restaurada
+    updateRunwayTooltip(saved.airport, saved.runway);
 
     // Repõe os restantes campos
     if (saved.wind) document.getElementById("wind").value = saved.wind;
@@ -551,6 +579,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Limpa a pista selecionada quando o aeroporto muda
         document.getElementById("runway").value = "";
 
+        // Limpa os dados da pista no tooltip
+        updateRunwayTooltip(selectedICAO, "");
+
         // Guarda o estado atual do formulário
         savePerformanceForm();
     });
@@ -565,26 +596,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Vai buscar a pista atualmente selecionada
         const rwy = document.getElementById("runway").value;
 
-        // Procura a entrada correspondente ao aeroporto e pista
-        const entry = airportData.find(a => a.icao === icao && a.rwy == rwy);
-
-        // Se não encontrar entrada, termina
-        if (!entry) return;
-
-        // Preenche o TORA no tooltip
-        document.getElementById("ttTora").textContent = entry.tora;
-
-        // Preenche o TODA no tooltip
-        document.getElementById("ttToda").textContent = entry.toda;
-
-        // Preenche o ASDA no tooltip
-        document.getElementById("ttAsda").textContent = entry.asda;
-
-        // Preenche a elevação no tooltip
-        document.getElementById("ttElev").textContent = entry.elevation;
-
-        // Preenche o slope no tooltip
-        document.getElementById("ttSlope").textContent = entry.slope + "%";
+        // Atualiza os dados da pista no tooltip
+        updateRunwayTooltip(icao, rwy);
     });
 
     /**
