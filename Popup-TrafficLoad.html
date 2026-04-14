@@ -21,35 +21,24 @@
             </div>
             <!-- Tab 2 -->
             <div class="tab-content" id="tab2">
-                <div class="counter-row"> <span>Homens</span>
-                    <div>
-                        <button class="counter-btn" onclick="updateCount('men', -1)">−</button>
-                        <span id="men-count" class="counter-value">0</span>
-                        <button class="counter-btn" onclick="updateCount('men', 1)">+</button>
-                    </div>
+                <div class="counter-row">
+                    <label for="men-count">Homens</label>
+                    <input id="men-count" class="counter-input" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
                 </div>
                 <div class="counter-row">
-                    <span>Mulheres</span>
-                    <div>
-                        <button class="counter-btn" onclick="updateCount('women', -1)">−</button>
-                        <span id="women-count" class="counter-value">0</span>
-                        <button class="counter-btn" onclick="updateCount('women', 1)">+</button>
-                    </div>
+                    <label for="women-count">Mulheres</label>
+                    <input id="women-count" class="counter-input" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
                 </div>
                 <div class="counter-row">
-                    <span>Crianças</span>
-                    <div>
-                        <button class="counter-btn" onclick="updateCount('children', -1)">−</button>
-                        <span id="children-count" class="counter-value">0</span>
-                        <button class="counter-btn" onclick="updateCount('children', 1)">+</button>
-                    </div>
+                    <label for="children-count">Crianças</label>
+                    <input id="children-count" class="counter-input" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
                 </div>
                 <div id="Total-Man-Pax">
                     <div>
                         <span>Extra</span>
-                        <input id="extra"></input>
+                        <input id="extra" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
                     </div>
-                    <div><span>Total</span><span id="total">100</span>
+                    <div><span>Total</span><span id="total">0</span>
                     </div>
                 </div>
             </div>

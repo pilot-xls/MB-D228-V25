@@ -306,17 +306,20 @@
     padding-top: 13px;
 }
 
-.popup-TLoad #tab2 .counter-row span {
+.popup-TLoad #tab2 .counter-row label {
     font-weight: bold;
     text-align: center;
     font-size: 18px;
 }
 
-.popup-TLoad #tab2 .counter-row div {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
+.popup-TLoad #tab2 .counter-input {
+    width: 70px;
+    text-align: center;
+    border-radius: 7px;
+    border-width: 1px;
+    border-style: ridge;
+    font-size: 18px;
+    padding: 4px 6px;
 }
 
 .popup-TLoad #tab2 .counter-row {
