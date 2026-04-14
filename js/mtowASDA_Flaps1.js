@@ -5,6 +5,7 @@
 //   const mtow = MTOW({ PA: 2000, OAT: 20, Wind: 10, runway_conditions: "DRY", ASDA: 700 });
 //   console.log(mtow.status, mtow.result);
 //   console.log(mtow.debug);
+import ASDR_Flaps1 from "./asdrFlaps1_CSATH.js";
 
 function MTOW(input) { // Função pública (mesmo estilo do teu ASDR)
   return TO_ENGINE_MTOW.compute(input); // Executar motor com debug
@@ -490,6 +491,26 @@ const TO_ENGINE_MTOW = {
     }; // Fechar return
   }, // Separador de métodos
 
+  _enforceAsdrLimitByDecrement(weight, { PA, OAT, wind, runway_conditions, ASDA }) { // Garante que ASDR calculada não excede a ASDA disponível
+    let safeWeight = Math.floor(weight); // Trabalhar com peso inteiro
+    let iter = 0; // Proteção contra loops infinitos
+    const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
+
+    while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir ASDR<=ASDA
+      const asdr = ASDR_Flaps1({ PA, OAT, Weight: safeWeight, Wind: wind, runway: runway_conditions }); // Recalcular ASDR para o peso candidato
+      if (asdr?.status === "passed" && Number.isFinite(asdr?.result) && asdr.result <= ASDA) { // Encontrou peso válido
+        return { safeWeight, debug: { mode: "ASDR_CHECK_DECREMENT", iterations: iter, asdrAtSafeWeight: asdr.result } }; // Return
+      }
+      safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador
+      iter += 1; // Incrementar contador
+    }
+
+    return { // Fallback conservador em caso de erro no cálculo forward
+      safeWeight: 0, // Se não validar, falha de forma segura
+      debug: { mode: "ASDR_CHECK_FALLBACK", iterations: iter, reason: "não foi possível validar ASDR dentro do limite de iterações" } // Debug
+    };
+  }, // Separador de métodos
+
   // ----------------------------------------------------
   // step1: ASDA -> y (resultData)
   // ----------------------------------------------------
@@ -821,10 +842,13 @@ const TO_ENGINE_MTOW = {
         return this._fail(base, "step6", "y_target acima do envelope (section+deviation)", { ...debug }); // Falha padrão
       } // Fechar if
 
+      const conservative = this._enforceAsdrLimitByDecrement(s6.weight, { PA, OAT, wind, runway_conditions, ASDA: ASDA_used }); // Garantir consistência com ASDR calculada
+      debug.step6Conservative = conservative.debug; // Registar ajuste no debug
+
       return { // Sucesso
         input: base.input, // Input normalizado
         status: "passed", // OK
-        result: s6.weight, // MTOW
+        result: conservative.safeWeight, // MTOW conservador
         debug // Debug completo
       }; // Fechar return
     } catch (e) {
