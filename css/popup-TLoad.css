@@ -342,17 +342,20 @@ dialog::backdrop {
     padding-top: 13px;
 }
 
-.popup-TLoad #tab2 .counter-row span {
+.popup-TLoad #tab2 .counter-row label {
     font-weight: bold;
     text-align: center;
     font-size: 18px;
 }
 
-.popup-TLoad #tab2 .counter-row div {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
+.popup-TLoad #tab2 .counter-input {
+    width: 70px;
+    text-align: center;
+    border-radius: 7px;
+    border-width: 1px;
+    border-style: ridge;
+    font-size: 18px;
+    padding: 4px 6px;
 }
 
 .popup-TLoad #tab2 .counter-row {
@@ -892,48 +895,13 @@ dialog::backdrop {
 }
 
 /* Texto das labels */
-.counter-row span {
+.counter-row label {
     width: 90px;
     font-weight: 500;
 }
 
-/* Slider */
-.counter-row input[type="range"] {
-    flex: 1;
-    height: 6px;
-    background: #ddd;
-    border-radius: 5px;
-    outline: none;
-    -webkit-appearance: none;
-}
-
-/* Estilo do "track" */
-.counter-row input[type="range"]::-webkit-slider-runnable-track {
-    height: 6px;
-    background: #ccc;
-    border-radius: 5px;
-}
-
-/* Estilo do "thumb" */
-.counter-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 34px;
-
-    /* aumenta a bolinha */
-    height: 34px;
-
-    /* aumenta a bolinha */
-    background: #0078ff;
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: -14px;
-
-    /* ajustar para centrar no track */
-}
-
-/* Valor ao lado do slider */
-.counter-value {
-    width: 30px;
+.counter-row .counter-input {
+    width: 70px;
     text-align: center;
     font-weight: bold;
 }

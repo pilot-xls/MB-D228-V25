@@ -21,7 +21,7 @@ editBtn.addEventListener("click", () => {
         // Activa o modo de edição no mapa de assentos
         seatMap.classList.add("edit-mode");
         // Esconde a legenda enquanto está em edição
-        legenda.style.display = "none";        
+        legenda.style.display = "none";
         // Troca o ícone do botão para ← (confirmar)
         editBtn.textContent = "←";
     } else {
@@ -49,16 +49,46 @@ document.querySelectorAll('.tab').forEach(tab => {
 
 
 // contadores
-const counts = { men: 0, women: 0, children: 0 };
+const maxPassengers = 19;
+const passengerInputs = {
+    men: document.getElementById('men-count'),
+    women: document.getElementById('women-count'),
+    children: document.getElementById('children-count'),
+};
 
-function updateCount(type, delta) {
-    counts[type] = Math.max(0, counts[type] + delta);
-    document.getElementById(type + '-count').textContent = counts[type];
-
-    // exemplo de total
-    const total = counts.men + counts.women + counts.children;
-    document.getElementById('total').textContent = total;
+function sanitizePositiveInteger(value) {
+    const digitsOnly = String(value || '').replace(/\D/g, '');
+    return digitsOnly ? Number(digitsOnly) : 0;
 }
+
+function getPassengerTotal() {
+    return sanitizePositiveInteger(passengerInputs.men.value)
+        + sanitizePositiveInteger(passengerInputs.women.value)
+        + sanitizePositiveInteger(passengerInputs.children.value);
+}
+
+function updatePassengerTotalDisplay() {
+    document.getElementById('total').textContent = getPassengerTotal();
+}
+
+Object.keys(passengerInputs).forEach((type) => {
+    passengerInputs[type].addEventListener('input', (event) => {
+        const currentInput = event.target;
+        let currentValue = sanitizePositiveInteger(currentInput.value);
+
+        const otherTotal = Object.keys(passengerInputs)
+            .filter((key) => key !== type)
+            .reduce((sum, key) => sum + sanitizePositiveInteger(passengerInputs[key].value), 0);
+
+        const maxForCurrent = Math.max(0, maxPassengers - otherTotal);
+        if (currentValue > maxForCurrent) {
+            currentValue = maxForCurrent;
+        }
+
+        currentInput.value = String(currentValue);
+        updatePassengerTotalDisplay();
+    });
+});
 
 // botões de assento
 document.querySelectorAll('.seat-btn').forEach(btn => {
@@ -105,14 +135,14 @@ document.getElementById("enter-btn").addEventListener("click", () => {
         //console.log("manualValue:", manualValue);
         totalWeight = manualValue;
         //console.log("totalWeight:", totalWeight);
-        moment = 0; 
+        moment = 0;
     }
 
     // 3) TAB 2 — somatório de passageiros / cargas
     if (tabId === "2") {
         const totalValue = document.getElementById("total").textContent.trim();
         totalWeight = totalValue;
-        moment = 0; 
+        moment = 0;
     }
 
     //console.log("ENVIADO PARA ROTAS:", totalWeight, moment);
@@ -121,7 +151,7 @@ document.getElementById("enter-btn").addEventListener("click", () => {
         total: Number(totalWeight) || 0,
         moment: Number(moment) || 0,
     }));
-    
+
 
     // 5) Manda fechar overlay em rotas
     window.parent.postMessage("closeTrafficPopup", "*");
@@ -156,6 +186,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
+
+
+const extraInput = document.getElementById('extra');
+if (extraInput) {
+    extraInput.addEventListener('input', (event) => {
+        event.target.value = String(sanitizePositiveInteger(event.target.value));
+    });
+}
+
+updatePassengerTotalDisplay();
 
 // Obtém o toggle (switch) através do id "toggleSeatType"
 const toggleSeatType = document.getElementById("toggleSeatType");

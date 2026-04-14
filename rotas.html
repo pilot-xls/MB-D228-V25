@@ -37,28 +37,25 @@
                 <!-- Tab 2 -->
                 <div class="tab-content" id="tab2">
                     <div class="counter-row">
-                        <span>Homens</span>
-                        <input type="range" min="0" max="19" value="0" id="men" oninput="updateSlider('men')">
-                        <span id="men-count" class="counter-value">0</span>
+                        <label for="men">Homens</label>
+                        <input id="men" class="counter-input" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
                     </div>
                     <div class="counter-row">
-                        <span>Mulheres</span>
-                        <input type="range" min="0" max="19" value="0" id="women" oninput="updateSlider('women')">
-                        <span id="women-count" class="counter-value">0</span>
+                        <label for="women">Mulheres</label>
+                        <input id="women" class="counter-input" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
                     </div>
                     <div class="counter-row">
-                        <span>Crianças</span>
-                        <input type="range" min="0" max="19" value="0" id="children" oninput="updateSlider('children')">
-                        <span id="children-count" class="counter-value">0</span>
+                        <label for="children">Crianças</label>
+                        <input id="children" class="counter-input" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
                     </div>
                     <div id="Total-Man-Pax">
                         <div>
                             <span>Extra</span>
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="extra">
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" id="extra" autocomplete="off">
                         </div>
                         <div>
                             <span>Total</span>
-                            <span id="total">100</span>
+                            <span id="total">0</span>
                         </div>
                     </div>
                 </div>

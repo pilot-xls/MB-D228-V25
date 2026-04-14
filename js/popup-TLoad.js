@@ -20,6 +20,34 @@ function toNum(v) {
 
 const extra = dialog.querySelector("#extra");
 const totalEl = dialog.querySelector("#total");
+const menInput = dialog.querySelector("#men");
+const womenInput = dialog.querySelector("#women");
+const childrenInput = dialog.querySelector("#children");
+const maxPassengers = 19;
+
+const passengerInputs = { men: menInput, women: womenInput, children: childrenInput };
+
+function sanitizePositiveInteger(value) {
+    const digitsOnly = String(value ?? "").replace(/\D/g, "");
+    return digitsOnly ? Number(digitsOnly) : 0;
+}
+
+function getPassengerCount() {
+    return counts.men + counts.women + counts.children;
+}
+
+function clampPassengerCounts() {
+    let overflow = getPassengerCount() - maxPassengers;
+    if (overflow <= 0) return;
+
+    ["children", "women", "men"].forEach((type) => {
+        if (overflow <= 0) return;
+        const reduction = Math.min(counts[type], overflow);
+        counts[type] -= reduction;
+        overflow -= reduction;
+    });
+}
+
 extra.addEventListener("input", calcularTotal_Tab2);
 
 
@@ -33,20 +61,22 @@ window.setAndUpdatePopup = function () {
 
     // TAB1 – PAYLOAD MANUAL
     const manual_payload = window.trafficLegAlvo?.trafficLoad?.total ?? 0;
-    document.getElementById("manual-load").value = manual_payload;
+    dialog.querySelector("#manual-load").value = manual_payload;
 
     // TAB2 – MANUAL PAX
-    counts.men = window.trafficLegAlvo?.trafficLoad?.homens ?? 0;
-    document.getElementById('men-count').textContent = counts.men;
+    counts.men = Number(window.trafficLegAlvo?.trafficLoad?.homens ?? 0);
+    counts.women = Number(window.trafficLegAlvo?.trafficLoad?.mulheres ?? 0);
+    counts.children = Number(window.trafficLegAlvo?.trafficLoad?.criancas ?? 0);
 
-    counts.women = window.trafficLegAlvo?.trafficLoad?.mulheres ?? 0;
-    document.getElementById("women-count").textContent = counts.women;
+    // garante a regra de negócio: máximo 19 passageiros
+    clampPassengerCounts();
 
-    counts.children = window.trafficLegAlvo?.trafficLoad?.criancas ?? 0;
-    document.getElementById("children-count").textContent = counts.children;
+    menInput.value = String(counts.men);
+    womenInput.value = String(counts.women);
+    childrenInput.value = String(counts.children);
 
     counts.extra = window.trafficLegAlvo?.trafficLoad?.extra ?? 0;
-    document.getElementById("extra").value = counts.extra;
+    dialog.querySelector("#extra").value = counts.extra;
 
     calcularTotal_Tab2();
 
@@ -65,18 +95,18 @@ window.setAndUpdatePopup = function () {
     const tl = window.trafficLegAlvo?.trafficLoad;
 
     // restaurar valores
-    document.getElementById("f-cargo-weight").value = tl?.f_gab ?? 0;
-    document.getElementById("f-cargo-Arm").value = tl?.f_gabArm ?? 2.560;
-    document.getElementById("r-cargo-weight").value = tl?.r_gab ?? 0;
+    dialog.querySelector("#f-cargo-weight").value = tl?.f_gab ?? 0;
+    dialog.querySelector("#f-cargo-Arm").value = tl?.f_gabArm ?? 2.560;
+    dialog.querySelector("#r-cargo-weight").value = tl?.r_gab ?? 0;
 
-    const toggle = document.getElementById("toggleSeatType");
+    const toggle = dialog.querySelector("#toggleSeatType");
     const isLarge =
         tl?.r_gabType === "LARGE" ||
         Number(tl?.r_gabArm) === 12.8;
 
     toggle.checked = !!isLarge;
 
-    document.getElementById("r-cargo-Arm").value = isLarge ? 12.8 : 13.142;
+    dialog.querySelector("#r-cargo-Arm").value = isLarge ? 12.8 : 13.142;
 
     // recalcular
     calcular_CargoControl();
@@ -123,12 +153,12 @@ function getPayloadDefaults() {
 
 
 // alternar separadores
-document.querySelectorAll('.tab').forEach(tab => {
+dialog.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        dialog.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        dialog.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById('tab' + tab.dataset.tab).classList.add('active');
+        dialog.querySelector('#tab' + tab.dataset.tab).classList.add('active');
     });
 });
 
@@ -161,8 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Obtém o toggle (switch) através do id "toggleSeatType"
-const toggleSeatType = document.getElementById("toggleSeatType");
-const cargoImage = document.getElementById("cargoImage");
+const toggleSeatType = dialog.querySelector("#toggleSeatType");
+const cargoImage = dialog.querySelector("#cargoImage");
 
 toggleSeatType.addEventListener("change", () => {
     cargoImage.src = toggleSeatType.checked ? "img/large-rear-cargo.png" : "img/small-rear-cargo.png";
@@ -182,24 +212,24 @@ window.popupTLoad.addEventListener("click", (event) => {
 
 
 //Botão enter 
-const btnEnter = document.getElementById("enter-btn");
+const btnEnter = dialog.querySelector("#enter-btn");
 btnEnter.addEventListener("click", () => {
 
     // 1) Detectar tab ativa
-    const tabActive = document.querySelector(".tab.active");
+    const tabActive = dialog.querySelector(".tab.active");
     const tabId = tabActive ? tabActive.dataset.tab : null;
 
 
     console.log("moment inicial: " + moment);
     // TAB 1 — carga manual
     if (tabId === "1") {
-        weight = Number(document.getElementById("manual-load").value) || 0;
+        weight = Number(dialog.querySelector("#manual-load").value) || 0;
         moment = 0;
     }
 
     // TAB 2 — passageiros
     if (tabId === "2") {
-        weight = Number(document.getElementById("total").textContent.trim()) || 0;
+        weight = Number(dialog.querySelector("#total").textContent.trim()) || 0;
         moment = 0;
         window.trafficLegAlvo.trafficLoad.total = weight;
         window.trafficLegAlvo.trafficLoad.moment = moment;
@@ -256,7 +286,7 @@ btnEnter.addEventListener("click", () => {
 });
 
 ["f-cargo-weight", "f-cargo-Arm", "r-cargo-weight"].forEach(id => {
-    const el = document.getElementById(id);
+    const el = dialog.querySelector("#" + id);
     if (!el) return;
     el.addEventListener("input", calcular_CargoControl);
 });
@@ -350,22 +380,20 @@ window.popupTLoad.addEventListener("cancel", () => {
 
 /*>>>>>>>>>>TAB2<<<<<<<<<*/
 
-// quando o slider muda
-function updateSlider(type) {
-    const value = Number(document.getElementById(type).value);
+function updatePassengers(type) {
+    const currentValue = sanitizePositiveInteger(passengerInputs[type].value);
+    const otherTotal = Object.keys(passengerInputs)
+        .filter((key) => key !== type)
+        .reduce((sum, key) => sum + counts[key], 0);
 
-    // atualiza o objeto counts
-    counts[type] = value;
-
-    // atualiza o número ao lado do slider
-    document.getElementById(type + '-count').textContent = value;
-
-    // recalcula total
-    calcularTotal_Tab2();
+    const maxForCurrent = Math.max(0, maxPassengers - otherTotal);
+    counts[type] = Math.min(currentValue, maxForCurrent);
+    passengerInputs[type].value = String(counts[type]);
 }
 
 function calcularTotal_Tab2() {
-    counts.extra = Number(extra.value) || 0;
+    counts.extra = sanitizePositiveInteger(extra.value);
+    extra.value = String(counts.extra);
 
     weight =
         counts.men * man +
@@ -375,6 +403,13 @@ function calcularTotal_Tab2() {
 
     totalEl.textContent = weight;
 }
+
+Object.keys(passengerInputs).forEach((type) => {
+    passengerInputs[type].addEventListener("input", () => {
+        updatePassengers(type);
+        calcularTotal_Tab2();
+    });
+});
 
 /* >>>>>>>>>>FIM TAB2<<<<<<<<<<*/
 
