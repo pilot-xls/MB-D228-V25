@@ -4,6 +4,7 @@
 //   const mtow = MTOW({ PA: 4000, OAT: 20, Wind: 10, slope: 0, TORA: 800});
 //   console.log(mtow.status, mtow.result);
 //   console.log(mtow.debug);
+import TORR_Flaps1 from "./torrFlaps1_CSATH.js";
 
 function MTOW(input) { // Função pública (mesmo estilo)
   return ENGINE.compute(input); // Executar motor com debug
@@ -559,6 +560,26 @@ const ENGINE = {
     };
   },
 
+  _enforceTorrLimitByDecrement(weight, { PA, OAT, wind, slope, TORA }) { // Garante que TORR calculada não excede a TORA disponível
+    let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
+    let iter = 0; // Proteção contra loops infinitos
+    const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
+
+    while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir TORR<=TORA
+      const torr = TORR_Flaps1({ PA, OAT, Weight: safeWeight, Wind: wind, slope }); // Recalcular TORR para o peso candidato
+      if (torr?.status === "passed" && Number.isFinite(torr?.result) && Math.round(torr.result) <= TORA) { // Encontrou peso válido
+        return { safeWeight, debug: { mode: "TORR_CHECK_DECREMENT", iterations: iter, torrAtSafeWeight: torr.result } }; // Return
+      }
+      safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador
+      iter += 1; // Incrementar contador
+    }
+
+    return { // Fallback conservador em caso de erro no cálculo forward
+      safeWeight: 0, // Se não validar, falha de forma segura
+      debug: { mode: "TORR_CHECK_FALLBACK", iterations: iter, reason: "não foi possível validar TORR dentro do limite de iterações" } // Debug
+    };
+  },
+
   _detectToraKey() { // Detectar o nome da coluna de TORA no resultData
     const sample = Array.isArray(resultData) ? resultData[0] : null; // Obter primeira linha
     if (!sample || typeof sample !== "object") throw new Error("Step1: resultData vazio ou inválido"); // Validar
@@ -873,7 +894,9 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
 
       if (s6.status === "failed") return this._fail(base, "step6", "y_target fora do envelope (section+deviation)", { ...debug }); // Falhar se não dá
 
-      return { input: base.input, status: "passed", result: s6.weight, debug }; // Return final
+      const conservative = this._enforceTorrLimitByDecrement(s6.weight, { PA, OAT, wind, slope, TORA }); // Garantir consistência com TORR calculada
+      debug.step6Conservative = conservative.debug; // Registar ajuste no debug
+      return { input: base.input, status: "passed", result: conservative.safeWeight, debug }; // Return final
     } catch (e) {
       return this._fail(base, "step6", e?.message ?? String(e), { ...debug }); // Falha step6
     }
