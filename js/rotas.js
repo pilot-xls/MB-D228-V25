@@ -395,14 +395,30 @@ function csath_MTOW(zfw) {
     return -1.05263 * zfw + 12084.21;
 }
 
+function getLegSummaryLine(label, maxValue, departureValue) {
+    const maxTxt = maxValue || "0";
+    const depTxt = departureValue || "0";
+    return `${label} "${maxTxt}" at departure "${depTxt}"`;
+}
+
+function buildLegSummary(leg) {
+    return {
+        fuel: getLegSummaryLine("Fuel max", leg?.maxFuelInfo || "Max: 0 lb (0 kg)", leg?.fuelOB ? `${leg.fuelOB} lb` : "0 lb"),
+        traffic: getLegSummaryLine("Traffic load max", leg?.maxPayloadInfo || "Max: 0 kg", leg?.trafficLoad?.total ? `${leg.trafficLoad.total} kg` : "0 kg"),
+        tow: `TOW "${leg?.tow || "0 kg"}"`,
+        lw: `LW "${leg?.landingWeight || "0 kg"}"`
+    };
+}
+
 // -------------------------------------------------------
 // 5. RENDERIZAÇÃO DE LEGS E ROTAS
 // -------------------------------------------------------
 
 function criarLegHTML(leg) {
+    const summary = buildLegSummary(leg);
     return `
     <div class="rota-leg" style="border-width:1px;border-radius:20px;border-style:groove;padding:5px;margin-top:10px;display:none;">
-        <div style="display:flex;justify-content:space-between;margin-top:13px;">
+        <div class="rota-leg-top-row" style="display:flex;justify-content:space-between;margin-top:13px;">
             <input class="leg-nome"
                    style="font-weight:bold;width:138px;border-width:1px;border-style:ridge;border-radius:10px;"
                    placeholder="ex:CAT-PRM"
@@ -410,10 +426,18 @@ function criarLegHTML(leg) {
             <div style="display:flex;align-items:center;gap:10px;">
                 <button class="btn-perf">Perf</button>
                 <button class="btn-mb">MB</button>
+                <button class="btn-edit-leg">Edit</button>
             </div>
         </div>
 
-        <div style="margin-top:10px;">
+        <div class="leg-summary">
+            <p class="leg-summary-fuel">${summary.fuel};</p>
+            <p class="leg-summary-traffic">${summary.traffic};</p>
+            <p class="leg-summary-tow">${summary.tow};</p>
+            <p class="leg-summary-lw">${summary.lw}.</p>
+        </div>
+
+        <div class="leg-edit-content" style="margin-top:10px;">
             <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
                     border-top-width:1px;border-top-style:dotted;padding-bottom:12px;">
                 <p style="margin-bottom:0;">Min Fuel O/B</p>
@@ -519,6 +543,16 @@ function aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData) {
         const maxPayloadEl = el.querySelector("#leg-max-traffic-load");
         if (maxFuelEl) maxFuelEl.textContent = leg.maxFuelInfo || "";
         if (maxPayloadEl) maxPayloadEl.textContent = leg.maxPayloadInfo || "";
+
+        const summary = buildLegSummary(leg);
+        const fuelSummaryEl = el.querySelector(".leg-summary-fuel");
+        const trafficSummaryEl = el.querySelector(".leg-summary-traffic");
+        const towSummaryEl = el.querySelector(".leg-summary-tow");
+        const lwSummaryEl = el.querySelector(".leg-summary-lw");
+        if (fuelSummaryEl) fuelSummaryEl.textContent = `${summary.fuel};`;
+        if (trafficSummaryEl) trafficSummaryEl.textContent = `${summary.traffic};`;
+        if (towSummaryEl) towSummaryEl.textContent = `${summary.tow};`;
+        if (lwSummaryEl) lwSummaryEl.textContent = `${summary.lw}.`;
     });
 }
 
@@ -890,6 +924,16 @@ function attachEvents(container, estado, aircraft) {
         //debugger;
         localStorage.setItem("mbLegSelecionada", JSON.stringify(legDataKg));
         window.location.href = "mb.html";
+    });
+
+    // Alternar modo da leg (view/edit)
+    container.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("btn-edit-leg")) return;
+        const legEl = e.target.closest(".rota-leg");
+        if (!legEl) return;
+
+        const expanded = legEl.classList.toggle("is-expanded");
+        e.target.textContent = expanded ? "View" : "Edit";
     });
 
     // UX: selecionar texto dos inputs ao focar + fechar teclado em mobile
@@ -1445,4 +1489,3 @@ function createEmptyTrafficLoad() {
         cargoMoment: 0
     };
 }
-
