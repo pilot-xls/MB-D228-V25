@@ -395,18 +395,14 @@ function csath_MTOW(zfw) {
     return -1.05263 * zfw + 12084.21;
 }
 
-function getLegSummaryLine(label, maxValue, departureValue) {
-    const maxTxt = maxValue || "0";
-    const depTxt = departureValue || "0";
-    return `${label} "${maxTxt}" at departure "${depTxt}"`;
-}
-
 function buildLegSummary(leg) {
     return {
-        fuel: getLegSummaryLine("Fuel max", leg?.maxFuelInfo || "Max: 0 lb (0 kg)", leg?.fuelOB ? `${leg.fuelOB} lb` : "0 lb"),
-        traffic: getLegSummaryLine("Traffic load max", leg?.maxPayloadInfo || "Max: 0 kg", leg?.trafficLoad?.total ? `${leg.trafficLoad.total} kg` : "0 kg"),
-        tow: `TOW "${leg?.tow || "0 kg"}"`,
-        lw: `LW "${leg?.landingWeight || "0 kg"}"`
+        fuelMax: leg?.maxFuelInfo || "Max: 0 lb (0 kg)",
+        fuelDeparture: leg?.fuelOB ? `${leg.fuelOB} lb` : "0 lb",
+        trafficMax: leg?.maxPayloadInfo || "Max: 0 kg",
+        trafficDeparture: leg?.trafficLoad?.total ? `${leg.trafficLoad.total} kg` : "0 kg",
+        tow: leg?.tow || "0 kg",
+        lw: leg?.landingWeight || "0 kg"
     };
 }
 
@@ -431,10 +427,35 @@ function criarLegHTML(leg) {
         </div>
 
         <div class="leg-summary">
-            <p class="leg-summary-fuel">${summary.fuel};</p>
-            <p class="leg-summary-traffic">${summary.traffic};</p>
-            <p class="leg-summary-tow">${summary.tow};</p>
-            <p class="leg-summary-lw">${summary.lw}.</p>
+            <div class="leg-summary-grid">
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Fuel max</span>
+                    <span class="leg-summary-value leg-summary-fuel-max">${summary.fuelMax}</span>
+                </div>
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Fuel departure</span>
+                    <span class="leg-summary-value leg-summary-fuel-dep">${summary.fuelDeparture}</span>
+                </div>
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Traffic max</span>
+                    <span class="leg-summary-value leg-summary-traffic-max">${summary.trafficMax}</span>
+                </div>
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Traffic departure</span>
+                    <span class="leg-summary-value leg-summary-traffic-dep">${summary.trafficDeparture}</span>
+                </div>
+            </div>
+            <div class="leg-summary-divider"></div>
+            <div class="leg-summary-weights">
+                <div class="leg-summary-item leg-summary-item-strong">
+                    <span class="leg-summary-label">TOW</span>
+                    <span class="leg-summary-value leg-summary-tow">${summary.tow}</span>
+                </div>
+                <div class="leg-summary-item leg-summary-item-strong">
+                    <span class="leg-summary-label">LW</span>
+                    <span class="leg-summary-value leg-summary-lw">${summary.lw}</span>
+                </div>
+            </div>
         </div>
 
         <div class="leg-edit-content" style="margin-top:10px;">
@@ -545,14 +566,18 @@ function aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData) {
         if (maxPayloadEl) maxPayloadEl.textContent = leg.maxPayloadInfo || "";
 
         const summary = buildLegSummary(leg);
-        const fuelSummaryEl = el.querySelector(".leg-summary-fuel");
-        const trafficSummaryEl = el.querySelector(".leg-summary-traffic");
+        const fuelMaxSummaryEl = el.querySelector(".leg-summary-fuel-max");
+        const fuelDepSummaryEl = el.querySelector(".leg-summary-fuel-dep");
+        const trafficMaxSummaryEl = el.querySelector(".leg-summary-traffic-max");
+        const trafficDepSummaryEl = el.querySelector(".leg-summary-traffic-dep");
         const towSummaryEl = el.querySelector(".leg-summary-tow");
         const lwSummaryEl = el.querySelector(".leg-summary-lw");
-        if (fuelSummaryEl) fuelSummaryEl.textContent = `${summary.fuel};`;
-        if (trafficSummaryEl) trafficSummaryEl.textContent = `${summary.traffic};`;
-        if (towSummaryEl) towSummaryEl.textContent = `${summary.tow};`;
-        if (lwSummaryEl) lwSummaryEl.textContent = `${summary.lw}.`;
+        if (fuelMaxSummaryEl) fuelMaxSummaryEl.textContent = summary.fuelMax;
+        if (fuelDepSummaryEl) fuelDepSummaryEl.textContent = summary.fuelDeparture;
+        if (trafficMaxSummaryEl) trafficMaxSummaryEl.textContent = summary.trafficMax;
+        if (trafficDepSummaryEl) trafficDepSummaryEl.textContent = summary.trafficDeparture;
+        if (towSummaryEl) towSummaryEl.textContent = summary.tow;
+        if (lwSummaryEl) lwSummaryEl.textContent = summary.lw;
     });
 }
 
