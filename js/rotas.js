@@ -429,30 +429,30 @@ function criarLegHTML(leg) {
         <div class="leg-summary">
             <div class="leg-summary-grid">
                 <div class="leg-summary-item">
-                    <span class="leg-summary-label">Maximum Fuel</span>
+                    <span class="leg-summary-label">Fuel max</span>
                     <span class="leg-summary-value leg-summary-fuel-max">${summary.fuelMax}</span>
                 </div>
                 <div class="leg-summary-item">
-                    <span class="leg-summary-label">Fuel at departure</span>
+                    <span class="leg-summary-label">Fuel departure</span>
                     <span class="leg-summary-value leg-summary-fuel-dep">${summary.fuelDeparture}</span>
                 </div>
                 <div class="leg-summary-item">
-                    <span class="leg-summary-label">Traffic Load</span>
+                    <span class="leg-summary-label">Traffic max</span>
                     <span class="leg-summary-value leg-summary-traffic-max">${summary.trafficMax}</span>
                 </div>
                 <div class="leg-summary-item">
-                    <span class="leg-summary-label">Traffic Load (actual)</span>
+                    <span class="leg-summary-label">Traffic departure</span>
                     <span class="leg-summary-value leg-summary-traffic-dep">${summary.trafficDeparture}</span>
                 </div>
             </div>
             <div class="leg-summary-divider"></div>
             <div class="leg-summary-weights">
                 <div class="leg-summary-item leg-summary-item-strong">
-                    <span class="leg-summary-label">Takeoff weight</span>
+                    <span class="leg-summary-label">TOW</span>
                     <span class="leg-summary-value leg-summary-tow">${summary.tow}</span>
                 </div>
                 <div class="leg-summary-item leg-summary-item-strong">
-                    <span class="leg-summary-label">Landing Weight</span>
+                    <span class="leg-summary-label">LW</span>
                     <span class="leg-summary-value leg-summary-lw">${summary.lw}</span>
                 </div>
             </div>
