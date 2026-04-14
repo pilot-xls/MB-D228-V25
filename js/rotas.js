@@ -395,14 +395,26 @@ function csath_MTOW(zfw) {
     return -1.05263 * zfw + 12084.21;
 }
 
+function buildLegSummary(leg) {
+    return {
+        fuelMax: leg?.maxFuelInfo || "Max: 0 lb (0 kg)",
+        fuelDeparture: leg?.fuelOB ? `${leg.fuelOB} lb` : "0 lb",
+        trafficMax: leg?.maxPayloadInfo || "Max: 0 kg",
+        trafficDeparture: leg?.trafficLoad?.total ? `${leg.trafficLoad.total} kg` : "0 kg",
+        tow: leg?.tow || "0 kg",
+        lw: leg?.landingWeight || "0 kg"
+    };
+}
+
 // -------------------------------------------------------
 // 5. RENDERIZAÇÃO DE LEGS E ROTAS
 // -------------------------------------------------------
 
 function criarLegHTML(leg) {
+    const summary = buildLegSummary(leg);
     return `
     <div class="rota-leg" style="border-width:1px;border-radius:20px;border-style:groove;padding:5px;margin-top:10px;display:none;">
-        <div style="display:flex;justify-content:space-between;margin-top:13px;">
+        <div class="rota-leg-top-row" style="display:flex;justify-content:space-between;margin-top:13px;">
             <input class="leg-nome"
                    style="font-weight:bold;width:138px;border-width:1px;border-style:ridge;border-radius:10px;"
                    placeholder="ex:CAT-PRM"
@@ -410,10 +422,43 @@ function criarLegHTML(leg) {
             <div style="display:flex;align-items:center;gap:10px;">
                 <button class="btn-perf">Perf</button>
                 <button class="btn-mb">MB</button>
+                <button class="btn-edit-leg">Edit</button>
             </div>
         </div>
 
-        <div style="margin-top:10px;">
+        <div class="leg-summary">
+            <div class="leg-summary-grid">
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Fuel max</span>
+                    <span class="leg-summary-value leg-summary-fuel-max">${summary.fuelMax}</span>
+                </div>
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Fuel departure</span>
+                    <span class="leg-summary-value leg-summary-fuel-dep">${summary.fuelDeparture}</span>
+                </div>
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Traffic max</span>
+                    <span class="leg-summary-value leg-summary-traffic-max">${summary.trafficMax}</span>
+                </div>
+                <div class="leg-summary-item">
+                    <span class="leg-summary-label">Traffic departure</span>
+                    <span class="leg-summary-value leg-summary-traffic-dep">${summary.trafficDeparture}</span>
+                </div>
+            </div>
+            <div class="leg-summary-divider"></div>
+            <div class="leg-summary-weights">
+                <div class="leg-summary-item leg-summary-item-strong">
+                    <span class="leg-summary-label">TOW</span>
+                    <span class="leg-summary-value leg-summary-tow">${summary.tow}</span>
+                </div>
+                <div class="leg-summary-item leg-summary-item-strong">
+                    <span class="leg-summary-label">LW</span>
+                    <span class="leg-summary-value leg-summary-lw">${summary.lw}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="leg-edit-content" style="margin-top:10px;">
             <div class="row-inputleg" style="display:flex;align-items:flex-end;justify-content:space-between;
                     border-top-width:1px;border-top-style:dotted;padding-bottom:12px;">
                 <p style="margin-bottom:0;">Min Fuel O/B</p>
@@ -519,6 +564,20 @@ function aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData) {
         const maxPayloadEl = el.querySelector("#leg-max-traffic-load");
         if (maxFuelEl) maxFuelEl.textContent = leg.maxFuelInfo || "";
         if (maxPayloadEl) maxPayloadEl.textContent = leg.maxPayloadInfo || "";
+
+        const summary = buildLegSummary(leg);
+        const fuelMaxSummaryEl = el.querySelector(".leg-summary-fuel-max");
+        const fuelDepSummaryEl = el.querySelector(".leg-summary-fuel-dep");
+        const trafficMaxSummaryEl = el.querySelector(".leg-summary-traffic-max");
+        const trafficDepSummaryEl = el.querySelector(".leg-summary-traffic-dep");
+        const towSummaryEl = el.querySelector(".leg-summary-tow");
+        const lwSummaryEl = el.querySelector(".leg-summary-lw");
+        if (fuelMaxSummaryEl) fuelMaxSummaryEl.textContent = summary.fuelMax;
+        if (fuelDepSummaryEl) fuelDepSummaryEl.textContent = summary.fuelDeparture;
+        if (trafficMaxSummaryEl) trafficMaxSummaryEl.textContent = summary.trafficMax;
+        if (trafficDepSummaryEl) trafficDepSummaryEl.textContent = summary.trafficDeparture;
+        if (towSummaryEl) towSummaryEl.textContent = summary.tow;
+        if (lwSummaryEl) lwSummaryEl.textContent = summary.lw;
     });
 }
 
@@ -890,6 +949,16 @@ function attachEvents(container, estado, aircraft) {
         //debugger;
         localStorage.setItem("mbLegSelecionada", JSON.stringify(legDataKg));
         window.location.href = "mb.html";
+    });
+
+    // Alternar modo da leg (view/edit)
+    container.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("btn-edit-leg")) return;
+        const legEl = e.target.closest(".rota-leg");
+        if (!legEl) return;
+
+        const expanded = legEl.classList.toggle("is-expanded");
+        e.target.textContent = expanded ? "View" : "Edit";
     });
 
     // UX: selecionar texto dos inputs ao focar + fechar teclado em mobile
@@ -1445,4 +1514,3 @@ function createEmptyTrafficLoad() {
         cargoMoment: 0
     };
 }
-
