@@ -547,13 +547,13 @@ const ENGINE = {
   },
 
   _enforceTodLimitByDecrement(weight, { PA, OAT, wind, slope, TORA }) { // Garante que TOD calculada não excede a TODA disponível
-    let safeWeight = Math.floor(weight); // Trabalhar com peso inteiro
+    let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
 
     while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir TOD<=TODA
       const todr = TODR_FlapsUp({ PA, OAT, Weight: safeWeight, Wind: wind, slope }); // Recalcular TOD para o peso candidato
-      if (todr?.status === "passed" && Number.isFinite(todr?.result) && todr.result <= TORA) { // Encontrou peso válido
+      if (todr?.status === "passed" && Number.isFinite(todr?.result) && Math.round(todr.result) <= TORA) { // Encontrou peso válido
         return { safeWeight, debug: { mode: "TOD_CHECK_DECREMENT", iterations: iter, todAtSafeWeight: todr.result } }; // Return
       }
       safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador

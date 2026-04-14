@@ -492,13 +492,13 @@ const TO_ENGINE_MTOW = {
   }, // Separador de métodos
 
   _enforceAsdrLimitByDecrement(weight, { PA, OAT, wind, runway_conditions, ASDA }) { // Garante que ASDR calculada não excede a ASDA disponível
-    let safeWeight = Math.floor(weight); // Trabalhar com peso inteiro
+    let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
 
     while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir ASDR<=ASDA
       const asdr = ASDR_Flaps1({ PA, OAT, Weight: safeWeight, Wind: wind, runway: runway_conditions }); // Recalcular ASDR para o peso candidato
-      if (asdr?.status === "passed" && Number.isFinite(asdr?.result) && asdr.result <= ASDA) { // Encontrou peso válido
+      if (asdr?.status === "passed" && Number.isFinite(asdr?.result) && Math.round(asdr.result) <= ASDA) { // Encontrou peso válido
         return { safeWeight, debug: { mode: "ASDR_CHECK_DECREMENT", iterations: iter, asdrAtSafeWeight: asdr.result } }; // Return
       }
       safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador

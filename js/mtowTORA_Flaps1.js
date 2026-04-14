@@ -561,13 +561,13 @@ const ENGINE = {
   },
 
   _enforceTorrLimitByDecrement(weight, { PA, OAT, wind, slope, TORA }) { // Garante que TORR calculada não excede a TORA disponível
-    let safeWeight = Math.floor(weight); // Trabalhar com peso inteiro
+    let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
 
     while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir TORR<=TORA
       const torr = TORR_Flaps1({ PA, OAT, Weight: safeWeight, Wind: wind, slope }); // Recalcular TORR para o peso candidato
-      if (torr?.status === "passed" && Number.isFinite(torr?.result) && torr.result <= TORA) { // Encontrou peso válido
+      if (torr?.status === "passed" && Number.isFinite(torr?.result) && Math.round(torr.result) <= TORA) { // Encontrou peso válido
         return { safeWeight, debug: { mode: "TORR_CHECK_DECREMENT", iterations: iter, torrAtSafeWeight: torr.result } }; // Return
       }
       safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador
