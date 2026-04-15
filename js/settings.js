@@ -13,6 +13,10 @@ const addModal = document.getElementById("add-modal");
 const deleteBtn = document.getElementById("delete-aircraft");
 const defaultCheckbox = document.getElementById("default-aircraft");
 
+function notifyDefaultAircraftChanged() {
+  window.dispatchEvent(new Event("defaultAircraftChanged"));
+}
+
 // payload inputs
 const manInput = document.getElementById("std-man");
 const womanInput = document.getElementById("std-woman");
@@ -68,6 +72,8 @@ const childInput = document.getElementById("std-child");
   } else if (Object.keys(aircraftData).length > 0) {
     updateTable(select.value = Object.keys(aircraftData)[0]);
   }
+
+  notifyDefaultAircraftChanged();
 
   // preenche os valores por defeito do payload
   manInput.value = payloadDefaults.man || "";
@@ -152,6 +158,7 @@ editForm.addEventListener("submit", e => {
 
   localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
   updateTable(currentAircraft);
+  notifyDefaultAircraftChanged();
   editModal.style.display = "none";
 });
 
@@ -163,6 +170,11 @@ deleteBtn.addEventListener("click", () => {
   delete aircraftData[currentAircraft];
   localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
 
+  const defaultId = localStorage.getItem("defaultAircraft");
+  if (defaultId === currentAircraft) {
+    localStorage.removeItem("defaultAircraft");
+  }
+
   const keys = Object.keys(aircraftData);
   if (keys.length > 0) {
     populateSelect();
@@ -173,6 +185,7 @@ deleteBtn.addEventListener("click", () => {
     currentAircraft = null;
   }
 
+  notifyDefaultAircraftChanged();
   editModal.style.display = "none";
 });
 
@@ -201,6 +214,7 @@ addForm.addEventListener("submit", e => {
   localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
   populateSelect();
   updateTable(id);
+  notifyDefaultAircraftChanged();
 
   addModal.style.display = "none";
   addForm.reset();
@@ -227,6 +241,7 @@ defaultCheckbox.addEventListener("change", e => {
   } else {
     localStorage.removeItem("defaultAircraft");
   }
+  notifyDefaultAircraftChanged();
 });
 
 // payload save
@@ -289,6 +304,7 @@ localStorage.setItem("rotasUserV1", JSON.stringify(sane));
 
     localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
 
+  notifyDefaultAircraftChanged();
 
   alert("Todos os dados foram repostos a partir dos ficheiros JSON.");
 });

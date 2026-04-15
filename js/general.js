@@ -100,6 +100,38 @@ document.addEventListener('DOMContentLoaded', () => {
             // Insere o HTML do header no contentor
             headerContainer.innerHTML = data;
 
+            const smallLabel = headerContainer.querySelector("small");
+
+            const updateDefaultAircraftLabel = async () => {
+                // garante que existem dados no arranque (primeira abertura da PWA)
+                if (typeof ensureSettingsData === "function") {
+                    await ensureSettingsData();
+                }
+
+                const defaultKey = localStorage.getItem("defaultAircraft");
+                const aircraftData = JSON.parse(localStorage.getItem("aircraftData") || "{}");
+                const defaultId = defaultKey && aircraftData[defaultKey]
+                    ? aircraftData[defaultKey].ID || defaultKey
+                    : "";
+
+                if (smallLabel) {
+                    smallLabel.textContent = defaultId;
+                }
+            };
+
+            // atualiza logo após carregar o header
+            updateDefaultAircraftLabel();
+
+            // atualiza na própria página quando o settings muda o default
+            window.addEventListener("defaultAircraftChanged", updateDefaultAircraftLabel);
+
+            // atualiza quando a mudança vier de outro separador/janela
+            window.addEventListener("storage", (e) => {
+                if (e.key === "defaultAircraft" || e.key === "aircraftData") {
+                    updateDefaultAircraftLabel();
+                }
+            });
+
             // Procura os elementos do menu já depois de inserir o header
             const menu = document.querySelector('.menu');
             const hamburger = document.querySelector('.hamburger');
