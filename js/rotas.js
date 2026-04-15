@@ -1338,7 +1338,10 @@ function attachEvents(container, estado, aircraft) {
             );
 
             const maxObNaCritKg = maxPermitidoLegKg + fuelTaxiKg;
-            const maxPossivelLb = Math.round(maxObNaCritKg * KG_TO_LB);
+            const maxPossivelLbByWeight = Math.floor(maxObNaCritKg * KG_TO_LB);
+            const maxPossivelLb = maxFuelTankLb > 0
+                ? Math.min(maxPossivelLbByWeight, maxFuelTankLb)
+                : maxPossivelLbByWeight;
 
             alert(
                 "⚠️ ATENÇÃO: rota exige reabastecimento intermédio\n\n" +
