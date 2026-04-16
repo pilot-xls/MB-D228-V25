@@ -1,5 +1,6 @@
-const CACHE_NAME = 'd228-cache-v1.4.0';
+const CACHE_NAME = 'd228-cache-v1.4.2';
 const APP_SHELL_FALLBACK = './index.html';
+const NETWORK_TIMEOUT_MS = 2500;
 
 const ASSETS = [
   './',
@@ -97,6 +98,24 @@ const ASSETS = [
   './js/torrFlapsUP_CSATH.js'
 ];
 
+
+async function fetchWithTimeout(request, timeoutMs = NETWORK_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(request, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function cacheResponse(request, response) {
+  if (!response || !response.ok) return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response.clone());
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
@@ -122,50 +141,66 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
 
-  // Navegação: tenta rede primeiro para atualizar conteúdo, fallback para cache.
+  // Permite probes de conectividade real sem interceptação do SW.
+  if (requestUrl.searchParams.has('sw-bypass')) {
+    return;
+  }
+
+  // Navegação: serve cache imediatamente e atualiza em background.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
+    event.respondWith((async () => {
+      const cachedNavigation = await caches.match(request);
+
+      const networkPromise = fetchWithTimeout(request)
+        .then(async (networkResponse) => {
+          await cacheResponse(request, networkResponse);
+          return networkResponse;
         })
-        .catch(async () => {
-          const cachedNavigation = await caches.match(request);
-          if (cachedNavigation) return cachedNavigation;
-          return caches.match(APP_SHELL_FALLBACK);
-        })
-    );
+        .catch(() => null);
+
+      if (cachedNavigation) {
+        event.waitUntil(networkPromise);
+        return cachedNavigation;
+      }
+
+      const networkResponse = await networkPromise;
+      if (networkResponse) return networkResponse;
+
+      const appShell = await caches.match(APP_SHELL_FALLBACK);
+      if (appShell) return appShell;
+
+      return new Response('Offline', {
+        status: 503,
+        statusText: 'Offline'
+      });
+    })());
     return;
   }
 
   // Recursos same-origin: cache primeiro, atualiza em background quando possível.
   if (isSameOrigin) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        const networkFetch = fetch(request)
-          .then((networkResponse) => {
-            if (
-              networkResponse &&
-              networkResponse.ok &&
-              networkResponse.type === 'basic'
-            ) {
-              const copy = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
+    event.respondWith((async () => {
+      const cachedResponse = await caches.match(request);
+      if (cachedResponse) return cachedResponse;
 
-        return cachedResponse || networkFetch;
-      })
-    );
+      try {
+        const networkResponse = await fetchWithTimeout(request);
+        if (networkResponse && networkResponse.type === 'basic') {
+          await cacheResponse(request, networkResponse);
+        }
+        return networkResponse;
+      } catch (error) {
+        return new Response('Offline', {
+          status: 503,
+          statusText: 'Offline'
+        });
+      }
+    })());
     return;
   }
 
   // Recursos cross-origin: rede com fallback de cache.
-  event.respondWith(fetch(request).catch(() => caches.match(request)));
+  event.respondWith(
+    fetchWithTimeout(request, 3000).catch(() => caches.match(request))
+  );
 });
