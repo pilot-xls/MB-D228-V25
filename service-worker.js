@@ -1,4 +1,4 @@
-const CACHE_NAME = 'd228-cache-v1.4.1';
+const CACHE_NAME = 'd228-cache-v1.4.2';
 const APP_SHELL_FALLBACK = './index.html';
 const NETWORK_TIMEOUT_MS = 2500;
 
@@ -141,25 +141,38 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
 
-  // Navegação: tenta rede primeiro para atualizar conteúdo, fallback para cache.
+  // Permite probes de conectividade real sem interceptação do SW.
+  if (requestUrl.searchParams.has('sw-bypass')) {
+    return;
+  }
+
+  // Navegação: serve cache imediatamente e atualiza em background.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cachedNavigation = await caches.match(request);
 
-      try {
-        const networkResponse = await fetchWithTimeout(request);
-        await cacheResponse(request, networkResponse);
-        return networkResponse;
-      } catch (error) {
-        if (cachedNavigation) return cachedNavigation;
-        const appShell = await caches.match(APP_SHELL_FALLBACK);
-        if (appShell) return appShell;
+      const networkPromise = fetchWithTimeout(request)
+        .then(async (networkResponse) => {
+          await cacheResponse(request, networkResponse);
+          return networkResponse;
+        })
+        .catch(() => null);
 
-        return new Response('Offline', {
-          status: 503,
-          statusText: 'Offline'
-        });
+      if (cachedNavigation) {
+        event.waitUntil(networkPromise);
+        return cachedNavigation;
       }
+
+      const networkResponse = await networkPromise;
+      if (networkResponse) return networkResponse;
+
+      const appShell = await caches.match(APP_SHELL_FALLBACK);
+      if (appShell) return appShell;
+
+      return new Response('Offline', {
+        status: 503,
+        statusText: 'Offline'
+      });
     })());
     return;
   }

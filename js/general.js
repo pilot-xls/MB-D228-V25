@@ -133,11 +133,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const connectionDot = document.getElementById('connection-status-dot');
+            let connectivityIntervalId = null;
 
-            const updateConnectionDot = () => {
+            const applyConnectionDotState = (online) => {
                 if (!connectionDot) return;
 
-                const online = navigator.onLine;
                 connectionDot.style.backgroundColor = online ? '#27ae60' : '#c0392b';
                 connectionDot.style.boxShadow = online
                     ? '0 0 0 2px rgba(0,0,0,0.35), 0 0 8px rgba(39,174,96,0.55)'
@@ -146,9 +146,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 connectionDot.setAttribute('aria-label', online ? 'Online' : 'Offline');
             };
 
+            const hasRealConnectivity = async () => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                try {
+                    const probeUrl = `manifest.json?sw-bypass=1&t=${Date.now()}`;
+                    const response = await fetch(probeUrl, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+
+                    return response.ok;
+                } catch (error) {
+                    return false;
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            };
+
+            const updateConnectionDot = async () => {
+                if (!connectionDot) return;
+
+                if (!navigator.onLine) {
+                    applyConnectionDotState(false);
+                    return;
+                }
+
+                const realOnline = await hasRealConnectivity();
+                applyConnectionDotState(realOnline);
+            };
+
             updateConnectionDot();
+
             window.addEventListener('online', updateConnectionDot);
-            window.addEventListener('offline', updateConnectionDot);
+            window.addEventListener('offline', () => applyConnectionDotState(false));
+
+            if (connectivityIntervalId) {
+                clearInterval(connectivityIntervalId);
+            }
+            connectivityIntervalId = setInterval(updateConnectionDot, 15000);
 
             // Procura os elementos do menu já depois de inserir o header
             const menu = document.querySelector('.menu');
