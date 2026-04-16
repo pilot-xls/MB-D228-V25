@@ -132,6 +132,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            const connectionDot = document.getElementById('connection-status-dot');
+
+            const updateConnectionDot = () => {
+                if (!connectionDot) return;
+
+                const online = navigator.onLine;
+                connectionDot.style.backgroundColor = online ? '#27ae60' : '#c0392b';
+                connectionDot.style.boxShadow = online
+                    ? '0 0 0 2px rgba(0,0,0,0.35), 0 0 8px rgba(39,174,96,0.55)'
+                    : '0 0 0 2px rgba(0,0,0,0.35), 0 0 8px rgba(192,57,43,0.55)';
+                connectionDot.title = online ? 'Online' : 'Offline';
+                connectionDot.setAttribute('aria-label', online ? 'Online' : 'Offline');
+            };
+
+            updateConnectionDot();
+            window.addEventListener('online', updateConnectionDot);
+            window.addEventListener('offline', updateConnectionDot);
+
             // Procura os elementos do menu já depois de inserir o header
             const menu = document.querySelector('.menu');
             const hamburger = document.querySelector('.hamburger');
