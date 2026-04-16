@@ -1,4 +1,6 @@
-const CACHE_NAME = 'd228-cache-v1.3.8';
+const CACHE_NAME = 'd228-cache-v1.4.0';
+const APP_SHELL_FALLBACK = './index.html';
+
 const ASSETS = [
   './',
   './index.html',
@@ -19,7 +21,7 @@ const ASSETS = [
   './css/performance.css',
   './css/popup-TLoad.css',
   './css/popup-TrafficLoad.css',
-  './css/popup-fuel.css',  
+  './css/popup-fuel.css',
   './css/rotas.css',
   './css/settings.css',
   './css/style.css',
@@ -59,65 +61,111 @@ const ASSETS = [
   './img/waypoint.png',
   './img/weather.png',
 
- /* JS */
-'./js/Popup-TrafficLoad.js',
-'./js/ToSpeeds.js',
-'./js/ToWAT.js',
-'./js/asdrFlaps1_CSATH.js',
-'./js/asdrFlapsUP_CSATH.js',
-'./js/calculadora.js',
-'./js/cg2segFlaps1_CSATH.js',
-'./js/cg2segFlapsUp_CSATH.js',
-'./js/cg3segFlaps1_CSATH.js',
-'./js/cg4segFlapsUp_CSATH.js',
-'./js/cgRequired2Seg_CSATH.js',
-'./js/cgRequired34Seg_CSATH.js',
-'./js/dataLoader.js',
-'./js/general.js',
-'./js/index.js',
-'./js/mb.js',
-'./js/mtowASDA_Flaps1.js',
-'./js/mtowASDA_FlapsUp.js',
-'./js/mtowTODA_Flaps1.js',
-'./js/mtowTODA_FlapsUp.js',
-'./js/mtowTORA_Flaps1.js',
-'./js/mtowTORA_FlapsUp.js',
+  /* JS */
+  './js/Popup-TrafficLoad.js',
+  './js/ToSpeeds.js',
+  './js/ToWAT.js',
+  './js/asdrFlaps1_CSATH.js',
+  './js/asdrFlapsUP_CSATH.js',
+  './js/calculadora.js',
+  './js/cg2segFlaps1_CSATH.js',
+  './js/cg2segFlapsUp_CSATH.js',
+  './js/cg3segFlaps1_CSATH.js',
+  './js/cg4segFlapsUp_CSATH.js',
+  './js/cgRequired2Seg_CSATH.js',
+  './js/cgRequired34Seg_CSATH.js',
+  './js/dataLoader.js',
+  './js/general.js',
+  './js/index.js',
+  './js/mb.js',
+  './js/mtowASDA_Flaps1.js',
+  './js/mtowASDA_FlapsUp.js',
+  './js/mtowTODA_Flaps1.js',
+  './js/mtowTODA_FlapsUp.js',
+  './js/mtowTORA_Flaps1.js',
+  './js/mtowTORA_FlapsUp.js',
   './js/cgMTOWSearch.js',
-'./js/netGradient_CSATH.js',
-'./js/performance.js',
-'./js/popup-TLoad.js',
-'./js/rotas.js',
-'./js/settings.js',
-'./js/todrFlaps1_CSATH.js',
-'./js/todrFlapsUP_CSATH.js',
-'./js/torqueTakeoff_CSATH.js',
-'./js/torrFlaps1_CSATH.js',
-'./js/torrFlapsUP_CSATH.js'
+  './js/netGradient_CSATH.js',
+  './js/performance.js',
+  './js/popup-TLoad.js',
+  './js/rotas.js',
+  './js/settings.js',
+  './js/todrFlaps1_CSATH.js',
+  './js/todrFlapsUP_CSATH.js',
+  './js/torqueTakeoff_CSATH.js',
+  './js/torrFlaps1_CSATH.js',
+  './js/torrFlapsUP_CSATH.js'
 ];
 
-
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response =>
-      response || fetch(event.request)
-    )
-  );
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  const request = event.request;
+  const requestUrl = new URL(request.url);
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+
+  // Navegação: tenta rede primeiro para atualizar conteúdo, fallback para cache.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cachedNavigation = await caches.match(request);
+          if (cachedNavigation) return cachedNavigation;
+          return caches.match(APP_SHELL_FALLBACK);
+        })
+    );
+    return;
+  }
+
+  // Recursos same-origin: cache primeiro, atualiza em background quando possível.
+  if (isSameOrigin) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        const networkFetch = fetch(request)
+          .then((networkResponse) => {
+            if (
+              networkResponse &&
+              networkResponse.ok &&
+              networkResponse.type === 'basic'
+            ) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse || networkFetch;
+      })
+    );
+    return;
+  }
+
+  // Recursos cross-origin: rede com fallback de cache.
+  event.respondWith(fetch(request).catch(() => caches.match(request)));
 });
