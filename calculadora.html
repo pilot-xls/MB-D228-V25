@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Calculadora</title>
         <link rel="stylesheet" href="css/theme.css">
-        <link rel="stylesheet" href="css/calculadora.css"> 
+        <link rel="stylesheet" href="css/calculadora.css">
         <link rel="stylesheet" href="css/menu.css">
     </head>
     <body>
@@ -15,38 +15,35 @@
         <main class="container">
             <section class="section calculator-block">
                 <div class="time-calculator">
-                    <h3 class="block-title">Calculadora de Horas</h3>
-                    <div>
-                        <div style="display: flex; justify-content: center;">
-                            <input id="timeInput" type="text" class="display-input" value="0" readonly style="font-size: 45px; text-align: center;">
-                        </div>
-                        <div class="keypadCLC">
-                            <div class="rowCLC">
-                                <button class="buttonCLC">7</button>
-                                <button class="buttonCLC">8</button>
-                                <button class="buttonCLC">9</button>
-                                <button class="buttonCLC operatorCLC">+</button>
-                            </div>
-                            <div class="rowCLC">
-                                <button class="buttonCLC">4</button>
-                                <button class="buttonCLC">5</button>
-                                <button class="buttonCLC">6</button>
-                                <button class="buttonCLC operatorCLC">-</button>
-                            </div>
-                            <div class="rowCLC">
-                                <button class="buttonCLC">1</button>
-                                <button class="buttonCLC">2</button>
-                                <button class="buttonCLC">3</button>
-                                <button class="buttonCLC clearCLC">C</button>
-                            </div>
-                            <div class="rowCLC">
-                                <button class="buttonCLC">0</button>
-                                <button class="buttonCLC equalsCLC">=</button>
-                            </div>
-                        </div>
+                    <h3 class="block-title">Calculadora de Tempo</h3>
+
+                    <div class="total-mobile-card">
+                        <span>Total acumulado</span>
+                        <strong id="totalDisplay">00h 00m</strong>
+                    </div>
+
+                    <div class="time-input-grid">
+                        <label>
+                            Horas
+                            <input id="hoursInput" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                        </label>
+                        <label>
+                            Minutos
+                            <input id="minutesInput" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                        </label>
+                    </div>
+
+                    <div class="manual-actions">
+                        <button id="manualAddBtn" type="button" class="primary-btn">Somar</button>
+                        <button id="manualSubtractBtn" type="button" class="danger-btn">Subtrair</button>
+                    </div>
+
+                    <div class="manual-actions secondary-actions">
+                        <button id="resetTotalBtn" type="button" class="ghost-btn" aria-label="Reiniciar total acumulado">Reiniciar Total</button>
                     </div>
                 </div>
             </section>
+
             <section class="section conversions-block">
                 <div class="calc-block">
                     <h2 class="block-title">Conversões</h2>

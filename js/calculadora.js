@@ -1,201 +1,125 @@
-
 document.addEventListener('DOMContentLoaded', () => {
-    const display = document.getElementById('timeInput');
-    const buttons = document.querySelectorAll('.buttonCLC');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const hoursInput = document.getElementById('hoursInput');
+    const minutesInput = document.getElementById('minutesInput');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+    const manualSubtractBtn = document.getElementById('manualSubtractBtn');
+    const resetTotalBtn = document.getElementById('resetTotalBtn');
 
-    let current = '';       // sequência de dígitos introduzidos
-    let stored = null;      // valor em minutos da 1ª parte
-    let operator = null;    // + ou -
-    let justCalculated = false; // flag para saber se acabou de carregar em "="
+    let totalMinutes = 0;
 
-    // --- Funções auxiliares ---
+    const pad = (value) => String(value).padStart(2, '0');
 
-    // Formata string de dígitos como HH:MM
-    const formatTime = (digits) => {
-        digits = digits.replace(/[^\d]/g, '').replace(/^0+/, '');
-        if (digits.length === 0) return '00:00';
-        const minutes = digits.slice(-2).padStart(2, '0');
-        const hours = digits.slice(0, -2) || '0';
-        return `${hours.padStart(2, '0')}:${minutes}`;
+    const minutesToReadable = (minutes) => {
+        const signal = minutes < 0 ? '-' : '';
+        const absolute = Math.abs(minutes);
+        const hours = Math.floor(absolute / 60);
+        const mins = absolute % 60;
+        return `${signal}${pad(hours)}h ${pad(mins)}m`;
     };
 
-    // Converte HH:MM → minutos
-    const timeToMinutes = (time) => {
-        const [h, m] = time.split(':').map(Number);
-        return h * 60 + m;
+    const inputToMinutes = () => {
+        const hours = Math.max(0, parseInt(hoursInput.value || '0', 10));
+        const minutes = Math.max(0, parseInt(minutesInput.value || '0', 10));
+        return (hours * 60) + minutes;
     };
 
-    // Converte minutos → HH:MM (suporta negativos e horas grandes)
-    const minutesToTime = (min) => {
-        const sign = min < 0 ? '-' : '';
-        const abs = Math.abs(min);
-        const h = Math.floor(abs / 60);
-        const m = abs % 60;
-        return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const renderTotal = () => {
+        totalDisplay.textContent = minutesToReadable(totalMinutes);
     };
 
-    const updateDisplay = () => {
-        display.value = formatTime(current);
+    const clearInputs = () => {
+        hoursInput.value = '';
+        minutesInput.value = '';
     };
 
-    const calculate = () => {
-        if (stored === null || operator === null) return;
-        const second = timeToMinutes(formatTime(current || '0'));
-        let result = 0;
-        if (operator === '+') result = stored + second;
-        if (operator === '-') result = stored - second;
-        current = minutesToTime(result).replace(':', '');
-        stored = null;
-        operator = null;
-        justCalculated = true; // marca que acabou cálculo
-        updateDisplay();
+    const applyOperation = (operator) => {
+        const delta = inputToMinutes();
+
+        if (delta <= 0) return;
+
+        if (operator === '-') {
+            totalMinutes -= delta;
+        } else {
+            totalMinutes += delta;
+        }
+
+        clearInputs();
+        renderTotal();
     };
 
-    // --- Eventos de clique ---
-
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const value = btn.textContent;
-
-            if (/^\d$/.test(value)) {
-                // se acabou de calcular, limpar e começar novo número
-                if (justCalculated) {
-                    current = '';
-                    justCalculated = false;
-                }
-                current += value;
-                updateDisplay();
-            }
-            else if (value === 'C') {
-                current = '';
-                stored = null;
-                operator = null;
-                justCalculated = false;
-                updateDisplay();
-            }
-            else if (value === '+' || value === '-') {
-                if (current === '' && stored === null) return;
-                const currentMinutes = timeToMinutes(formatTime(current));
-                if (stored !== null && operator !== null) {
-                    stored = operator === '+'
-                        ? stored + currentMinutes
-                        : stored - currentMinutes;
-                } else {
-                    stored = currentMinutes;
-                }
-                operator = value;
-                current = '';
-                justCalculated = false;
-                updateDisplay();
-            }
-            else if (value === '=') {
-                calculate();
-            }
-        });
+    manualAddBtn.addEventListener('click', () => {
+        applyOperation('+');
     });
 
-    updateDisplay();
+    manualSubtractBtn.addEventListener('click', () => {
+        applyOperation('-');
+    });
+
+    resetTotalBtn.addEventListener('click', () => {
+        totalMinutes = 0;
+        clearInputs();
+        renderTotal();
+    });
+
+    renderTotal();
 });
-
-
-
 function lbToKg() {
-
-    const lb = parseFloat(document.getElementById("lb").value) || 0;
-
-    document.getElementById("kg").value = (lb * 0.453592).toFixed(1);
-
+    const lb = parseFloat(document.getElementById('lb').value) || 0;
+    document.getElementById('kg').value = (lb * 0.453592).toFixed(1);
 }
 
 function kgToLb() {
-
-    const kg = parseFloat(document.getElementById("kg").value) || 0;
-
-    document.getElementById("lb").value = (kg / 0.453592).toFixed(1);
-
+    const kg = parseFloat(document.getElementById('kg').value) || 0;
+    document.getElementById('lb').value = (kg / 0.453592).toFixed(1);
 }
 
-// ... e todas as outras funções de conversão...
-
 function usgToL() {
-
-    const usg = parseFloat(document.getElementById("usg").value) || 0;
-
-    document.getElementById("l").value = (usg * 3.78541).toFixed(1);
-
+    const usg = parseFloat(document.getElementById('usg').value) || 0;
+    document.getElementById('l').value = (usg * 3.78541).toFixed(1);
 }
 
 function lToUsg() {
-
-    const l = parseFloat(document.getElementById("l").value) || 0;
-
-    document.getElementById("usg").value = (l / 3.78541).toFixed(1);
-
+    const l = parseFloat(document.getElementById('l').value) || 0;
+    document.getElementById('usg').value = (l / 3.78541).toFixed(1);
 }
 
-
-
 function ftToM() {
-
-    const ft = parseFloat(document.getElementById("ft").value) || 0;
-
-    document.getElementById("m").value = (ft * 0.3048).toFixed(1);
-
+    const ft = parseFloat(document.getElementById('ft').value) || 0;
+    document.getElementById('m').value = (ft * 0.3048).toFixed(1);
 }
 
 function mToFt() {
-
-    const m = parseFloat(document.getElementById("m").value) || 0;
-
-    document.getElementById("ft").value = (m / 0.3048).toFixed(1);
-
+    const m = parseFloat(document.getElementById('m').value) || 0;
+    document.getElementById('ft').value = (m / 0.3048).toFixed(1);
 }
 
-
-
 function nmToKm() {
-
-    const nm = parseFloat(document.getElementById("nm").value) || 0;
-
-    document.getElementById("km").value = (nm * 1.852).toFixed(2);
-
+    const nm = parseFloat(document.getElementById('nm').value) || 0;
+    document.getElementById('km').value = (nm * 1.852).toFixed(2);
 }
 
 function kmToNm() {
-
-    const km = parseFloat(document.getElementById("km").value) || 0;
-
-    document.getElementById("nm").value = (km / 1.852).toFixed(2);
-
+    const km = parseFloat(document.getElementById('km').value) || 0;
+    document.getElementById('nm').value = (km / 1.852).toFixed(2);
 }
 
-
-
 function ktToKmh() {
-
-    const kt = parseFloat(document.getElementById("kt").value) || 0;
-
-    document.getElementById("kmh").value = (kt * 1.852).toFixed(1);
-
+    const kt = parseFloat(document.getElementById('kt').value) || 0;
+    document.getElementById('kmh').value = (kt * 1.852).toFixed(1);
 }
 
 function kmhToKt() {
-
-    const kmh = parseFloat(document.getElementById("kmh").value) || 0;
-
-    document.getElementById("kt").value = (kmh / 1.852).toFixed(1);
-
+    const kmh = parseFloat(document.getElementById('kmh').value) || 0;
+    document.getElementById('kt').value = (kmh / 1.852).toFixed(1);
 }
 
-// --- Conversão entre litros (L) e libras (lb) ---
-// L ↔ lb (Jet A-1)
 function lToLbA1() {
-    const l = parseFloat(document.getElementById("Lts").value) || 0;
-    document.getElementById("lbA1").value = (l * 1.76).toFixed(1);
+    const l = parseFloat(document.getElementById('Lts').value) || 0;
+    document.getElementById('lbA1').value = (l * 1.76).toFixed(1);
 }
 
 function lbA1ToL() {
-    const lb = parseFloat(document.getElementById("lbA1").value) || 0;
-    document.getElementById("Lts").value = (lb / 1.76).toFixed(1);
+    const lb = parseFloat(document.getElementById('lbA1').value) || 0;
+    document.getElementById('Lts').value = (lb / 1.76).toFixed(1);
 }
-
