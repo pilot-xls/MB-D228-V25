@@ -1,5 +1,6 @@
-const CACHE_NAME = 'd228-cache-v1.4.0';
+const CACHE_NAME = 'd228-cache-v1.4.1';
 const APP_SHELL_FALLBACK = './index.html';
+const NETWORK_TIMEOUT_MS = 4000;
 
 const ASSETS = [
   './',
@@ -113,6 +114,19 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+async function fetchWithTimeout(request, timeoutMs = NETWORK_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(request, {
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
     return;
@@ -125,7 +139,7 @@ self.addEventListener('fetch', (event) => {
   // Navegação: tenta rede primeiro para atualizar conteúdo, fallback para cache.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetchWithTimeout(request)
         .then((response) => {
           if (response && response.ok) {
             const copy = response.clone();
@@ -146,7 +160,7 @@ self.addEventListener('fetch', (event) => {
   if (isSameOrigin) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
-        const networkFetch = fetch(request)
+        const networkFetch = fetchWithTimeout(request)
           .then((networkResponse) => {
             if (
               networkResponse &&
@@ -167,5 +181,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Recursos cross-origin: rede com fallback de cache.
-  event.respondWith(fetch(request).catch(() => caches.match(request)));
+  event.respondWith(
+    fetchWithTimeout(request).catch(() => caches.match(request))
+  );
 });
