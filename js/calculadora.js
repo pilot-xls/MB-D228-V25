@@ -2,18 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalDisplay = document.getElementById('totalDisplay');
     const hoursInput = document.getElementById('hoursInput');
     const minutesInput = document.getElementById('minutesInput');
-    const focusHoursBtn = document.getElementById('focusHoursBtn');
-    const focusMinutesBtn = document.getElementById('focusMinutesBtn');
     const timeKeypad = document.getElementById('timeKeypad');
     const manualAddBtn = document.getElementById('manualAddBtn');
     const manualSubtractBtn = document.getElementById('manualSubtractBtn');
     const resetTotalBtn = document.getElementById('resetTotalBtn');
     const historyList = document.getElementById('historyList');
     const historyCount = document.getElementById('historyCount');
-    const historyEditor = document.getElementById('historyEditor');
-    const historyOperator = document.getElementById('historyOperator');
-    const saveHistoryEditBtn = document.getElementById('saveHistoryEditBtn');
-    const cancelHistoryEditBtn = document.getElementById('cancelHistoryEditBtn');
 
     const MAX_DIGITS = 3;
     let activeField = 'hours';
@@ -54,8 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setActiveField = (field) => {
         activeField = field;
-        focusHoursBtn.classList.toggle('is-active', field === 'hours');
-        focusMinutesBtn.classList.toggle('is-active', field === 'minutes');
+        hoursInput.classList.toggle('is-active', field === 'hours');
+        minutesInput.classList.toggle('is-active', field === 'minutes');
     };
 
     const renderInputBuffers = () => {
@@ -100,6 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
         totalDisplay.textContent = minutesToReadable(calculateTotal());
     };
 
+    const resetCalculator = () => {
+        history = [];
+        nextHistoryId = 1;
+        clearBuffers();
+        finishEditing();
+        renderHistory();
+        renderTotal();
+    };
+
     const commitOperation = (operator) => {
         const delta = parseBuffersToMinutes();
         if (delta <= 0) return;
@@ -108,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = history.find((item) => item.id === editingId);
             if (!target) return;
 
-            target.operator = operator;
             target.minutes = delta;
             finishEditing();
         } else {
@@ -129,14 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const minutes = target.minutes % 60;
         hoursBuffer = String(hours);
         minutesBuffer = String(minutes);
-        historyOperator.value = target.operator;
-        historyEditor.hidden = false;
         renderInputBuffers();
     };
 
     const finishEditing = () => {
         editingId = null;
-        historyEditor.hidden = true;
     };
 
     const removeHistoryItem = (id) => {
@@ -149,8 +148,20 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTotal();
     };
 
-    focusHoursBtn.addEventListener('click', () => setActiveField('hours'));
-    focusMinutesBtn.addEventListener('click', () => setActiveField('minutes'));
+    const setupInputPicker = (input, fieldName) => {
+        const activateField = (event) => {
+            event.preventDefault();
+            setActiveField(fieldName);
+            input.blur();
+        };
+
+        input.addEventListener('pointerdown', activateField);
+        input.addEventListener('click', activateField);
+        input.addEventListener('touchstart', activateField, { passive: false });
+    };
+
+    setupInputPicker(hoursInput, 'hours');
+    setupInputPicker(minutesInput, 'minutes');
 
     timeKeypad.addEventListener('click', (event) => {
         const button = event.target.closest('button');
@@ -169,8 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (action === 'clear') {
-            setBuffer('');
-            renderInputBuffers();
+            resetCalculator();
             return;
         }
 
@@ -193,14 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     manualAddBtn.addEventListener('click', () => commitOperation('+'));
     manualSubtractBtn.addEventListener('click', () => commitOperation('-'));
 
-    resetTotalBtn.addEventListener('click', () => {
-        history = [];
-        nextHistoryId = 1;
-        clearBuffers();
-        finishEditing();
-        renderHistory();
-        renderTotal();
-    });
+    resetTotalBtn.addEventListener('click', resetCalculator);
 
     historyList.addEventListener('click', (event) => {
         const target = event.target.closest('button[data-action]');
@@ -216,16 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.dataset.action === 'delete') {
             removeHistoryItem(id);
         }
-    });
-
-    saveHistoryEditBtn.addEventListener('click', () => {
-        if (editingId === null) return;
-        commitOperation(historyOperator.value);
-    });
-
-    cancelHistoryEditBtn.addEventListener('click', () => {
-        finishEditing();
-        clearBuffers();
     });
 
     setActiveField('hours');

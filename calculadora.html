@@ -33,11 +33,6 @@
                         </label>
                     </div>
 
-                    <div class="field-selector" role="group" aria-label="Selecionar campo de edição">
-                        <button id="focusHoursBtn" class="field-btn is-active" type="button">Editar Horas</button>
-                        <button id="focusMinutesBtn" class="field-btn" type="button">Editar Minutos</button>
-                    </div>
-
                     <div class="keypad" id="timeKeypad" aria-label="Teclado numérico">
                         <button type="button" data-key="1">1</button>
                         <button type="button" data-key="2">2</button>
@@ -67,19 +62,6 @@
                             <h4>Histórico</h4>
                             <small id="historyCount">0 registos</small>
                         </div>
-
-                        <div class="history-editor" id="historyEditor" hidden>
-                            <label>
-                                Operação
-                                <select id="historyOperator">
-                                    <option value="+">Somar</option>
-                                    <option value="-">Subtrair</option>
-                                </select>
-                            </label>
-                            <button id="saveHistoryEditBtn" type="button" class="primary-btn">Guardar edição</button>
-                            <button id="cancelHistoryEditBtn" type="button" class="ghost-btn">Cancelar</button>
-                        </div>
-
                         <ul id="historyList" class="history-list"></ul>
                     </section>
                 </div>
