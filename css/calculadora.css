@@ -1,97 +1,238 @@
-/* -------------------- */
-/* -------------------- */
-/* Definições globais e layout */
-/* -------------------- */
-/* -------------------- */
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 1rem;
-    max-width: 600px;
-
-    /* Limita a largura para ecrãs maiores */
+    padding: 0 1rem 1.5rem;
+    max-width: 720px;
     margin: 0 auto;
-}
-
-h1 {
-    text-align: center;
-    color: var(--primary-color, #333);
-
-    /* Assume var --primary-color do theme.css */
-    margin: 1.5rem 0 1rem;
-    font-size: 2em;
 }
 
 .section {
     width: 100%;
     margin-bottom: 1.5rem;
-    background: var(--card-bg, #ffffff);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--border-color, #eee);
+    border-radius: 16px;
+    padding: 1.2rem;
+    border: 1px solid rgba(113, 147, 255, 0.25);
+    background: linear-gradient(165deg, rgba(17, 21, 38, 0.95), rgba(9, 12, 24, 0.92));
+    box-shadow: 0 16px 30px rgba(4, 8, 20, 0.35);
 }
 
 .block-title {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
     text-align: center;
-    font-size: 1.25em;
-    color: var(--text-color-dark, #333);
-    margin-bottom: 1.5rem;
+    letter-spacing: 0.04em;
+    color: #e7eeff;
+}
+
+.time-shell {
+    border: 1px solid rgba(140, 173, 255, 0.3);
+    border-radius: 12px;
+    padding: 0.8rem;
+    background: rgba(9, 14, 30, 0.78);
+}
+
+.time-shell-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.mini-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #99abd9;
+}
+
+.time-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.history-empty,
+.history-line {
+    border-radius: 10px;
+    padding: 0.45rem 0.6rem;
+    background: rgba(23, 34, 67, 0.7);
+    border: 1px solid rgba(145, 172, 255, 0.18);
+    color: #e5ecff;
+}
+
+.history-empty {
+    text-align: center;
+    font-size: 0.92rem;
+    color: #9aa9ce;
+}
+
+.history-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+}
+
+.history-action {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #dce7ff;
+}
+
+.history-controls {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.history-btn,
+.ghost-btn,
+.mode-btn,
+.quick-btn,
+.primary-btn,
+.danger-btn {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #eef3ff;
+    transition: all 0.15s ease;
+}
+
+.history-btn,
+.ghost-btn {
+    background: rgba(55, 80, 145, 0.35);
+    padding: 0.28rem 0.45rem;
+    font-size: 0.74rem;
+}
+
+.history-btn.danger,
+.danger-btn {
+    background: rgba(170, 56, 82, 0.35);
+    border-color: rgba(255, 110, 140, 0.35);
+}
+
+.history-btn:hover,
+.ghost-btn:hover,
+.mode-btn:hover,
+.quick-btn:hover,
+.primary-btn:hover,
+.danger-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.12);
+}
+
+.totals-panel {
+    margin-top: 0.65rem;
+    border-radius: 10px;
+    padding: 0.6rem;
+    background: rgba(31, 49, 102, 0.52);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    color: #b5c3eb;
+}
+
+.totals-panel strong {
+    font-family: 'Courier New', monospace;
+    font-size: 1.35rem;
+    color: #ffffff;
+}
+
+.entry-panel {
+    margin-top: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.entry-mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.mode-btn {
+    padding: 0.55rem;
+    background: rgba(24, 39, 75, 0.7);
+    border-color: rgba(132, 167, 255, 0.24);
     font-weight: 600;
 }
 
-/* -------------------- */
-/* -------------------- */
-/* --- CALCULADORA DE TEMPO --- */
-/* -------------------- */
-/* -------------------- */
-.display-input {
-    pointer-events: none;
+.mode-btn.active {
+    background: linear-gradient(145deg, rgba(45, 76, 168, 0.96), rgba(21, 122, 214, 0.92));
+    border-color: rgba(147, 193, 255, 0.6);
 }
 
-.keypadCLC {
+.time-input-grid {
     display: grid;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
 }
 
-.rowCLC {
+.time-input-grid label {
     display: flex;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: #b9c7e9;
+    font-size: 0.85rem;
 }
 
-.buttonCLC {
-    flex: 1;
-    font-size: 1.5rem;
-    padding: 1rem;
-    border: none;
-    border-radius: 0.5rem;
-    background: var(--btn-bg,rgb(122, 119, 119));
-    color: var(--btn-color, #fff);
+.time-input-grid input {
+    border-radius: 10px;
+    border: 1px solid rgba(126, 156, 230, 0.4);
+    background: rgba(8, 14, 31, 0.9);
+    color: #f5f8ff;
+    padding: 0.65rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
-.buttonCLC:active {
-    background: var(--btn-active, #444);
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.45rem;
 }
 
-.operatorCLC {
-    background: var(--btn-operator,  rgb(122, 119, 119));
+.quick-btn {
+    background: rgba(62, 95, 173, 0.35);
+    border-color: rgba(146, 178, 255, 0.25);
+    padding: 0.5rem 0.25rem;
+    font-size: 0.79rem;
 }
 
-.equalsCLC {
-    background: var(--btn-equals, #474897);
+.entry-actions {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 0.55rem;
 }
 
-.clearCLC {
-    background: var(--btn-clear, #db3535);
+.primary-btn,
+.danger-btn {
+    padding: 0.7rem;
+    font-weight: 600;
 }
 
-/* -------------------- */
-/* -------------------- */
-/* --- CONVERSÕES --- */
-/* -------------------- */
-/* -------------------- */
+.primary-btn {
+    background: linear-gradient(145deg, #2374f9, #1bc2ff);
+    border-color: rgba(186, 227, 255, 0.55);
+}
+
+.danger-btn {
+    background: linear-gradient(145deg, rgba(174, 60, 83, 0.85), rgba(126, 37, 55, 0.9));
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .calc-block {
     width: 100%;
 }
@@ -99,8 +240,6 @@ h1 {
 .conversion-line {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-
-    /* Label (1), Input 1 (1), Input 2 (1) */
     gap: 10px;
     align-items: center;
     margin-bottom: 12px;
@@ -114,10 +253,8 @@ h1 {
 
 .conversion-line label {
     font-weight: 600;
-    color: var(--primary-color, #000000);
+    color: #e5ecff;
     text-align: left;
-
-    /* Para evitar que as labels longas quebrem o layout */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -133,21 +270,19 @@ h1 {
     transition: border-color 0.2s;
 }
 
-.conversion-line input:focus {
-    border-color: var(--primary-color, #000000);
+.conversion-line input:focus,
+.time-input-grid input:focus {
+    border-color: #81b4ff;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(37, 129, 255, 0.18);
 }
 
-#timeInput {
-    caret-color: transparent;
+@media (max-width: 540px) {
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
 
-    /* esconde o cursor */
-    user-select: none;
-    width: 95%;
-    height: 40px;
-    text-align: right;
-    padding: 5px;
-
-    /* impede seleção de texto */
+    .entry-actions {
+        grid-template-columns: 1fr;
+    }
 }
