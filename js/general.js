@@ -138,12 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!connectionDot) return;
 
                 const online = navigator.onLine;
-                connectionDot.style.background = online
-                    ? 'linear-gradient(90deg, rgba(39,174,96,0.35) 0%, rgba(46,204,113,0.95) 50%, rgba(39,174,96,0.35) 100%)'
-                    : 'linear-gradient(90deg, rgba(192,57,43,0.35) 0%, rgba(231,76,60,0.95) 50%, rgba(192,57,43,0.35) 100%)';
-                connectionDot.style.boxShadow = online
-                    ? '0 0 6px rgba(46,204,113,0.45), 0 0 1px rgba(255,255,255,0.4) inset'
-                    : '0 0 6px rgba(231,76,60,0.45), 0 0 1px rgba(255,255,255,0.35) inset';
+                connectionDot.classList.toggle('is-online', online);
+                connectionDot.classList.toggle('is-offline', !online);
                 connectionDot.title = online ? 'Online' : 'Offline';
                 connectionDot.setAttribute('aria-label', online ? 'Online' : 'Offline');
             };
