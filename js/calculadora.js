@@ -1,201 +1,228 @@
-
 document.addEventListener('DOMContentLoaded', () => {
-    const display = document.getElementById('timeInput');
-    const buttons = document.querySelectorAll('.buttonCLC');
+    const historyList = document.getElementById('timeHistory');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const hoursInput = document.getElementById('hoursInput');
+    const minutesInput = document.getElementById('minutesInput');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+    const manualSubtractBtn = document.getElementById('manualSubtractBtn');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const quickButtons = document.querySelectorAll('.quick-btn');
 
-    let current = '';       // sequência de dígitos introduzidos
-    let stored = null;      // valor em minutos da 1ª parte
-    let operator = null;    // + ou -
-    let justCalculated = false; // flag para saber se acabou de carregar em "="
+    let history = [];
 
-    // --- Funções auxiliares ---
+    const pad = (value) => String(value).padStart(2, '0');
 
-    // Formata string de dígitos como HH:MM
-    const formatTime = (digits) => {
-        digits = digits.replace(/[^\d]/g, '').replace(/^0+/, '');
-        if (digits.length === 0) return '00:00';
-        const minutes = digits.slice(-2).padStart(2, '0');
-        const hours = digits.slice(0, -2) || '0';
-        return `${hours.padStart(2, '0')}:${minutes}`;
+    const minutesToReadable = (minutes) => {
+        const signal = minutes < 0 ? '-' : '';
+        const absolute = Math.abs(minutes);
+        const hours = Math.floor(absolute / 60);
+        const mins = absolute % 60;
+        return `${signal}${pad(hours)}h ${pad(mins)}m`;
     };
 
-    // Converte HH:MM → minutos
-    const timeToMinutes = (time) => {
-        const [h, m] = time.split(':').map(Number);
-        return h * 60 + m;
+    const inputToMinutes = () => {
+        const hours = Math.max(0, parseInt(hoursInput.value || '0', 10));
+        const minutes = Math.max(0, parseInt(minutesInput.value || '0', 10));
+        return (hours * 60) + minutes;
     };
 
-    // Converte minutos → HH:MM (suporta negativos e horas grandes)
-    const minutesToTime = (min) => {
-        const sign = min < 0 ? '-' : '';
-        const abs = Math.abs(min);
-        const h = Math.floor(abs / 60);
-        const m = abs % 60;
-        return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const formatAction = (item) => {
+        const sign = item.operator === '-' ? '-' : '+';
+        const h = Math.floor(item.minutes / 60);
+        const m = item.minutes % 60;
+
+        if (h > 0 && m > 0) return `${sign}${h}h ${m}m`;
+        if (h > 0) return `${sign}${h}h`;
+        return `${sign}${m} min`;
     };
 
-    const updateDisplay = () => {
-        display.value = formatTime(current);
+    const calculateTotal = () => history.reduce((acc, item) => {
+        if (item.operator === '-') return acc - item.minutes;
+        return acc + item.minutes;
+    }, 0);
+
+    const editEntry = (index) => {
+        const entry = history[index];
+        if (!entry) return;
+
+        const current = `${entry.operator}${entry.minutes}`;
+        const updated = window.prompt('Editar entrada (ex: +90 ou -45):', current);
+
+        if (updated === null) return;
+
+        const cleaned = updated.replace(/\s+/g, '');
+        const match = cleaned.match(/^([+-])(\d+)$/);
+
+        if (!match) {
+            window.alert('Formato inválido. Use +90 ou -45.');
+            return;
+        }
+
+        const [, operator, minuteText] = match;
+        const minutes = parseInt(minuteText, 10);
+
+        if (minutes <= 0) {
+            window.alert('Os minutos devem ser superiores a zero.');
+            return;
+        }
+
+        history[index] = { operator, minutes };
+        renderAll();
     };
 
-    const calculate = () => {
-        if (stored === null || operator === null) return;
-        const second = timeToMinutes(formatTime(current || '0'));
-        let result = 0;
-        if (operator === '+') result = stored + second;
-        if (operator === '-') result = stored - second;
-        current = minutesToTime(result).replace(':', '');
-        stored = null;
-        operator = null;
-        justCalculated = true; // marca que acabou cálculo
-        updateDisplay();
+    const renderHistory = () => {
+        historyList.innerHTML = '';
+
+        if (history.length === 0) {
+            const emptyState = document.createElement('li');
+            emptyState.className = 'history-empty';
+            emptyState.textContent = 'Sem entradas ainda.';
+            historyList.appendChild(emptyState);
+        } else {
+            history.forEach((item, index) => {
+                const line = document.createElement('li');
+                line.className = 'history-line';
+
+                const action = document.createElement('span');
+                action.className = 'history-action';
+                action.textContent = formatAction(item);
+
+                const controls = document.createElement('div');
+                controls.className = 'history-controls';
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'history-btn';
+                editBtn.textContent = 'Editar';
+                editBtn.addEventListener('click', () => editEntry(index));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'history-btn danger';
+                deleteBtn.textContent = 'Apagar';
+                deleteBtn.addEventListener('click', () => {
+                    history.splice(index, 1);
+                    renderAll();
+                });
+
+                controls.append(editBtn, deleteBtn);
+                line.append(action, controls);
+                historyList.appendChild(line);
+            });
+        }
+
+        undoBtn.disabled = history.length === 0;
+        clearHistoryBtn.disabled = history.length === 0;
     };
 
-    // --- Eventos de clique ---
+    const renderTotal = () => {
+        totalDisplay.textContent = minutesToReadable(calculateTotal());
+    };
 
-    buttons.forEach(btn => {
+    const renderAll = () => {
+        renderHistory();
+        renderTotal();
+    };
+
+    const clearInputs = () => {
+        hoursInput.value = '';
+        minutesInput.value = '';
+    };
+
+    const addEntry = (minutes, operator) => {
+        if (!minutes || minutes < 0) return;
+        history.push({ operator, minutes });
+        clearInputs();
+        renderAll();
+    };
+
+    manualAddBtn.addEventListener('click', () => {
+        addEntry(inputToMinutes(), '+');
+    });
+
+    manualSubtractBtn.addEventListener('click', () => {
+        addEntry(inputToMinutes(), '-');
+    });
+
+    clearHistoryBtn.addEventListener('click', () => {
+        history = [];
+        clearInputs();
+        renderAll();
+    });
+
+    undoBtn.addEventListener('click', () => {
+        history.pop();
+        renderAll();
+    });
+
+    quickButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
-            const value = btn.textContent;
-
-            if (/^\d$/.test(value)) {
-                // se acabou de calcular, limpar e começar novo número
-                if (justCalculated) {
-                    current = '';
-                    justCalculated = false;
-                }
-                current += value;
-                updateDisplay();
-            }
-            else if (value === 'C') {
-                current = '';
-                stored = null;
-                operator = null;
-                justCalculated = false;
-                updateDisplay();
-            }
-            else if (value === '+' || value === '-') {
-                if (current === '' && stored === null) return;
-                const currentMinutes = timeToMinutes(formatTime(current));
-                if (stored !== null && operator !== null) {
-                    stored = operator === '+'
-                        ? stored + currentMinutes
-                        : stored - currentMinutes;
-                } else {
-                    stored = currentMinutes;
-                }
-                operator = value;
-                current = '';
-                justCalculated = false;
-                updateDisplay();
-            }
-            else if (value === '=') {
-                calculate();
-            }
+            const minutes = parseInt(btn.dataset.minutes || '0', 10);
+            const operator = btn.dataset.op === '-' ? '-' : '+';
+            addEntry(minutes, operator);
         });
     });
 
-    updateDisplay();
+    renderAll();
 });
 
-
-
 function lbToKg() {
-
-    const lb = parseFloat(document.getElementById("lb").value) || 0;
-
-    document.getElementById("kg").value = (lb * 0.453592).toFixed(1);
-
+    const lb = parseFloat(document.getElementById('lb').value) || 0;
+    document.getElementById('kg').value = (lb * 0.453592).toFixed(1);
 }
 
 function kgToLb() {
-
-    const kg = parseFloat(document.getElementById("kg").value) || 0;
-
-    document.getElementById("lb").value = (kg / 0.453592).toFixed(1);
-
+    const kg = parseFloat(document.getElementById('kg').value) || 0;
+    document.getElementById('lb').value = (kg / 0.453592).toFixed(1);
 }
 
-// ... e todas as outras funções de conversão...
-
 function usgToL() {
-
-    const usg = parseFloat(document.getElementById("usg").value) || 0;
-
-    document.getElementById("l").value = (usg * 3.78541).toFixed(1);
-
+    const usg = parseFloat(document.getElementById('usg').value) || 0;
+    document.getElementById('l').value = (usg * 3.78541).toFixed(1);
 }
 
 function lToUsg() {
-
-    const l = parseFloat(document.getElementById("l").value) || 0;
-
-    document.getElementById("usg").value = (l / 3.78541).toFixed(1);
-
+    const l = parseFloat(document.getElementById('l').value) || 0;
+    document.getElementById('usg').value = (l / 3.78541).toFixed(1);
 }
 
-
-
 function ftToM() {
-
-    const ft = parseFloat(document.getElementById("ft").value) || 0;
-
-    document.getElementById("m").value = (ft * 0.3048).toFixed(1);
-
+    const ft = parseFloat(document.getElementById('ft').value) || 0;
+    document.getElementById('m').value = (ft * 0.3048).toFixed(1);
 }
 
 function mToFt() {
-
-    const m = parseFloat(document.getElementById("m").value) || 0;
-
-    document.getElementById("ft").value = (m / 0.3048).toFixed(1);
-
+    const m = parseFloat(document.getElementById('m').value) || 0;
+    document.getElementById('ft').value = (m / 0.3048).toFixed(1);
 }
 
-
-
 function nmToKm() {
-
-    const nm = parseFloat(document.getElementById("nm").value) || 0;
-
-    document.getElementById("km").value = (nm * 1.852).toFixed(2);
-
+    const nm = parseFloat(document.getElementById('nm').value) || 0;
+    document.getElementById('km').value = (nm * 1.852).toFixed(2);
 }
 
 function kmToNm() {
-
-    const km = parseFloat(document.getElementById("km").value) || 0;
-
-    document.getElementById("nm").value = (km / 1.852).toFixed(2);
-
+    const km = parseFloat(document.getElementById('km').value) || 0;
+    document.getElementById('nm').value = (km / 1.852).toFixed(2);
 }
 
-
-
 function ktToKmh() {
-
-    const kt = parseFloat(document.getElementById("kt").value) || 0;
-
-    document.getElementById("kmh").value = (kt * 1.852).toFixed(1);
-
+    const kt = parseFloat(document.getElementById('kt').value) || 0;
+    document.getElementById('kmh').value = (kt * 1.852).toFixed(1);
 }
 
 function kmhToKt() {
-
-    const kmh = parseFloat(document.getElementById("kmh").value) || 0;
-
-    document.getElementById("kt").value = (kmh / 1.852).toFixed(1);
-
+    const kmh = parseFloat(document.getElementById('kmh').value) || 0;
+    document.getElementById('kt').value = (kmh / 1.852).toFixed(1);
 }
 
-// --- Conversão entre litros (L) e libras (lb) ---
-// L ↔ lb (Jet A-1)
 function lToLbA1() {
-    const l = parseFloat(document.getElementById("Lts").value) || 0;
-    document.getElementById("lbA1").value = (l * 1.76).toFixed(1);
+    const l = parseFloat(document.getElementById('Lts').value) || 0;
+    document.getElementById('lbA1').value = (l * 1.76).toFixed(1);
 }
 
 function lbA1ToL() {
-    const lb = parseFloat(document.getElementById("lbA1").value) || 0;
-    document.getElementById("Lts").value = (lb / 1.76).toFixed(1);
+    const lb = parseFloat(document.getElementById('lbA1').value) || 0;
+    document.getElementById('Lts').value = (lb / 1.76).toFixed(1);
 }
-
