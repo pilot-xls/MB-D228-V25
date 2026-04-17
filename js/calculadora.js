@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeKeypad = document.getElementById('timeKeypad');
     const manualAddBtn = document.getElementById('manualAddBtn');
     const manualSubtractBtn = document.getElementById('manualSubtractBtn');
-    const resetTotalBtn = document.getElementById('resetTotalBtn');
     const historyList = document.getElementById('historyList');
     const historyCount = document.getElementById('historyCount');
 
@@ -202,8 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     manualAddBtn.addEventListener('click', () => commitOperation('+'));
     manualSubtractBtn.addEventListener('click', () => commitOperation('-'));
-
-    resetTotalBtn.addEventListener('click', resetCalculator);
 
     historyList.addEventListener('click', (event) => {
         const target = event.target.closest('button[data-action]');
