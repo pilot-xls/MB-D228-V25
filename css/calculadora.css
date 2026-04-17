@@ -11,6 +11,13 @@
     --warn: #fde68a;
 }
 
+html,
+body {
+    width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+}
+
 body {
     background: var(--bg);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
