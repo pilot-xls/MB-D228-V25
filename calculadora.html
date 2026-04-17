@@ -25,12 +25,27 @@
                     <div class="time-input-grid">
                         <label>
                             Horas
-                            <input id="hoursInput" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                            <input id="hoursInput" type="text" readonly inputmode="none" placeholder="00">
                         </label>
                         <label>
                             Minutos
-                            <input id="minutesInput" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                            <input id="minutesInput" type="text" readonly inputmode="none" placeholder="00">
                         </label>
+                    </div>
+
+                    <div class="keypad" id="timeKeypad" aria-label="Teclado numérico">
+                        <button type="button" data-key="1">1</button>
+                        <button type="button" data-key="2">2</button>
+                        <button type="button" data-key="3">3</button>
+                        <button type="button" data-key="4">4</button>
+                        <button type="button" data-key="5">5</button>
+                        <button type="button" data-key="6">6</button>
+                        <button type="button" data-key="7">7</button>
+                        <button type="button" data-key="8">8</button>
+                        <button type="button" data-key="9">9</button>
+                        <button type="button" data-action="clear">C</button>
+                        <button type="button" data-key="0">0</button>
+                        <button type="button" data-action="backspace">⌫</button>
                     </div>
 
                     <div class="manual-actions">
@@ -41,6 +56,14 @@
                     <div class="manual-actions secondary-actions">
                         <button id="resetTotalBtn" type="button" class="ghost-btn" aria-label="Reiniciar total acumulado">Reiniciar Total</button>
                     </div>
+
+                    <section class="history-screen" aria-label="Ecrã de histórico">
+                        <div class="history-header">
+                            <h4>Histórico</h4>
+                            <small id="historyCount">0 registos</small>
+                        </div>
+                        <ul id="historyList" class="history-list"></ul>
+                    </section>
                 </div>
             </section>
 
