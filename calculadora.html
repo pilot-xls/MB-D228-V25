@@ -32,11 +32,6 @@
                     </div>
 
                     <div class="entry-panel">
-                        <div class="entry-mode" role="group" aria-label="Tipo de operação">
-                            <button id="modePlus" type="button" class="mode-btn active" data-op="+">Somar</button>
-                            <button id="modeMinus" type="button" class="mode-btn" data-op="-">Subtrair</button>
-                        </div>
-
                         <div class="time-input-grid">
                             <label>
                                 Horas
@@ -48,17 +43,38 @@
                             </label>
                         </div>
 
-                        <div class="quick-actions">
-                            <button type="button" class="quick-btn" data-minutes="10">+10 min</button>
-                            <button type="button" class="quick-btn" data-minutes="15">+15 min</button>
-                            <button type="button" class="quick-btn" data-minutes="30">+30 min</button>
-                            <button type="button" class="quick-btn" data-minutes="60">+1h</button>
+                        <div class="manual-actions">
+                            <button id="manualAddBtn" type="button" class="primary-btn">Somar horas+min</button>
+                            <button id="manualSubtractBtn" type="button" class="danger-btn">Subtrair horas+min</button>
                         </div>
 
-                        <div class="entry-actions">
-                            <button id="addEntryBtn" type="button" class="primary-btn">Adicionar ao histórico</button>
-                            <button id="clearHistoryBtn" type="button" class="danger-btn">Limpar tudo</button>
+                        <div class="quick-wrap">
+                            <p class="quick-title">Somar rápido</p>
+                            <div class="quick-actions">
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="5">+5 min</button>
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="10">+10 min</button>
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="15">+15 min</button>
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="20">+20 min</button>
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="30">+30 min</button>
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="60">+1h</button>
+                                <button type="button" class="quick-btn" data-op="+" data-minutes="120">+2h</button>
+                            </div>
                         </div>
+
+                        <div class="quick-wrap quick-subtract-wrap">
+                            <p class="quick-title">Subtrair rápido</p>
+                            <div class="quick-actions quick-actions-subtract">
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="5">-5 min</button>
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="10">-10 min</button>
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="15">-15 min</button>
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="20">-20 min</button>
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="30">-30 min</button>
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="60">-1h</button>
+                                <button type="button" class="quick-btn subtract" data-op="-" data-minutes="120">-2h</button>
+                            </div>
+                        </div>
+
+                        <button id="clearHistoryBtn" type="button" class="danger-btn clear-btn">Limpar histórico</button>
                     </div>
                 </div>
             </section>

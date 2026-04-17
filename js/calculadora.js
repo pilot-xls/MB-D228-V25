@@ -3,13 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalDisplay = document.getElementById('totalDisplay');
     const hoursInput = document.getElementById('hoursInput');
     const minutesInput = document.getElementById('minutesInput');
-    const addEntryBtn = document.getElementById('addEntryBtn');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+    const manualSubtractBtn = document.getElementById('manualSubtractBtn');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
     const undoBtn = document.getElementById('undoBtn');
-    const modeButtons = document.querySelectorAll('.mode-btn');
     const quickButtons = document.querySelectorAll('.quick-btn');
 
-    let activeOperator = '+';
     let history = [];
 
     const pad = (value) => String(value).padStart(2, '0');
@@ -42,6 +41,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item.operator === '-') return acc - item.minutes;
         return acc + item.minutes;
     }, 0);
+
+    const editEntry = (index) => {
+        const entry = history[index];
+        if (!entry) return;
+
+        const current = `${entry.operator}${entry.minutes}`;
+        const updated = window.prompt('Editar entrada (ex: +90 ou -45):', current);
+
+        if (updated === null) return;
+
+        const cleaned = updated.replace(/\s+/g, '');
+        const match = cleaned.match(/^([+-])(\d+)$/);
+
+        if (!match) {
+            window.alert('Formato inválido. Use +90 ou -45.');
+            return;
+        }
+
+        const [, operator, minuteText] = match;
+        const minutes = parseInt(minuteText, 10);
+
+        if (minutes <= 0) {
+            window.alert('Os minutos devem ser superiores a zero.');
+            return;
+        }
+
+        history[index] = { operator, minutes };
+        renderAll();
+    };
 
     const renderHistory = () => {
         historyList.innerHTML = '';
@@ -97,56 +125,24 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTotal();
     };
 
-    const setActiveMode = (operator) => {
-        activeOperator = operator;
-        modeButtons.forEach((btn) => {
-            btn.classList.toggle('active', btn.dataset.op === operator);
-        });
-    };
-
     const clearInputs = () => {
         hoursInput.value = '';
         minutesInput.value = '';
     };
 
-    const addEntry = (minutes, operator = activeOperator) => {
+    const addEntry = (minutes, operator) => {
         if (!minutes || minutes < 0) return;
         history.push({ operator, minutes });
         clearInputs();
         renderAll();
     };
 
-    const editEntry = (index) => {
-        const entry = history[index];
-        if (!entry) return;
+    manualAddBtn.addEventListener('click', () => {
+        addEntry(inputToMinutes(), '+');
+    });
 
-        const current = `${entry.operator}${entry.minutes}`;
-        const updated = window.prompt('Editar entrada (ex: +90 ou -45):', current);
-
-        if (updated === null) return;
-
-        const cleaned = updated.replace(/\s+/g, '');
-        const match = cleaned.match(/^([+-])(\d+)$/);
-
-        if (!match) {
-            window.alert('Formato inválido. Use +90 ou -45.');
-            return;
-        }
-
-        const [, operator, minuteText] = match;
-        const minutes = parseInt(minuteText, 10);
-
-        if (minutes <= 0) {
-            window.alert('Os minutos devem ser superiores a zero.');
-            return;
-        }
-
-        history[index] = { operator, minutes };
-        renderAll();
-    };
-
-    addEntryBtn.addEventListener('click', () => {
-        addEntry(inputToMinutes());
+    manualSubtractBtn.addEventListener('click', () => {
+        addEntry(inputToMinutes(), '-');
     });
 
     clearHistoryBtn.addEventListener('click', () => {
@@ -160,16 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
     });
 
-    modeButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-            setActiveMode(btn.dataset.op);
-        });
-    });
-
     quickButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
             const minutes = parseInt(btn.dataset.minutes || '0', 10);
-            addEntry(minutes, '+');
+            const operator = btn.dataset.op === '-' ? '-' : '+';
+            addEntry(minutes, operator);
         });
     });
 
