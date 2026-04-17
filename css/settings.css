@@ -1,4 +1,11 @@
 /* Layout Principal e Container */
+html,
+body {
+    width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+}
+
 .settings-container {
     display: flex;
     flex-direction: column;
