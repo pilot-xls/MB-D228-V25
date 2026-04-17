@@ -208,3 +208,67 @@ html {
     margin: 0px;
     padding: 0px;
 }
+
+.connection-status-line {
+    --line-soft: rgba(39, 174, 96, 0.35);
+    --line-strong: rgba(46, 204, 113, 0.95);
+    --line-glow: rgba(46, 204, 113, 0.45);
+    left: 0;
+    width: 100vw;
+    height: 2px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 9999;
+    background: linear-gradient(90deg, var(--line-soft) 0%, var(--line-strong) 50%, var(--line-soft) 100%);
+    box-shadow: 0 0 6px var(--line-glow), 0 0 1px rgba(255, 255, 255, 0.4) inset;
+    transition: background .2s ease, box-shadow .2s ease;
+}
+
+.connection-status-line::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 130px;
+    height: 8px;
+    border-radius: 999px;
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center;
+    background: radial-gradient(ellipse at center, var(--line-strong) 0%, transparent 78%);
+    opacity: .8;
+    animation: connectionLineBreath 2.6s ease-in-out infinite;
+}
+
+.connection-status-line--top {
+    position: fixed;
+    top: 0;
+}
+
+.connection-status-line--under-header {
+    position: absolute;
+    bottom: -1px;
+}
+
+.connection-status-line.is-offline {
+    --line-soft: rgba(192, 57, 43, 0.35);
+    --line-strong: rgba(231, 76, 60, 0.95);
+    --line-glow: rgba(231, 76, 60, 0.45);
+}
+
+@keyframes connectionLineBreath {
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: .7;
+    }
+    45% {
+        transform: translate(-50%, -50%) scale(1.2, 1.35);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .connection-status-line::after {
+        animation: none;
+    }
+}
