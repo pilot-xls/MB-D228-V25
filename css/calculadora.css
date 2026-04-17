@@ -100,6 +100,18 @@ body {
     box-sizing: border-box;
 }
 
+.time-input-grid input {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.time-input-grid input.is-active {
+    border-color: #63b9e0;
+    background: linear-gradient(180deg, #ffffff 0%, #f4fbff 100%);
+    box-shadow:
+        0 0 0 1px rgba(99, 185, 224, 0.25),
+        0 0 12px rgba(89, 178, 219, 0.22);
+}
+
 .field-selector {
     display: grid;
     grid-template-columns: 1fr 1fr;
