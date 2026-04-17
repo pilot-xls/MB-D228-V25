@@ -1,97 +1,245 @@
-/* -------------------- */
-/* -------------------- */
-/* Definições globais e layout */
-/* -------------------- */
-/* -------------------- */
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 1rem;
-    max-width: 600px;
-
-    /* Limita a largura para ecrãs maiores */
+    padding: 0 1rem 1.5rem;
+    max-width: 720px;
     margin: 0 auto;
-}
-
-h1 {
-    text-align: center;
-    color: var(--primary-color, #333);
-
-    /* Assume var --primary-color do theme.css */
-    margin: 1.5rem 0 1rem;
-    font-size: 2em;
 }
 
 .section {
     width: 100%;
     margin-bottom: 1.5rem;
-    background: var(--card-bg, #ffffff);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--border-color, #eee);
+    border-radius: 16px;
+    padding: 1.2rem;
+    border: 1px solid #d9e5ff;
+    background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+    box-shadow: 0 12px 32px rgba(44, 91, 173, 0.12);
 }
 
 .block-title {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
     text-align: center;
-    font-size: 1.25em;
-    color: var(--text-color-dark, #333);
-    margin-bottom: 1.5rem;
+    letter-spacing: 0.04em;
+    color: #1b315f;
+}
+
+.time-shell {
+    border: 1px solid #cfddff;
+    border-radius: 12px;
+    padding: 0.8rem;
+    background: #f9fbff;
+}
+
+.time-shell-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.mini-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6480bd;
+}
+
+.time-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.history-empty,
+.history-line {
+    border-radius: 10px;
+    padding: 0.45rem 0.6rem;
+    background: #ffffff;
+    border: 1px solid #d9e5ff;
+    color: #1f3b6f;
+}
+
+.history-empty {
+    text-align: center;
+    font-size: 0.92rem;
+    color: #6682b8;
+}
+
+.history-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+}
+
+.history-action {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #274378;
+}
+
+.history-controls {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.history-btn,
+.ghost-btn,
+.quick-btn,
+.primary-btn,
+.danger-btn {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.history-btn,
+.ghost-btn {
+    background: #edf3ff;
+    color: #32528d;
+    border-color: #cddfff;
+    padding: 0.28rem 0.45rem;
+    font-size: 0.74rem;
+}
+
+.history-btn.danger,
+.danger-btn {
+    background: #ffeef1;
+    border-color: #ffc8d3;
+    color: #8e3043;
+}
+
+.history-btn:hover,
+.ghost-btn:hover,
+.quick-btn:hover,
+.primary-btn:hover,
+.danger-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.98);
+}
+
+.totals-panel {
+    margin-top: 0.65rem;
+    border-radius: 10px;
+    padding: 0.6rem;
+    background: linear-gradient(145deg, #eaf1ff, #dbe8ff);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    color: #4b6294;
+}
+
+.totals-panel strong {
+    font-family: 'Courier New', monospace;
+    font-size: 1.35rem;
+    color: #193a74;
+}
+
+.entry-panel {
+    margin-top: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.time-input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+}
+
+.time-input-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: #4b6291;
+    font-size: 0.85rem;
+}
+
+.time-input-grid input {
+    border-radius: 10px;
+    border: 1px solid #bfd4ff;
+    background: #fff;
+    color: #1f3766;
+    padding: 0.65rem 0.75rem;
+    font-size: 1rem;
     font-weight: 600;
 }
 
-/* -------------------- */
-/* -------------------- */
-/* --- CALCULADORA DE TEMPO --- */
-/* -------------------- */
-/* -------------------- */
-.display-input {
-    pointer-events: none;
-}
-
-.keypadCLC {
+.manual-actions {
     display: grid;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
 }
 
-.rowCLC {
-    display: flex;
-    gap: 0.5rem;
+.quick-wrap {
+    padding: 0.55rem;
+    border: 1px solid #dce8ff;
+    border-radius: 12px;
+    background: #f8fbff;
 }
 
-.buttonCLC {
-    flex: 1;
-    font-size: 1.5rem;
-    padding: 1rem;
-    border: none;
-    border-radius: 0.5rem;
-    background: var(--btn-bg,rgb(122, 119, 119));
-    color: var(--btn-color, #fff);
+.quick-title {
+    margin: 0 0 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4d679b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
-.buttonCLC:active {
-    background: var(--btn-active, #444);
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.45rem;
 }
 
-.operatorCLC {
-    background: var(--btn-operator,  rgb(122, 119, 119));
+.quick-btn {
+    background: #edf4ff;
+    color: #2a477e;
+    border-color: #c8dcff;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.79rem;
+    font-weight: 600;
 }
 
-.equalsCLC {
-    background: var(--btn-equals, #474897);
+.quick-btn.subtract {
+    background: #fff1f3;
+    border-color: #ffd0d7;
+    color: #8c3347;
 }
 
-.clearCLC {
-    background: var(--btn-clear, #db3535);
+.primary-btn,
+.danger-btn {
+    padding: 0.68rem;
+    font-weight: 700;
 }
 
-/* -------------------- */
-/* -------------------- */
-/* --- CONVERSÕES --- */
-/* -------------------- */
-/* -------------------- */
+.primary-btn {
+    background: linear-gradient(145deg, #2a79ff, #44bcff);
+    color: #fff;
+    border-color: #99c3ff;
+}
+
+.clear-btn {
+    width: 100%;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .calc-block {
     width: 100%;
 }
@@ -99,8 +247,6 @@ h1 {
 .conversion-line {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-
-    /* Label (1), Input 1 (1), Input 2 (1) */
     gap: 10px;
     align-items: center;
     margin-bottom: 12px;
@@ -114,10 +260,8 @@ h1 {
 
 .conversion-line label {
     font-weight: 600;
-    color: var(--primary-color, #000000);
+    color: #274378;
     text-align: left;
-
-    /* Para evitar que as labels longas quebrem o layout */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -133,21 +277,25 @@ h1 {
     transition: border-color 0.2s;
 }
 
-.conversion-line input:focus {
-    border-color: var(--primary-color, #000000);
+.conversion-line input:focus,
+.time-input-grid input:focus {
+    border-color: #81b4ff;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(37, 129, 255, 0.18);
 }
 
-#timeInput {
-    caret-color: transparent;
+@media (max-width: 580px) {
+    .quick-actions {
+        grid-template-columns: repeat(3, 1fr);
+    }
 
-    /* esconde o cursor */
-    user-select: none;
-    width: 95%;
-    height: 40px;
-    text-align: right;
-    padding: 5px;
+    .manual-actions {
+        grid-template-columns: 1fr;
+    }
+}
 
-    /* impede seleção de texto */
+@media (max-width: 420px) {
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
