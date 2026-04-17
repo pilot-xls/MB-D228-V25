@@ -11,189 +11,94 @@
     width: 100%;
     margin-bottom: 1rem;
     border-radius: 16px;
-    padding: 1rem;
+    padding: 0.9rem;
     border: 1px solid #d9e5ff;
     background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
     box-shadow: 0 8px 26px rgba(44, 91, 173, 0.1);
 }
 
 .block-title {
-    margin: 0 0 0.9rem;
-    font-size: 1.02rem;
+    margin: 0 0 0.8rem;
+    font-size: 1rem;
     text-align: center;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     color: #1b315f;
 }
 
 .total-mobile-card {
     border: 1px solid #cddfff;
     border-radius: 12px;
-    padding: 0.7rem 0.8rem;
+    padding: 0.55rem 0.7rem;
     background: linear-gradient(145deg, #ecf3ff, #deebff);
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.65rem;
     color: #4b6294;
 }
 
 .total-mobile-card strong {
     font-family: 'Courier New', monospace;
-    font-size: 1.45rem;
+    font-size: 1.24rem;
     color: #17376f;
 }
 
 .time-input-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.6rem;
+    gap: 0.55rem;
     margin-bottom: 0.6rem;
 }
 
 .time-input-grid label {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
     color: #4b6291;
-    font-size: 0.84rem;
+    font-size: 0.8rem;
 }
 
 .time-input-grid input {
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid #bfd4ff;
     background: #fff;
     color: #1f3766;
-    padding: 0.78rem 0.75rem;
-    font-size: 1.06rem;
+    padding: 0.58rem 0.55rem;
+    font-size: 0.98rem;
     font-weight: 700;
+    width: 100%;
+    min-width: 0;
 }
 
 .manual-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.55rem;
-    margin-bottom: 0.7rem;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
 }
 
-.quick-wrap,
-.history-panel {
-    padding: 0.65rem;
-    border: 1px solid #dce8ff;
-    border-radius: 12px;
-    background: #f8fbff;
-    margin-bottom: 0.65rem;
+.manual-actions.secondary-actions {
+    grid-template-columns: 1fr;
+    margin-bottom: 0;
 }
 
-.quick-title,
-.mini-label {
-    margin: 0 0 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #4d679b;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.quick-actions {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.45rem;
-}
-
-.history-top-actions {
-    display: flex;
-    gap: 0.4rem;
-}
-
-.time-shell-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.4rem;
-}
-
-.time-history {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 240px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-}
-
-.history-empty,
-.history-line {
-    border-radius: 10px;
-    padding: 0.45rem 0.55rem;
-    background: #fff;
-    border: 1px solid #d9e5ff;
-    color: #1f3b6f;
-}
-
-.history-empty {
-    text-align: center;
-    color: #6682b8;
-}
-
-.history-line {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
-}
-
-.history-action {
-    font-family: 'Courier New', monospace;
-    font-weight: 700;
-    color: #274378;
-    font-size: 0.95rem;
-}
-
-.history-controls {
-    display: flex;
-    gap: 0.35rem;
-}
-
-.history-btn,
 .ghost-btn,
-.quick-btn,
 .primary-btn,
 .danger-btn {
     border: 1px solid transparent;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.15s ease;
+    min-height: 40px;
+    padding: 0.48rem;
+    font-weight: 700;
+    font-size: 0.92rem;
 }
 
-.quick-btn,
-.ghost-btn,
-.history-btn {
+.ghost-btn {
     background: #edf4ff;
     color: #2a477e;
     border-color: #c8dcff;
-    font-weight: 600;
-}
-
-.quick-btn {
-    min-height: 40px;
-}
-
-.quick-btn.subtract,
-.danger-btn,
-.history-btn.danger,
-.ghost-btn.danger {
-    background: #fff1f3;
-    border-color: #ffd0d7;
-    color: #8c3347;
-}
-
-.primary-btn,
-.danger-btn {
-    min-height: 44px;
-    padding: 0.55rem;
-    font-weight: 700;
 }
 
 .primary-btn {
@@ -202,14 +107,12 @@
     border-color: #99c3ff;
 }
 
-button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    transform: none;
+.danger-btn {
+    background: #fff1f3;
+    border-color: #ffd0d7;
+    color: #8c3347;
 }
 
-.quick-btn:hover,
-.history-btn:hover,
 .ghost-btn:hover,
 .primary-btn:hover,
 .danger-btn:hover {
@@ -244,11 +147,11 @@ button:disabled {
 }
 
 .conversion-line input {
-    width: 80%;
-    padding: 10px;
+    width: 100%;
+    padding: 8px;
     border: 1px solid var(--border-color, #ccc);
     border-radius: 6px;
-    font-size: 1em;
+    font-size: 0.95em;
     text-align: center;
     transition: border-color 0.2s;
 }
@@ -262,39 +165,45 @@ button:disabled {
 
 @media (max-width: 600px) {
     .section {
-        padding: 0.85rem;
+        padding: 0.8rem;
+        border-radius: 14px;
     }
 
-    .quick-actions {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .block-title {
+        font-size: 0.96rem;
+    }
+
+    .time-input-grid input {
+        font-size: 0.94rem;
+        padding: 0.5rem;
     }
 
     .conversion-line {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-
-    .conversion-line label {
-        grid-column: 1 / -1;
-    }
-
-    .conversion-line input {
-        width: 100%;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin-bottom: 10px;
     }
 }
 
 @media (max-width: 420px) {
-    .manual-actions,
+    .container {
+        padding-left: 0.55rem;
+        padding-right: 0.55rem;
+    }
+
     .time-input-grid {
-        grid-template-columns: 1fr;
+        gap: 0.45rem;
     }
 
-    .quick-actions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .total-mobile-card strong {
+        font-size: 1.1rem;
     }
 
-    .history-line {
-        flex-direction: column;
-        align-items: flex-start;
+    .ghost-btn,
+    .primary-btn,
+    .danger-btn {
+        font-size: 0.86rem;
+        min-height: 37px;
+        padding: 0.42rem;
     }
 }

@@ -29,50 +29,17 @@
                         </label>
                         <label>
                             Minutos
-                            <input id="minutesInput" type="number" min="0" step="5" inputmode="numeric" placeholder="00">
+                            <input id="minutesInput" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
                         </label>
                     </div>
 
                     <div class="manual-actions">
-                        <button id="manualAddBtn" type="button" class="primary-btn">+ Aplicar</button>
-                        <button id="manualSubtractBtn" type="button" class="danger-btn">- Aplicar</button>
+                        <button id="manualAddBtn" type="button" class="primary-btn">Somar</button>
+                        <button id="manualSubtractBtn" type="button" class="danger-btn">Subtrair</button>
                     </div>
 
-                    <div class="quick-wrap">
-                        <p class="quick-title">Somar rápido</p>
-                        <div class="quick-actions">
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="5">+5m</button>
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="10">+10m</button>
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="15">+15m</button>
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="20">+20m</button>
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="30">+30m</button>
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="60">+1h</button>
-                            <button type="button" class="quick-btn" data-op="+" data-minutes="120">+2h</button>
-                        </div>
-                    </div>
-
-                    <div class="quick-wrap">
-                        <p class="quick-title">Subtrair rápido</p>
-                        <div class="quick-actions">
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="5">-5m</button>
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="10">-10m</button>
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="15">-15m</button>
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="20">-20m</button>
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="30">-30m</button>
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="60">-1h</button>
-                            <button type="button" class="quick-btn subtract" data-op="-" data-minutes="120">-2h</button>
-                        </div>
-                    </div>
-
-                    <div class="history-panel">
-                        <div class="time-shell-header">
-                            <span class="mini-label">Histórico</span>
-                            <div class="history-top-actions">
-                                <button id="undoBtn" type="button" class="ghost-btn">Undo</button>
-                                <button id="clearHistoryBtn" type="button" class="ghost-btn danger">Limpar</button>
-                            </div>
-                        </div>
-                        <ul id="timeHistory" class="time-history" aria-live="polite"></ul>
+                    <div class="manual-actions secondary-actions">
+                        <button id="resetTotalBtn" type="button" class="ghost-btn" aria-label="Reiniciar total acumulado">Reiniciar Total</button>
                     </div>
                 </div>
             </section>

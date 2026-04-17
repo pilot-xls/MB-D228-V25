@@ -1,15 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const historyList = document.getElementById('timeHistory');
     const totalDisplay = document.getElementById('totalDisplay');
     const hoursInput = document.getElementById('hoursInput');
     const minutesInput = document.getElementById('minutesInput');
     const manualAddBtn = document.getElementById('manualAddBtn');
     const manualSubtractBtn = document.getElementById('manualSubtractBtn');
-    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-    const undoBtn = document.getElementById('undoBtn');
-    const quickButtons = document.querySelectorAll('.quick-btn');
+    const resetTotalBtn = document.getElementById('resetTotalBtn');
 
-    let history = [];
+    let totalMinutes = 0;
 
     const pad = (value) => String(value).padStart(2, '0');
 
@@ -27,102 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return (hours * 60) + minutes;
     };
 
-    const formatAction = (item) => {
-        const sign = item.operator === '-' ? '-' : '+';
-        const h = Math.floor(item.minutes / 60);
-        const m = item.minutes % 60;
-
-        if (h > 0 && m > 0) return `${sign}${h}h ${m}m`;
-        if (h > 0) return `${sign}${h}h`;
-        return `${sign}${m} min`;
-    };
-
-    const calculateTotal = () => history.reduce((acc, item) => {
-        if (item.operator === '-') return acc - item.minutes;
-        return acc + item.minutes;
-    }, 0);
-
-    const editEntry = (index) => {
-        const entry = history[index];
-        if (!entry) return;
-
-        const current = `${entry.operator}${entry.minutes}`;
-        const updated = window.prompt('Editar entrada (ex: +90 ou -45):', current);
-
-        if (updated === null) return;
-
-        const cleaned = updated.replace(/\s+/g, '');
-        const match = cleaned.match(/^([+-])(\d+)$/);
-
-        if (!match) {
-            window.alert('Formato inválido. Use +90 ou -45.');
-            return;
-        }
-
-        const [, operator, minuteText] = match;
-        const minutes = parseInt(minuteText, 10);
-
-        if (minutes <= 0) {
-            window.alert('Os minutos devem ser superiores a zero.');
-            return;
-        }
-
-        history[index] = { operator, minutes };
-        renderAll();
-    };
-
-    const renderHistory = () => {
-        historyList.innerHTML = '';
-
-        if (history.length === 0) {
-            const emptyState = document.createElement('li');
-            emptyState.className = 'history-empty';
-            emptyState.textContent = 'Sem entradas ainda.';
-            historyList.appendChild(emptyState);
-        } else {
-            history.forEach((item, index) => {
-                const line = document.createElement('li');
-                line.className = 'history-line';
-
-                const action = document.createElement('span');
-                action.className = 'history-action';
-                action.textContent = formatAction(item);
-
-                const controls = document.createElement('div');
-                controls.className = 'history-controls';
-
-                const editBtn = document.createElement('button');
-                editBtn.type = 'button';
-                editBtn.className = 'history-btn';
-                editBtn.textContent = 'Editar';
-                editBtn.addEventListener('click', () => editEntry(index));
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.type = 'button';
-                deleteBtn.className = 'history-btn danger';
-                deleteBtn.textContent = 'Apagar';
-                deleteBtn.addEventListener('click', () => {
-                    history.splice(index, 1);
-                    renderAll();
-                });
-
-                controls.append(editBtn, deleteBtn);
-                line.append(action, controls);
-                historyList.appendChild(line);
-            });
-        }
-
-        undoBtn.disabled = history.length === 0;
-        clearHistoryBtn.disabled = history.length === 0;
-    };
-
     const renderTotal = () => {
-        totalDisplay.textContent = minutesToReadable(calculateTotal());
-    };
-
-    const renderAll = () => {
-        renderHistory();
-        renderTotal();
+        totalDisplay.textContent = minutesToReadable(totalMinutes);
     };
 
     const clearInputs = () => {
@@ -130,43 +33,37 @@ document.addEventListener('DOMContentLoaded', () => {
         minutesInput.value = '';
     };
 
-    const addEntry = (minutes, operator) => {
-        if (!minutes || minutes < 0) return;
-        history.push({ operator, minutes });
+    const applyOperation = (operator) => {
+        const delta = inputToMinutes();
+
+        if (delta <= 0) return;
+
+        if (operator === '-') {
+            totalMinutes -= delta;
+        } else {
+            totalMinutes += delta;
+        }
+
         clearInputs();
-        renderAll();
+        renderTotal();
     };
 
     manualAddBtn.addEventListener('click', () => {
-        addEntry(inputToMinutes(), '+');
+        applyOperation('+');
     });
 
     manualSubtractBtn.addEventListener('click', () => {
-        addEntry(inputToMinutes(), '-');
+        applyOperation('-');
     });
 
-    clearHistoryBtn.addEventListener('click', () => {
-        history = [];
+    resetTotalBtn.addEventListener('click', () => {
+        totalMinutes = 0;
         clearInputs();
-        renderAll();
+        renderTotal();
     });
 
-    undoBtn.addEventListener('click', () => {
-        history.pop();
-        renderAll();
-    });
-
-    quickButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const minutes = parseInt(btn.dataset.minutes || '0', 10);
-            const operator = btn.dataset.op === '-' ? '-' : '+';
-            addEntry(minutes, operator);
-        });
-    });
-
-    renderAll();
+    renderTotal();
 });
-
 function lbToKg() {
     const lb = parseFloat(document.getElementById('lb').value) || 0;
     document.getElementById('kg').value = (lb * 0.453592).toFixed(1);
