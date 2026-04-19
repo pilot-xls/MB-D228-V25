@@ -1,6 +1,6 @@
 /**
  * Camada UI principal do FDR.
- * Objetivo: concentrar renderização do ecrã (fase, métricas, permissões e alertas operacionais).
+ * Objetivo: concentrar renderização do ecrã (fase, métricas, permissões, UX states e debug panel).
  */
 
 /**
@@ -36,6 +36,24 @@ export function renderSessionState(target, sessionState) {
     const uiState = map[sessionState] ?? map.stopped;
     target.textContent = uiState.text;
     target.className = `status-badge ${uiState.className}`;
+}
+
+/**
+ * Renderiza o estado UX com mensagens de validação prática.
+ * @param {HTMLElement} target elemento do alerta UX.
+ * @param {{visible:boolean, tone?:'ok'|'warning'|'error', message?:string}} state estado UX atual.
+ */
+export function renderUxState(target, state) {
+    target.hidden = !state.visible;
+    target.textContent = state.message ?? '';
+
+    const toneClass = state.tone === 'ok'
+        ? 'fdr-alert-ok'
+        : state.tone === 'error'
+            ? 'fdr-alert-error'
+            : 'fdr-alert-warning';
+
+    target.className = `fdr-alert ${toneClass}`;
 }
 
 /**
@@ -80,6 +98,22 @@ export function renderWakeLockAlert(target, alert) {
     target.hidden = !alert.visible;
     target.textContent = alert.message ?? '';
     target.className = 'fdr-alert fdr-alert-warning';
+}
+
+/**
+ * Atualiza painel de debug com estado interno de deteção e sessão.
+ * @param {object} fields refs dos elementos do painel.
+ * @param {object} payload dados para debug.
+ */
+export function renderDebugPanel(fields, payload) {
+    fields.phase.textContent = payload.phase ?? '--';
+    fields.gpsQuality.textContent = payload.gpsQuality ?? '--';
+    fields.takeoff.textContent = payload.takeoffAt ?? '--';
+    fields.landing.textContent = payload.landingAt ?? '--';
+    fields.scores.textContent = JSON.stringify(payload.scores ?? {}, null, 2);
+    fields.windowMetrics.textContent = JSON.stringify(payload.windowMetrics ?? {}, null, 2);
+    fields.points.textContent = JSON.stringify(payload.lastPoints ?? [], null, 2);
+    fields.reasons.textContent = JSON.stringify(payload.reasonCodes ?? [], null, 2);
 }
 
 /**

@@ -44,6 +44,8 @@
                     <output id="session-status" class="status-badge status-pending">Parado</output>
                 </div>
 
+                <div id="ux-state" class="fdr-alert fdr-alert-warning" hidden></div>
+
                 <div class="fdr-row">
                     <label for="aircraft-profile">Perfil de aeronave</label>
                     <select id="aircraft-profile" name="aircraft-profile">
@@ -57,6 +59,8 @@
                 <div class="fdr-actions">
                     <button type="button" id="btn-start" class="btn btn-primary">Iniciar tracking</button>
                     <button type="button" id="btn-stop" class="btn btn-danger" disabled>Parar tracking</button>
+                    <button type="button" id="btn-demo" class="btn btn-secondary">Demo track</button>
+                    <button type="button" id="btn-stop-demo" class="btn btn-secondary" disabled>Parar demo</button>
                     <button type="button" id="btn-takeoff" class="btn btn-warning" disabled>Takeoff manual</button>
                     <button type="button" id="btn-landing" class="btn btn-warning" disabled>Landing manual</button>
                     <button type="button" id="btn-clear-manual" class="btn btn-secondary" disabled>Limpar overrides manuais</button>
@@ -112,12 +116,31 @@
                     <div><span>Session time</span><strong id="summary-session-time">00:00:00</strong></div>
                     <div class="summary-wide"><span>Confidence summary</span><strong id="summary-confidence">--</strong></div>
                 </div>
+                <div class="summary-extra">
+                    <h3>Timeline final</h3>
+                    <ul id="summary-timeline" class="summary-timeline">
+                        <li>Ainda sem eventos.</li>
+                    </ul>
+                </div>
             </section>
 
             <section class="fdr-panel">
                 <details id="debug-section">
-                    <summary>Debug</summary>
-                    <pre id="debug-output">Sem dados de debug.</pre>
+                    <summary>Debug panel</summary>
+                    <div id="debug-grid" class="debug-grid">
+                        <div><span>Fase atual</span><strong id="debug-phase">--</strong></div>
+                        <div><span>Qualidade GPS</span><strong id="debug-gps-quality">--</strong></div>
+                        <div><span>TakeoffAt</span><strong id="debug-takeoff">--</strong></div>
+                        <div><span>LandingAt</span><strong id="debug-landing">--</strong></div>
+                    </div>
+                    <h4>Scores dos eventos</h4>
+                    <pre id="debug-scores">Sem dados.</pre>
+                    <h4>Métricas da janela</h4>
+                    <pre id="debug-window">Sem dados.</pre>
+                    <h4>Últimos pontos</h4>
+                    <pre id="debug-points">Sem dados.</pre>
+                    <h4>Reason codes</h4>
+                    <pre id="debug-reasons">Sem dados.</pre>
                 </details>
             </section>
 

@@ -50,7 +50,12 @@ export function createDetectionEngine(options = {}) {
                     event: null,
                     confidence: 0,
                     metrics: defaultMetrics(sample),
-                    reasonCodes
+                    reasonCodes,
+                    debug: {
+                        scores: {},
+                        windowMetrics: {},
+                        lastPoints: []
+                    }
                 };
             }
 
@@ -100,7 +105,24 @@ export function createDetectionEngine(options = {}) {
                 event: decision.event,
                 confidence,
                 metrics,
-                reasonCodes
+                reasonCodes,
+                debug: {
+                    scores,
+                    windowMetrics: {
+                        smoothedSpeedKt: state.smoothedSpeedKt,
+                        smoothedVerticalFpm: state.smoothedVerticalFpm,
+                        altitudeTrendFpm,
+                        counters: state.counters
+                    },
+                    lastPoints: state.samples.slice(-5).map(item => ({
+                        t: item.timestamp,
+                        lat: Number(item.latitude.toFixed(5)),
+                        lon: Number(item.longitude.toFixed(5)),
+                        speedKt: Number((item.speedKt ?? 0).toFixed(1)),
+                        altitudeFt: Number(((item.altitudeFt ?? 0)).toFixed(0)),
+                        accuracy: Number((item.accuracy ?? 0).toFixed(1))
+                    }))
+                }
             };
         }
     };

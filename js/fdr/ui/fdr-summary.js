@@ -54,6 +54,7 @@ export function buildSessionSummary(session, now = Date.now()) {
             flyTime: '00:00:00',
             sessionTime: '00:00:00',
             confidence: '--',
+            detectionConfidence: '--',
             takeoffSource: '--',
             landingSource: '--'
         };
@@ -85,17 +86,51 @@ export function buildSessionSummary(session, now = Date.now()) {
         confidence: samples > 0
             ? `avg ${Math.round(avg)}% · max ${Math.round(max)}% · n=${samples}`
             : '--',
+        detectionConfidence: session.metrics?.confidence !== null && session.metrics?.confidence !== undefined
+            ? `${Math.round(session.metrics.confidence)}%`
+            : '--',
         takeoffSource: takeoff.source ?? '--',
         landingSource: landing.source ?? '--'
     };
 }
 
 /**
- * Atualiza os campos de resumo no ecrã.
- * @param {{takeoff:HTMLElement, landing:HTMLElement, flyTime:HTMLElement, sessionTime:HTMLElement, confidence:HTMLElement, takeoffSource:HTMLElement, landingSource:HTMLElement}} fields campos UI.
- * @param {object} summary resumo formatado.
+ * Renderiza timeline final dos eventos com badge auto/manual.
+ * @param {HTMLElement} target lista UL de timeline.
+ * @param {Array<{label:string,timestamp:number|null,source:'auto'|'manual'|null}>} items eventos relevantes.
  */
-export function renderSummary(fields, summary) {
+export function renderSummaryTimeline(target, items) {
+    target.innerHTML = '';
+
+    if (!items.length) {
+        const item = document.createElement('li');
+        item.textContent = 'Ainda sem eventos.';
+        target.appendChild(item);
+        return;
+    }
+
+    items.forEach(entry => {
+        const item = document.createElement('li');
+        item.textContent = `${entry.label}: ${entry.timestamp ? formatTimestamp(entry.timestamp) : '--:--:--'}`;
+
+        if (entry.source) {
+            const badge = document.createElement('span');
+            badge.className = `source-badge source-${entry.source}`;
+            badge.textContent = entry.source;
+            item.appendChild(badge);
+        }
+
+        target.appendChild(item);
+    });
+}
+
+/**
+ * Atualiza os campos de resumo no ecrã.
+ * @param {{takeoff:HTMLElement, landing:HTMLElement, flyTime:HTMLElement, sessionTime:HTMLElement, confidence:HTMLElement, takeoffSource:HTMLElement, landingSource:HTMLElement, timeline:HTMLElement}} fields campos UI.
+ * @param {object} summary resumo formatado.
+ * @param {Array<{label:string,timestamp:number|null,source:'auto'|'manual'|null}>} timelineItems eventos para timeline final.
+ */
+export function renderSummary(fields, summary, timelineItems = []) {
     fields.takeoff.textContent = summary.takeoff ?? '--:--:--';
     fields.landing.textContent = summary.landing ?? '--:--:--';
     fields.flyTime.textContent = summary.flyTime ?? '00:00:00';
@@ -103,4 +138,6 @@ export function renderSummary(fields, summary) {
     fields.confidence.textContent = summary.confidence ?? '--';
     fields.takeoffSource.textContent = summary.takeoffSource ?? '--';
     fields.landingSource.textContent = summary.landingSource ?? '--';
+
+    renderSummaryTimeline(fields.timeline, timelineItems);
 }
