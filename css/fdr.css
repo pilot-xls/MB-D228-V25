@@ -1,0 +1,236 @@
+/*
+ * Módulo visual FDR.
+ * Objetivo: disponibilizar a base visual da página fdr.html com foco mobile-first,
+ * mantendo consistência com a identidade atual da app (cartões escuros e destaque laranja).
+ */
+
+:root {
+    --fdr-bg: #0f141a;
+    --fdr-panel: #1f2a34;
+    --fdr-panel-border: #334455;
+    --fdr-text: #f5f7fa;
+    --fdr-muted: #b3c0cb;
+    --fdr-accent: #e07f1e;
+    --fdr-success: #2ecc71;
+    --fdr-warning: #f1c40f;
+    --fdr-danger: #e74c3c;
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(circle at top, #1c2733, var(--fdr-bg));
+    color: var(--fdr-text);
+}
+
+.fdr-page {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    padding: 1rem;
+    box-sizing: border-box;
+    display: grid;
+    gap: 1rem;
+}
+
+.fdr-header,
+.fdr-panel,
+.fdr-warning {
+    background: var(--fdr-panel);
+    border: 1px solid var(--fdr-panel-border);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.fdr-header {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fdr-header h1,
+.fdr-panel h2 {
+    margin: 0 0 0.35rem;
+}
+
+.fdr-header p {
+    margin: 0;
+    color: var(--fdr-muted);
+}
+
+.fdr-row {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+}
+
+.fdr-row label,
+.fdr-row span {
+    color: var(--fdr-muted);
+}
+
+#aircraft-profile {
+    width: 100%;
+    border: 1px solid var(--fdr-panel-border);
+    border-radius: 10px;
+    padding: 0.6rem;
+    background: #16202a;
+    color: var(--fdr-text);
+}
+
+.fdr-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--fdr-accent);
+}
+
+.btn-secondary {
+    background: #3b4a59;
+}
+
+.btn-warning {
+    background: #8b6b15;
+}
+
+.btn-danger {
+    background: #8c2f25;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-width: 130px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
+}
+
+.status-ok {
+    background: rgba(46, 204, 113, 0.2);
+    color: #c9f7dc;
+}
+
+.status-pending {
+    background: rgba(241, 196, 15, 0.2);
+    color: #ffefb3;
+}
+
+.status-error {
+    background: rgba(231, 76, 60, 0.2);
+    color: #ffd2cc;
+}
+
+.phase-row {
+    border-top: 1px solid var(--fdr-panel-border);
+    padding-top: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#phase-indicator {
+    color: var(--fdr-accent);
+}
+
+.metric-grid,
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+}
+
+.metric-card,
+.summary-grid > div {
+    background: #16202a;
+    border: 1px solid #2d3c4c;
+    border-radius: 10px;
+    padding: 0.75rem;
+}
+
+.metric-card h3,
+.metric-card p {
+    margin: 0;
+}
+
+.metric-card p {
+    margin-top: 0.35rem;
+    font-weight: 700;
+    color: var(--fdr-accent);
+}
+
+.summary-grid span {
+    display: block;
+    color: var(--fdr-muted);
+    margin-bottom: 0.25rem;
+}
+
+.event-log {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.event-log li {
+    color: #dce5ed;
+}
+
+#debug-section summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+#debug-output {
+    margin: 0.75rem 0 0;
+    padding: 0.75rem;
+    border-radius: 10px;
+    background: #111920;
+    color: #b7f0ff;
+    white-space: pre-wrap;
+}
+
+.fdr-warning p {
+    margin: 0;
+    color: #ffe6bd;
+}
+
+@media (min-width: 720px) {
+    .fdr-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 980px) {
+    .metric-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}

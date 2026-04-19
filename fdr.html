@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Flytools - FDR</title>
+        <link rel="manifest" href="manifest.json?v=7">
+        <link rel="stylesheet" href="css/theme.css">
+        <link rel="stylesheet" href="css/fdr.css">
+    </head>
+    <body>
+        <main class="fdr-page">
+            <header class="fdr-header">
+                <div>
+                    <h1>FDR</h1>
+                    <p>Flight Data Recorder (base de integração)</p>
+                </div>
+                <button type="button" id="btn-back" class="btn btn-secondary">Voltar ao menu</button>
+            </header>
+
+            <section class="fdr-panel">
+                <h2>Controlo da sessão</h2>
+
+                <div class="fdr-row">
+                    <label for="permission-status">Permissão de localização</label>
+                    <output id="permission-status" class="status-badge status-pending">A verificar...</output>
+                </div>
+
+                <div class="fdr-row">
+                    <label for="aircraft-profile">Perfil de aeronave</label>
+                    <select id="aircraft-profile" name="aircraft-profile">
+                        <option value="" selected disabled>A carregar perfis...</option>
+                    </select>
+                </div>
+
+                <div class="fdr-actions">
+                    <button type="button" id="btn-start" class="btn btn-primary">Iniciar tracking</button>
+                    <button type="button" id="btn-stop" class="btn btn-danger" disabled>Parar tracking</button>
+                    <button type="button" id="btn-takeoff" class="btn btn-warning" disabled>Takeoff manual</button>
+                    <button type="button" id="btn-landing" class="btn btn-warning" disabled>Landing manual</button>
+                </div>
+
+                <div class="fdr-row phase-row">
+                    <span>Fase atual</span>
+                    <strong id="phase-indicator">IDLE</strong>
+                </div>
+            </section>
+
+            <section class="fdr-panel">
+                <h2>Métricas</h2>
+                <div class="metric-grid">
+                    <article class="metric-card">
+                        <h3>GPS accuracy</h3>
+                        <p id="metric-gps-accuracy">-- m</p>
+                    </article>
+                    <article class="metric-card">
+                        <h3>Velocidade</h3>
+                        <p id="metric-speed">-- kt</p>
+                    </article>
+                    <article class="metric-card">
+                        <h3>Altitude</h3>
+                        <p id="metric-altitude">-- ft</p>
+                    </article>
+                    <article class="metric-card">
+                        <h3>Vertical speed</h3>
+                        <p id="metric-vspeed">-- ft/min</p>
+                    </article>
+                    <article class="metric-card">
+                        <h3>Confiança</h3>
+                        <p id="metric-confidence">-- %</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="fdr-panel">
+                <h2>Timeline / Log</h2>
+                <ol id="event-log" class="event-log" aria-live="polite">
+                    <li>Sistema FDR inicializado.</li>
+                </ol>
+            </section>
+
+            <section class="fdr-panel">
+                <h2>Resumo da sessão</h2>
+                <div class="summary-grid">
+                    <div><span>Takeoff time</span><strong id="summary-takeoff">--:--:--</strong></div>
+                    <div><span>Landing time</span><strong id="summary-landing">--:--:--</strong></div>
+                    <div><span>Fly time</span><strong id="summary-fly-time">00:00:00</strong></div>
+                    <div><span>Session time</span><strong id="summary-session-time">00:00:00</strong></div>
+                </div>
+            </section>
+
+            <section class="fdr-panel">
+                <details id="debug-section">
+                    <summary>Debug</summary>
+                    <pre id="debug-output">Sem dados de debug.</pre>
+                </details>
+            </section>
+
+            <section class="fdr-warning">
+                <p>
+                    Para melhor desempenho do tracking em PWA, mantenha a app aberta e ativa durante a sessão.
+                </p>
+            </section>
+        </main>
+
+        <script type="module" src="js/fdr.js"></script>
+    </body>
+</html>
