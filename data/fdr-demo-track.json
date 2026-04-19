@@ -1,23 +1,27 @@
 [
-    {
-        "timestamp": "2026-04-19T10:00:00Z",
-        "lat": 38.7813,
-        "lon": -9.134,
-        "altitudeFt": 170,
-        "speedKt": 0
-    },
-    {
-        "timestamp": "2026-04-19T10:01:20Z",
-        "lat": 38.7831,
-        "lon": -9.1202,
-        "altitudeFt": 450,
-        "speedKt": 78
-    },
-    {
-        "timestamp": "2026-04-19T10:02:35Z",
-        "lat": 38.7889,
-        "lon": -9.1044,
-        "altitudeFt": 1200,
-        "speedKt": 112
-    }
+  { "timestamp": "2026-04-19T10:00:00Z", "phase": "taxi", "lat": 38.78130, "lon": -9.13400, "altitudeFt": 168, "speedKt": 4, "accuracyM": 6, "heading": 110 },
+  { "timestamp": "2026-04-19T10:00:06Z", "phase": "taxi", "lat": 38.78162, "lon": -9.13345, "altitudeFt": 169, "speedKt": 9, "accuracyM": 6, "heading": 112 },
+  { "timestamp": "2026-04-19T10:00:12Z", "phase": "taxi", "lat": 38.78199, "lon": -9.13288, "altitudeFt": 170, "speedKt": 14, "accuracyM": 7, "heading": 113 },
+  { "timestamp": "2026-04-19T10:00:18Z", "phase": "taxi", "lat": 38.78230, "lon": -9.13220, "altitudeFt": 170, "speedKt": 18, "accuracyM": 7, "heading": 115 },
+
+  { "timestamp": "2026-04-19T10:00:24Z", "phase": "takeoff_roll", "lat": 38.78288, "lon": -9.13095, "altitudeFt": 171, "speedKt": 32, "accuracyM": 6, "heading": 120 },
+  { "timestamp": "2026-04-19T10:00:30Z", "phase": "takeoff_roll", "lat": 38.78380, "lon": -9.12910, "altitudeFt": 173, "speedKt": 46, "accuracyM": 6, "heading": 121 },
+  { "timestamp": "2026-04-19T10:00:36Z", "phase": "takeoff_roll", "lat": 38.78515, "lon": -9.12640, "altitudeFt": 178, "speedKt": 61, "accuracyM": 6, "heading": 122 },
+
+  { "timestamp": "2026-04-19T10:00:42Z", "phase": "airborne", "lat": 38.78690, "lon": -9.12295, "altitudeFt": 245, "speedKt": 74, "accuracyM": 7, "heading": 123 },
+  { "timestamp": "2026-04-19T10:00:48Z", "phase": "airborne", "lat": 38.78920, "lon": -9.11860, "altitudeFt": 420, "speedKt": 92, "accuracyM": 7, "heading": 124 },
+  { "timestamp": "2026-04-19T10:00:54Z", "phase": "airborne", "lat": 38.79240, "lon": -9.11285, "altitudeFt": 730, "speedKt": 108, "accuracyM": 7, "heading": 126 },
+  { "timestamp": "2026-04-19T10:01:00Z", "phase": "airborne", "lat": 38.79595, "lon": -9.10660, "altitudeFt": 980, "speedKt": 114, "accuracyM": 8, "heading": 127 },
+  { "timestamp": "2026-04-19T10:01:06Z", "phase": "airborne", "lat": 38.79910, "lon": -9.10090, "altitudeFt": 1120, "speedKt": 116, "accuracyM": 8, "heading": 128 },
+
+  { "timestamp": "2026-04-19T10:01:12Z", "phase": "approach", "lat": 38.80240, "lon": -9.09585, "altitudeFt": 980, "speedKt": 104, "accuracyM": 8, "heading": 126 },
+  { "timestamp": "2026-04-19T10:01:18Z", "phase": "approach", "lat": 38.80505, "lon": -9.09195, "altitudeFt": 760, "speedKt": 93, "accuracyM": 9, "heading": 123 },
+  { "timestamp": "2026-04-19T10:01:24Z", "phase": "approach", "lat": 38.80710, "lon": -9.08930, "altitudeFt": 520, "speedKt": 81, "accuracyM": 9, "heading": 120 },
+  { "timestamp": "2026-04-19T10:01:30Z", "phase": "approach", "lat": 38.80865, "lon": -9.08735, "altitudeFt": 300, "speedKt": 70, "accuracyM": 9, "heading": 118 },
+
+  { "timestamp": "2026-04-19T10:01:36Z", "phase": "landing_roll", "lat": 38.80945, "lon": -9.08645, "altitudeFt": 190, "speedKt": 58, "accuracyM": 7, "heading": 117 },
+  { "timestamp": "2026-04-19T10:01:42Z", "phase": "landing_roll", "lat": 38.81005, "lon": -9.08590, "altitudeFt": 175, "speedKt": 40, "accuracyM": 7, "heading": 114 },
+  { "timestamp": "2026-04-19T10:01:48Z", "phase": "landing_roll", "lat": 38.81038, "lon": -9.08555, "altitudeFt": 170, "speedKt": 22, "accuracyM": 6, "heading": 111 },
+  { "timestamp": "2026-04-19T10:01:54Z", "phase": "landing_roll", "lat": 38.81056, "lon": -9.08530, "altitudeFt": 169, "speedKt": 8, "accuracyM": 6, "heading": 108 },
+  { "timestamp": "2026-04-19T10:02:00Z", "phase": "taxi", "lat": 38.81070, "lon": -9.08505, "altitudeFt": 169, "speedKt": 3, "accuracyM": 6, "heading": 105 }
 ]

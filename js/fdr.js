@@ -12,15 +12,18 @@ import {
 import { createFdrRepository } from './fdr/storage/fdr-repository.js';
 import {
     appendEventLog,
+    renderDebugPanel,
     renderGpsAlert,
     renderLiveMetrics,
     renderPermissionState,
     renderPhase,
     renderSessionState,
+    renderUxState,
     renderWakeLockAlert
 } from './fdr/ui/fdr-screen.js';
 import { buildSessionSummary, renderSummary } from './fdr/ui/fdr-summary.js';
 import { metersToFeet, msToKnots } from './fdr/utils/geo.js';
+import { formatTimestamp } from './fdr/utils/time.js';
 
 /**
  * Bootstrap do módulo FDR.
@@ -35,10 +38,11 @@ async function initFdrPage() {
 
     let removeWakeVisibilityListener = () => {};
     let sessionClockId = null;
+    let demoTimer = null;
 
     /**
      * Estado em memória da sessão atual.
-     * Mantém apenas informação operacional da página, persistindo o histórico em IndexedDB.
+     * Mantém informação operacional da página e timeline para validação prática.
      */
     const activeSession = {
         id: null,
@@ -56,7 +60,18 @@ async function initFdrPage() {
         landingAutoAt: null,
         manualTakeoffAt: null,
         manualLandingAt: null,
-        confidence: { avg: 0, max: 0, samples: 0 }
+        confidence: { avg: 0, max: 0, samples: 0 },
+        timeline: [],
+        debug: {
+            reasonCodes: [],
+            scores: {},
+            windowMetrics: {},
+            lastPoints: []
+        },
+        demo: {
+            active: false,
+            trackName: null
+        }
     };
 
     bindStaticActions(elements);
@@ -69,7 +84,8 @@ async function initFdrPage() {
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
     setupInitialAlerts(elements);
-    renderSummary(elements.summary, buildSessionSummary(null));
+    renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Tracking parado.' });
+    renderSummary(elements.summary, buildSessionSummary(null), []);
 
     await restoreActiveSession(repository, elements, machine, activeSession);
 
@@ -108,10 +124,11 @@ async function initFdrPage() {
         renderRecoveryBlock(elements, false);
         renderSessionState(elements.sessionStatus, 'stopped');
         renderPhase(elements.phaseIndicator, machine.getPhase());
-        renderSummary(elements.summary, buildSessionSummary(null));
-        toggleTrackingButtons(elements, false);
+        updateSummaryFromSession(elements, activeSession);
+        toggleTrackingButtons(elements, false, false);
         appendEventLog(elements.eventLog, 'Sessão restaurada foi terminada pelo utilizador.');
-        updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
+        renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão incompleta (terminada manualmente).' });
+        updateDebug(elements.debug, activeSession, geoService.getStatus());
     });
 
     elements.btnStart.addEventListener('click', async () => {
@@ -122,6 +139,7 @@ async function initFdrPage() {
                 tone: 'error',
                 message: 'Permissão de localização negada. Ative nas definições do browser.'
             });
+            renderUxState(elements.uxState, { visible: true, tone: 'error', message: 'Sem permissão de localização.' });
             appendEventLog(elements.eventLog, 'Início bloqueado: permissão negada.');
             return;
         }
@@ -132,6 +150,7 @@ async function initFdrPage() {
                 tone: 'error',
                 message: 'GPS indisponível neste dispositivo.'
             });
+            renderUxState(elements.uxState, { visible: true, tone: 'error', message: 'Sem GPS compatível neste dispositivo.' });
             return;
         }
 
@@ -160,7 +179,7 @@ async function initFdrPage() {
 
         renderPhase(elements.phaseIndicator, machine.getPhase());
         renderSessionState(elements.sessionStatus, 'active');
-        toggleTrackingButtons(elements, true);
+        toggleTrackingButtons(elements, true, false);
         renderRecoveryBlock(elements, false);
         startSessionClock(elements, activeSession, sessionClockId, id => {
             sessionClockId = id;
@@ -185,9 +204,11 @@ async function initFdrPage() {
             }
         });
 
+        appendTimelineEntry(activeSession, 'Tracking iniciado', Date.now(), 'manual');
         appendEventLog(elements.eventLog, 'Tracking iniciado e sessão persistida em IndexedDB.');
+        renderUxState(elements.uxState, { visible: true, tone: 'ok', message: 'Tracking ativo.' });
         updateSummaryFromSession(elements, activeSession);
-        updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
+        updateDebug(elements.debug, activeSession, geoService.getStatus());
     });
 
     elements.btnStop.addEventListener('click', async () => {
@@ -207,8 +228,78 @@ async function initFdrPage() {
         await releaseWakeLock();
         renderWakeLockAlert(elements.wakeLockAlert, { visible: false });
 
+        appendTimelineEntry(activeSession, 'Tracking parado', Date.now(), 'manual');
         appendEventLog(elements.eventLog, 'Tracking parado e sessão finalizada.');
-        updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
+        renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Tracking parado.' });
+        updateDebug(elements.debug, activeSession, geoService.getStatus());
+    });
+
+    elements.btnDemo.addEventListener('click', async () => {
+        if (demoTimer) {
+            return;
+        }
+
+        if (!activeSession.id) {
+            elements.btnStart.click();
+            if (!activeSession.id) {
+                return;
+            }
+        }
+
+        const track = await loadDemoTrack();
+        if (!track.length) {
+            appendEventLog(elements.eventLog, 'Demo track sem pontos válidos.');
+            return;
+        }
+
+        let index = 0;
+        activeSession.demo.active = true;
+        activeSession.demo.trackName = 'fdr-demo-track';
+        elements.btnDemo.disabled = true;
+        elements.btnStopDemo.disabled = false;
+
+        renderUxState(elements.uxState, {
+            visible: true,
+            tone: 'ok',
+            message: 'Modo demo ativo: a reproduzir track fictício.'
+        });
+
+        appendEventLog(elements.eventLog, `Demo track iniciado (${track.length} pontos).`);
+
+        demoTimer = setInterval(async () => {
+            const point = track[index];
+            if (!point) {
+                clearInterval(demoTimer);
+                demoTimer = null;
+                activeSession.demo.active = false;
+                elements.btnDemo.disabled = false;
+                elements.btnStopDemo.disabled = true;
+                appendEventLog(elements.eventLog, 'Demo track concluído.');
+                renderUxState(elements.uxState, {
+                    visible: true,
+                    tone: 'warning',
+                    message: 'Demo concluído. Valide takeoff/landing e resumo final.'
+                });
+                return;
+            }
+
+            await processIncomingPoint(point, detector, machine, activeSession, elements, repository, true);
+            index += 1;
+        }, 900);
+    });
+
+    elements.btnStopDemo.addEventListener('click', () => {
+        if (!demoTimer) {
+            return;
+        }
+
+        clearInterval(demoTimer);
+        demoTimer = null;
+        activeSession.demo.active = false;
+        elements.btnDemo.disabled = false;
+        elements.btnStopDemo.disabled = true;
+        appendEventLog(elements.eventLog, 'Demo track parado manualmente.');
+        renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão incompleta (demo interrompido).' });
     });
 
     elements.btnTakeoff.addEventListener('click', async () => {
@@ -229,8 +320,10 @@ async function initFdrPage() {
                 timestamp: manualAt
             });
             renderPhase(elements.phaseIndicator, machine.getPhase());
+            appendTimelineEntry(activeSession, 'Takeoff manual', manualAt, 'manual');
             updateSummaryFromSession(elements, activeSession);
             appendEventLog(elements.eventLog, 'Takeoff manual registado (override).');
+            renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Takeoff manual registado.' });
         }
     });
 
@@ -252,8 +345,10 @@ async function initFdrPage() {
                 timestamp: manualAt
             });
             renderPhase(elements.phaseIndicator, machine.getPhase());
+            appendTimelineEntry(activeSession, 'Landing manual', manualAt, 'manual');
             updateSummaryFromSession(elements, activeSession);
             appendEventLog(elements.eventLog, 'Landing manual registado (override).');
+            renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Landing manual registado.' });
         }
     });
 
@@ -300,6 +395,7 @@ async function restoreActiveSession(repository, elements, machine, activeSession
         eventsCount: restored.eventsCount
     });
 
+    renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão restaurada. Escolha continuar ou terminar.' });
     appendEventLog(elements.eventLog, `Sessão ativa restaurada (${restored.id.slice(0, 8)}...).`);
 }
 
@@ -326,6 +422,7 @@ async function continueRestoredSession(args) {
     const permissionState = await syncPermissionState(elements.permissionStatus);
     if (permissionState === 'denied') {
         appendEventLog(elements.eventLog, 'Continuação bloqueada: permissão negada.');
+        renderUxState(elements.uxState, { visible: true, tone: 'error', message: 'Sem permissão de localização.' });
         return;
     }
 
@@ -349,7 +446,7 @@ async function continueRestoredSession(args) {
     renderSessionState(elements.sessionStatus, 'active');
     renderPhase(elements.phaseIndicator, activeSession.phase);
     renderRecoveryBlock(elements, false);
-    toggleTrackingButtons(elements, true);
+    toggleTrackingButtons(elements, true, false);
 
     startSessionClock(elements, activeSession, sessionClockId, setClockRef);
 
@@ -363,6 +460,7 @@ async function continueRestoredSession(args) {
     }
 
     setWakeListener(setupWakeLockAutoReacquire(() => {}));
+    renderUxState(elements.uxState, { visible: true, tone: 'ok', message: 'Tracking ativo (sessão restaurada).' });
     appendEventLog(elements.eventLog, 'Sessão restaurada retomada com sucesso.');
 }
 
@@ -373,58 +471,7 @@ async function continueRestoredSession(args) {
 function subscribeGeolocation(geoService, elements, activeSession, detector, machine, repository) {
     geoService.subscribe(async event => {
         if (event.type === 'point') {
-            const point = event.payload;
-            const detectionResult = detector.evaluateSample(point, machine.getPhase());
-
-            activeSession.metrics = {
-                gpsAccuracy: point.accuracy,
-                speedKt: detectionResult.metrics.speedKt ?? (point.speed !== null ? msToKnots(point.speed) : null),
-                altitudeFt: detectionResult.metrics.altitudeFt ?? (point.altitude !== null ? metersToFeet(point.altitude) : null),
-                verticalSpeedFpm: detectionResult.metrics.smoothedVerticalFpm ?? detectionResult.metrics.verticalSpeedFpm ?? null,
-                confidence: detectionResult.confidence
-            };
-
-            renderLiveMetrics(elements.metrics, {
-                gpsAccuracy: `${Math.round(point.accuracy)} m`,
-                speed: activeSession.metrics.speedKt !== null ? `${activeSession.metrics.speedKt.toFixed(1)} kt` : '-- kt',
-                altitude: activeSession.metrics.altitudeFt !== null ? `${activeSession.metrics.altitudeFt.toFixed(0)} ft` : '-- ft',
-                vspeed: activeSession.metrics.verticalSpeedFpm !== null ? `${Math.round(activeSession.metrics.verticalSpeedFpm)} ft/min` : '-- ft/min',
-                confidence: `${Math.round(detectionResult.confidence)} %`
-            });
-
-            if (point.accuracy > FDR_CONFIG.gps.weakAccuracyThreshold) {
-                renderGpsAlert(elements.gpsAlert, {
-                    visible: true,
-                    tone: 'warning',
-                    message: `Sinal GPS fraco (${Math.round(point.accuracy)} m).`
-                });
-            } else {
-                renderGpsAlert(elements.gpsAlert, { visible: false });
-            }
-
-            await applyDetectionDecision({
-                detectionResult,
-                machine,
-                activeSession,
-                elements,
-                repository
-            });
-
-            if (activeSession.id) {
-                await repository.appendPoint(activeSession.id, point, detectionResult.confidence);
-                const sessionPatch = {
-                    phase: activeSession.phase,
-                    metricsSnapshot: activeSession.metrics,
-                    confidence: activeSession.confidence
-                };
-                const updated = await repository.updateSessionState(activeSession.id, sessionPatch);
-                if (updated) {
-                    activeSession.confidence = updated.confidence ?? activeSession.confidence;
-                }
-            }
-
-            updateSummaryFromSession(elements, activeSession);
-            updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
+            await processIncomingPoint(event.payload, detector, machine, activeSession, elements, repository, false);
             return;
         }
 
@@ -434,6 +481,7 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
                 tone: 'error',
                 message: 'Erro de leitura GPS. Verifique permissões e sinal.'
             });
+            renderUxState(elements.uxState, { visible: true, tone: 'error', message: 'Falha de leitura GPS.' });
             appendEventLog(elements.eventLog, `Erro GPS: ${event.error.message}`);
             if (activeSession.id) {
                 await repository.appendEvent(activeSession.id, {
@@ -452,12 +500,14 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
                 tone: 'error',
                 message: 'GPS sem suporte neste browser/dispositivo.'
             });
+            renderUxState(elements.uxState, { visible: true, tone: 'error', message: 'GPS não suportado.' });
             appendEventLog(elements.eventLog, 'Geolocation API indisponível.');
             return;
         }
 
         if (event.type === 'tracking-paused') {
             renderSessionState(elements.sessionStatus, 'paused');
+            renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Tracking em pausa.' });
             appendEventLog(elements.eventLog, 'Tracking em pausa.');
             if (activeSession.id) {
                 await repository.appendEvent(activeSession.id, {
@@ -472,6 +522,7 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
 
         if (event.type === 'tracking-resumed') {
             renderSessionState(elements.sessionStatus, 'active');
+            renderUxState(elements.uxState, { visible: true, tone: 'ok', message: 'Tracking retomado.' });
             appendEventLog(elements.eventLog, 'Tracking retomado.');
             if (activeSession.id) {
                 await repository.appendEvent(activeSession.id, {
@@ -491,6 +542,78 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
             renderSessionState(elements.sessionStatus, 'stopped');
         }
     });
+}
+
+/**
+ * Processa um ponto (real ou demo) para deteção, persistência e UI.
+ */
+async function processIncomingPoint(point, detector, machine, activeSession, elements, repository, isDemoPoint) {
+    const detectionResult = detector.evaluateSample(point, machine.getPhase());
+
+    activeSession.metrics = {
+        gpsAccuracy: point.accuracy,
+        speedKt: detectionResult.metrics.speedKt ?? (point.speed !== null ? msToKnots(point.speed) : null),
+        altitudeFt: detectionResult.metrics.altitudeFt ?? (point.altitude !== null ? metersToFeet(point.altitude) : null),
+        verticalSpeedFpm: detectionResult.metrics.smoothedVerticalFpm ?? detectionResult.metrics.verticalSpeedFpm ?? null,
+        confidence: detectionResult.confidence
+    };
+
+    activeSession.debug.reasonCodes = detectionResult.reasonCodes ?? [];
+    activeSession.debug.scores = detectionResult.debug?.scores ?? {};
+    activeSession.debug.windowMetrics = detectionResult.debug?.windowMetrics ?? {};
+    activeSession.debug.lastPoints = detectionResult.debug?.lastPoints ?? [];
+
+    renderLiveMetrics(elements.metrics, {
+        gpsAccuracy: `${Math.round(point.accuracy)} m`,
+        speed: activeSession.metrics.speedKt !== null ? `${activeSession.metrics.speedKt.toFixed(1)} kt` : '-- kt',
+        altitude: activeSession.metrics.altitudeFt !== null ? `${activeSession.metrics.altitudeFt.toFixed(0)} ft` : '-- ft',
+        vspeed: activeSession.metrics.verticalSpeedFpm !== null ? `${Math.round(activeSession.metrics.verticalSpeedFpm)} ft/min` : '-- ft/min',
+        confidence: `${Math.round(detectionResult.confidence)} %`
+    });
+
+    if (point.accuracy > FDR_CONFIG.gps.weakAccuracyThreshold) {
+        renderGpsAlert(elements.gpsAlert, {
+            visible: true,
+            tone: 'warning',
+            message: `Sinal GPS fraco (${Math.round(point.accuracy)} m).`
+        });
+        renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'GPS fraco.' });
+    } else {
+        renderGpsAlert(elements.gpsAlert, { visible: false });
+        if (detectionResult.confidence < 60) {
+            renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Baixa confiança de deteção.' });
+        } else if (activeSession.state === 'active') {
+            renderUxState(elements.uxState, { visible: true, tone: 'ok', message: 'Tracking ativo.' });
+        }
+    }
+
+    await applyDetectionDecision({
+        detectionResult,
+        machine,
+        activeSession,
+        elements,
+        repository
+    });
+
+    if (activeSession.id) {
+        await repository.appendPoint(activeSession.id, point, detectionResult.confidence);
+        const sessionPatch = {
+            phase: activeSession.phase,
+            metricsSnapshot: activeSession.metrics,
+            confidence: activeSession.confidence
+        };
+        const updated = await repository.updateSessionState(activeSession.id, sessionPatch);
+        if (updated) {
+            activeSession.confidence = updated.confidence ?? activeSession.confidence;
+        }
+    }
+
+    if (isDemoPoint) {
+        appendEventLog(elements.eventLog, `Demo point ${formatTimestamp(point.timestamp)} | ${Math.round(activeSession.metrics.speedKt ?? 0)}kt`);
+    }
+
+    updateSummaryFromSession(elements, activeSession);
+    updateDebug(elements.debug, activeSession, { isTracking: !isDemoPoint, isPaused: false });
 }
 
 /**
@@ -535,7 +658,7 @@ async function stopSession({ elements, machine, geoService, repository, activeSe
 
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
-    toggleTrackingButtons(elements, false);
+    toggleTrackingButtons(elements, false, false);
     renderGpsAlert(elements.gpsAlert, { visible: false });
 
     updateSummaryFromSession(elements, {
@@ -612,6 +735,7 @@ async function applyDetectionDecision({ detectionResult, machine, activeSession,
             });
         }
 
+        appendTimelineEntry(activeSession, 'Takeoff automático', activeSession.takeoffAutoAt, 'auto');
         appendEventLog(elements.eventLog, 'Takeoff automático confirmado.');
     }
 
@@ -634,6 +758,7 @@ async function applyDetectionDecision({ detectionResult, machine, activeSession,
             });
         }
 
+        appendTimelineEntry(activeSession, 'Landing automático', activeSession.landingAutoAt, 'auto');
         appendEventLog(elements.eventLog, 'Landing automático confirmado.');
     }
 }
@@ -646,6 +771,8 @@ function mapDomElements() {
         btnBack: document.getElementById('btn-back'),
         btnStart: document.getElementById('btn-start'),
         btnStop: document.getElementById('btn-stop'),
+        btnDemo: document.getElementById('btn-demo'),
+        btnStopDemo: document.getElementById('btn-stop-demo'),
         btnTakeoff: document.getElementById('btn-takeoff'),
         btnLanding: document.getElementById('btn-landing'),
         btnClearManual: document.getElementById('btn-clear-manual'),
@@ -658,7 +785,7 @@ function mapDomElements() {
         aircraftProfile: document.getElementById('aircraft-profile'),
         phaseIndicator: document.getElementById('phase-indicator'),
         eventLog: document.getElementById('event-log'),
-        debugOutput: document.getElementById('debug-output'),
+        uxState: document.getElementById('ux-state'),
         gpsAlert: document.getElementById('gps-alert'),
         wakeLockAlert: document.getElementById('wake-lock-alert'),
         metrics: {
@@ -675,7 +802,18 @@ function mapDomElements() {
             sessionTime: document.getElementById('summary-session-time'),
             confidence: document.getElementById('summary-confidence'),
             takeoffSource: document.getElementById('summary-takeoff-source'),
-            landingSource: document.getElementById('summary-landing-source')
+            landingSource: document.getElementById('summary-landing-source'),
+            timeline: document.getElementById('summary-timeline')
+        },
+        debug: {
+            phase: document.getElementById('debug-phase'),
+            gpsQuality: document.getElementById('debug-gps-quality'),
+            takeoff: document.getElementById('debug-takeoff'),
+            landing: document.getElementById('debug-landing'),
+            scores: document.getElementById('debug-scores'),
+            windowMetrics: document.getElementById('debug-window'),
+            points: document.getElementById('debug-points'),
+            reasons: document.getElementById('debug-reasons')
         }
     };
 }
@@ -721,6 +859,31 @@ async function populateAircraftProfiles(select) {
 }
 
 /**
+ * Carrega a demo track e converte o formato JSON para ponto normalizado de motor.
+ */
+async function loadDemoTrack() {
+    try {
+        const response = await fetch(FDR_CONFIG.demoTrackPath);
+        const data = await response.json();
+
+        return data.map(item => ({
+            timestamp: new Date(item.timestamp).getTime(),
+            latitude: item.lat,
+            longitude: item.lon,
+            accuracy: item.accuracyM ?? 6,
+            altitude: item.altitudeFt / 3.28084,
+            altitudeAccuracy: null,
+            heading: item.heading ?? null,
+            speed: item.speedKt * 0.514444,
+            source: 'demo'
+        }));
+    } catch (error) {
+        console.warn('[FDR] Falha ao carregar demo track.', error);
+        return [];
+    }
+}
+
+/**
  * Mostra/oculta bloco de recuperação e atualiza respetivos detalhes.
  */
 function renderRecoveryBlock(elements, visible, details = null) {
@@ -736,11 +899,13 @@ function renderRecoveryBlock(elements, visible, details = null) {
 }
 
 /**
- * Atualiza botão de tracking conforme estado ativo.
+ * Atualiza botão de tracking/demo conforme estados ativos.
  */
-function toggleTrackingButtons(elements, isTracking) {
+function toggleTrackingButtons(elements, isTracking, isDemo) {
     elements.btnStart.disabled = isTracking;
     elements.btnStop.disabled = !isTracking;
+    elements.btnDemo.disabled = isDemo;
+    elements.btnStopDemo.disabled = !isDemo;
     elements.btnTakeoff.disabled = !isTracking;
     elements.btnLanding.disabled = !isTracking;
     elements.btnClearManual.disabled = !isTracking;
@@ -810,20 +975,61 @@ function resetInMemorySession(activeSession, machine) {
     activeSession.takeoffSource = null;
     activeSession.landingSource = null;
     activeSession.confidence = { avg: 0, max: 0, samples: 0 };
+    activeSession.timeline = [];
+    activeSession.debug = {
+        reasonCodes: [],
+        scores: {},
+        windowMetrics: {},
+        lastPoints: []
+    };
+}
+
+/**
+ * Adiciona item de timeline para resumo final com fonte auto/manual.
+ */
+function appendTimelineEntry(activeSession, label, timestamp, source) {
+    activeSession.timeline.push({ label, timestamp, source });
 }
 
 /**
  * Renderiza resumo a partir da sessão atual em memória.
  */
 function updateSummaryFromSession(elements, activeSession) {
-    renderSummary(elements.summary, buildSessionSummary(activeSession));
+    const timeline = [
+        { label: 'Takeoff', timestamp: activeSession.manualTakeoffAt ?? activeSession.takeoffAutoAt, source: activeSession.manualTakeoffAt ? 'manual' : activeSession.takeoffAutoAt ? 'auto' : null },
+        { label: 'Landing', timestamp: activeSession.manualLandingAt ?? activeSession.landingAutoAt, source: activeSession.manualLandingAt ? 'manual' : activeSession.landingAutoAt ? 'auto' : null },
+        ...activeSession.timeline.slice(-6)
+    ].filter(item => item.timestamp || item.label === 'Takeoff' || item.label === 'Landing');
+
+    renderSummary(elements.summary, buildSessionSummary(activeSession), timeline);
 }
 
 /**
- * Renderiza estado simplificado na secção de debug.
+ * Renderiza painel de debug em formato operacional para validação em campo/demo.
  */
-function updateDebug(debugTarget, payload) {
-    debugTarget.textContent = JSON.stringify(payload, null, 2);
+function updateDebug(debugFields, activeSession, geoStatus) {
+    const takeoffAt = activeSession.manualTakeoffAt ?? activeSession.takeoffAutoAt;
+    const landingAt = activeSession.manualLandingAt ?? activeSession.landingAutoAt;
+
+    const gpsQuality = activeSession.metrics.gpsAccuracy === null
+        ? '--'
+        : activeSession.metrics.gpsAccuracy <= FDR_CONFIG.gps.weakAccuracyThreshold
+            ? 'boa'
+            : 'fraca';
+
+    renderDebugPanel(debugFields, {
+        phase: activeSession.phase,
+        gpsQuality: `${gpsQuality} (${Math.round(activeSession.metrics.gpsAccuracy ?? 0)}m)`,
+        takeoffAt: takeoffAt ? formatTimestamp(takeoffAt) : '--',
+        landingAt: landingAt ? formatTimestamp(landingAt) : '--',
+        reasonCodes: activeSession.debug.reasonCodes,
+        scores: activeSession.debug.scores,
+        windowMetrics: {
+            ...activeSession.debug.windowMetrics,
+            geoStatus
+        },
+        lastPoints: activeSession.debug.lastPoints
+    });
 }
 
 initFdrPage();

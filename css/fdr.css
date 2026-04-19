@@ -1,6 +1,6 @@
 /*
  * Módulo visual FDR.
- * Objetivo: disponibilizar UI mobile-first para sessão ativa, recuperação e resumo robusto.
+ * Objetivo: disponibilizar UI mobile-first para sessão ativa, recuperação, debug e resumo robusto.
  */
 
 :root {
@@ -172,6 +172,12 @@ body {
     color: #991b1b;
 }
 
+.fdr-alert-ok {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+}
+
 .phase-row {
     border-top: 1px solid var(--fdr-panel-border);
     padding-top: 0.85rem;
@@ -192,7 +198,8 @@ body {
 }
 
 .metric-card,
-.summary-grid > div {
+.summary-grid > div,
+.debug-grid > div {
     background: #f9fafb;
     border: 1px solid #edf2f7;
     border-radius: 10px;
@@ -210,7 +217,8 @@ body {
     color: var(--fdr-accent);
 }
 
-.summary-grid span {
+.summary-grid span,
+.debug-grid span {
     display: block;
     color: var(--fdr-muted);
     margin-bottom: 0.25rem;
@@ -222,6 +230,36 @@ body {
 
 .summary-wide {
     grid-column: 1 / -1;
+}
+
+.summary-extra h3 {
+    margin: 1rem 0 0.45rem;
+}
+
+.summary-timeline {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.source-badge {
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.source-badge.source-manual {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.source-badge.source-auto {
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .event-log {
@@ -240,8 +278,21 @@ body {
     font-weight: 700;
 }
 
-#debug-output {
-    margin: 0.75rem 0 0;
+.debug-grid {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: 1fr;
+}
+
+#debug-section h4 {
+    margin: 0.75rem 0 0.35rem;
+    color: #374151;
+}
+
+#debug-section pre {
+    margin: 0;
     padding: 0.75rem;
     border-radius: 10px;
     background: #f9fafb;
@@ -257,24 +308,26 @@ body {
 
 @media (min-width: 720px) {
     .fdr-actions {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
-    .metric-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .summary-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .metric-grid,
+    .summary-grid,
+    .debug-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (min-width: 980px) {
     .metric-grid {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .summary-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .debug-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
