@@ -19,31 +19,32 @@ import {
     renderSessionState,
     renderWakeLockAlert
 } from './fdr/ui/fdr-screen.js';
-import { renderSummary } from './fdr/ui/fdr-summary.js';
+import { buildSessionSummary, renderSummary } from './fdr/ui/fdr-summary.js';
 import { metersToFeet, msToKnots } from './fdr/utils/geo.js';
-import { formatDuration, formatTimestamp, safeTimeDiffSeconds } from './fdr/utils/time.js';
 
 /**
  * Bootstrap do módulo FDR.
- * Objetivo: ligar DOM, permissões, tracking, wake lock e estado de sessão ativa.
+ * Objetivo: iniciar persistência IndexedDB, restaurar sessão ativa e ligar UI/serviços.
  */
 async function initFdrPage() {
     const elements = mapDomElements();
     const machine = createStateMachine(FDR_CONFIG.defaultPhase);
     const detector = createDetectionEngine();
-    const repository = createFdrRepository(FDR_CONFIG.storageKey);
+    const repository = createFdrRepository();
     const geoService = createGeolocationService();
 
     let removeWakeVisibilityListener = () => {};
     let sessionClockId = null;
 
     /**
-     * Estado ativo da sessão em memória (não persistente completo nesta fase).
-     * Guarda metadados, métricas em tempo real, buffer de pontos e eventos base.
+     * Estado em memória da sessão atual.
+     * Mantém apenas informação operacional da página, persistindo o histórico em IndexedDB.
      */
     const activeSession = {
+        id: null,
         startedAt: null,
         phase: machine.getPhase(),
+        state: 'stopped',
         metrics: {
             gpsAccuracy: null,
             speedKt: null,
@@ -51,24 +52,67 @@ async function initFdrPage() {
             verticalSpeedFpm: null,
             confidence: 0
         },
-        takeoffAt: null,
-        landingAt: null,
-        pointsBuffer: [],
-        events: []
+        takeoffAutoAt: null,
+        landingAutoAt: null,
+        manualTakeoffAt: null,
+        manualLandingAt: null,
+        confidence: { avg: 0, max: 0, samples: 0 }
     };
 
     bindStaticActions(elements);
-    subscribeGeolocation(geoService, elements, activeSession, detector, machine);
-    renderPhase(elements.phaseIndicator, machine.getPhase());
-    renderSessionState(elements.sessionStatus, 'stopped');
+    subscribeGeolocation(geoService, elements, activeSession, detector, machine, repository);
+
+    await repository.initDb();
     await syncPermissionState(elements.permissionStatus);
     await populateAircraftProfiles(elements.aircraftProfile);
-    setupInitialAlerts(elements);
 
-    const savedSession = repository.loadSession();
-    if (savedSession?.startedAt) {
-        appendEventLog(elements.eventLog, 'Sessão anterior encontrada (snapshot).');
-    }
+    renderPhase(elements.phaseIndicator, machine.getPhase());
+    renderSessionState(elements.sessionStatus, 'stopped');
+    setupInitialAlerts(elements);
+    renderSummary(elements.summary, buildSessionSummary(null));
+
+    await restoreActiveSession(repository, elements, machine, activeSession);
+
+    elements.btnContinueSession.addEventListener('click', async () => {
+        await continueRestoredSession({
+            elements,
+            machine,
+            repository,
+            activeSession,
+            geoService,
+            removeWakeVisibilityListener,
+            setWakeListener: listener => {
+                removeWakeVisibilityListener = listener;
+            },
+            sessionClockId,
+            setClockRef: id => {
+                sessionClockId = id;
+            }
+        });
+    });
+
+    elements.btnTerminateSession.addEventListener('click', async () => {
+        if (!activeSession.id) {
+            return;
+        }
+
+        await repository.finalizeSession(activeSession.id, { phase: FDR_PHASES.ENDED, endedAt: Date.now() });
+        await repository.appendEvent(activeSession.id, {
+            type: 'session-terminated-from-restore',
+            source: 'manual',
+            timestamp: Date.now(),
+            payload: { reason: 'user_terminated_restored_session' }
+        });
+
+        resetInMemorySession(activeSession, machine);
+        renderRecoveryBlock(elements, false);
+        renderSessionState(elements.sessionStatus, 'stopped');
+        renderPhase(elements.phaseIndicator, machine.getPhase());
+        renderSummary(elements.summary, buildSessionSummary(null));
+        toggleTrackingButtons(elements, false);
+        appendEventLog(elements.eventLog, 'Sessão restaurada foi terminada pelo utilizador.');
+        updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
+    });
 
     elements.btnStart.addEventListener('click', async () => {
         const permissionState = await syncPermissionState(elements.permissionStatus);
@@ -78,7 +122,6 @@ async function initFdrPage() {
                 tone: 'error',
                 message: 'Permissão de localização negada. Ative nas definições do browser.'
             });
-            appendSessionEvent(activeSession, 'start-blocked-permission-denied');
             appendEventLog(elements.eventLog, 'Início bloqueado: permissão negada.');
             return;
         }
@@ -89,7 +132,6 @@ async function initFdrPage() {
                 tone: 'error',
                 message: 'GPS indisponível neste dispositivo.'
             });
-            appendSessionEvent(activeSession, 'start-blocked-gps-unsupported');
             return;
         }
 
@@ -100,13 +142,26 @@ async function initFdrPage() {
             return;
         }
 
-        activeSession.startedAt = Date.now();
-        activeSession.phase = machine.getPhase();
-        appendSessionEvent(activeSession, 'tracking-started', { to: toPreflight.to });
+        const newSession = await repository.createSession({
+            phase: machine.getPhase(),
+            aircraftProfileId: elements.aircraftProfile.value || null,
+            startedAt: Date.now()
+        });
+
+        hydrateSessionFromDb(activeSession, newSession, machine);
+        activeSession.state = 'active';
+
+        await repository.appendEvent(activeSession.id, {
+            type: 'tracking-started',
+            source: 'manual',
+            timestamp: Date.now(),
+            payload: { to: toPreflight.to }
+        });
 
         renderPhase(elements.phaseIndicator, machine.getPhase());
         renderSessionState(elements.sessionStatus, 'active');
         toggleTrackingButtons(elements, true);
+        renderRecoveryBlock(elements, false);
         startSessionClock(elements, activeSession, sessionClockId, id => {
             sessionClockId = id;
         });
@@ -130,67 +185,197 @@ async function initFdrPage() {
             }
         });
 
-        repository.saveSession({ startedAt: activeSession.startedAt, phase: activeSession.phase });
-        appendEventLog(elements.eventLog, 'Tracking iniciado.');
+        appendEventLog(elements.eventLog, 'Tracking iniciado e sessão persistida em IndexedDB.');
+        updateSummaryFromSession(elements, activeSession);
         updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
     });
 
     elements.btnStop.addEventListener('click', async () => {
-        stopSession({ elements, machine, geoService, activeSession, removeWakeVisibilityListener, sessionClockId });
+        await stopSession({
+            elements,
+            machine,
+            geoService,
+            repository,
+            activeSession,
+            removeWakeVisibilityListener,
+            sessionClockId
+        });
+
         sessionClockId = null;
         removeWakeVisibilityListener = () => {};
 
         await releaseWakeLock();
         renderWakeLockAlert(elements.wakeLockAlert, { visible: false });
 
-        repository.saveSession({ startedAt: null, phase: machine.getPhase() });
-        appendEventLog(elements.eventLog, 'Tracking parado.');
+        appendEventLog(elements.eventLog, 'Tracking parado e sessão finalizada.');
         updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
     });
 
-    elements.btnTakeoff.addEventListener('click', () => {
+    elements.btnTakeoff.addEventListener('click', async () => {
+        if (!activeSession.id) {
+            return;
+        }
+
         const transitioned = machine.transition(FDR_PHASES.AIRBORNE, { source: 'manual' });
         if (transitioned.changed) {
+            const manualAt = Date.now();
             activeSession.phase = machine.getPhase();
-            activeSession.takeoffAt = Date.now();
-            appendSessionEvent(activeSession, 'manual-takeoff');
+            activeSession.manualTakeoffAt = manualAt;
+            await repository.saveManualTakeoff(activeSession.id, manualAt);
+            await repository.updateSessionState(activeSession.id, { phase: activeSession.phase });
+            await repository.appendEvent(activeSession.id, {
+                type: 'manual-takeoff',
+                source: 'manual',
+                timestamp: manualAt
+            });
             renderPhase(elements.phaseIndicator, machine.getPhase());
-            renderSummary(elements.summary, { takeoff: formatTimestamp(activeSession.takeoffAt) });
-            appendEventLog(elements.eventLog, 'Takeoff manual registado.');
+            updateSummaryFromSession(elements, activeSession);
+            appendEventLog(elements.eventLog, 'Takeoff manual registado (override).');
         }
     });
 
-    elements.btnLanding.addEventListener('click', () => {
+    elements.btnLanding.addEventListener('click', async () => {
+        if (!activeSession.id) {
+            return;
+        }
+
         const transitioned = machine.transition(FDR_PHASES.LANDING_ROLL, { source: 'manual' });
         if (transitioned.changed) {
+            const manualAt = Date.now();
             activeSession.phase = machine.getPhase();
-            activeSession.landingAt = Date.now();
-            appendSessionEvent(activeSession, 'manual-landing');
-            renderPhase(elements.phaseIndicator, machine.getPhase());
-            renderSummary(elements.summary, {
-                landing: formatTimestamp(activeSession.landingAt),
-                flyTime: calculateFlyTime(activeSession)
+            activeSession.manualLandingAt = manualAt;
+            await repository.saveManualLanding(activeSession.id, manualAt);
+            await repository.updateSessionState(activeSession.id, { phase: activeSession.phase });
+            await repository.appendEvent(activeSession.id, {
+                type: 'manual-landing',
+                source: 'manual',
+                timestamp: manualAt
             });
-            appendEventLog(elements.eventLog, 'Landing manual registado.');
+            renderPhase(elements.phaseIndicator, machine.getPhase());
+            updateSummaryFromSession(elements, activeSession);
+            appendEventLog(elements.eventLog, 'Landing manual registado (override).');
         }
+    });
+
+    elements.btnClearManual.addEventListener('click', async () => {
+        if (!activeSession.id) {
+            return;
+        }
+
+        const updated = await repository.clearManualOverrides(activeSession.id);
+        if (!updated) {
+            return;
+        }
+
+        hydrateSessionFromDb(activeSession, updated, machine);
+        await repository.appendEvent(activeSession.id, {
+            type: 'manual-overrides-cleared',
+            source: 'manual',
+            timestamp: Date.now()
+        });
+        updateSummaryFromSession(elements, activeSession);
+        appendEventLog(elements.eventLog, 'Overrides manuais removidos; tempos automáticos preservados.');
     });
 }
 
 /**
- * Regista subscrição ao serviço de geolocalização.
- * Atualiza estado de sessão/métricas e alertas em tempo real.
+ * Restaura sessão ativa ao abrir a página, caso exista em IndexedDB.
  */
-function subscribeGeolocation(geoService, elements, activeSession, detector, machine) {
-    geoService.subscribe(event => {
+async function restoreActiveSession(repository, elements, machine, activeSession) {
+    const restored = await repository.getActiveSession();
+    if (!restored) {
+        return;
+    }
+
+    hydrateSessionFromDb(activeSession, restored, machine);
+    renderSessionState(elements.sessionStatus, 'paused');
+    renderPhase(elements.phaseIndicator, activeSession.phase);
+    updateSummaryFromSession(elements, activeSession);
+
+    renderRecoveryBlock(elements, true, {
+        sessionId: restored.id,
+        startedAt: restored.startedAt,
+        phase: restored.phase,
+        pointsCount: restored.pointsCount,
+        eventsCount: restored.eventsCount
+    });
+
+    appendEventLog(elements.eventLog, `Sessão ativa restaurada (${restored.id.slice(0, 8)}...).`);
+}
+
+/**
+ * Continua sessão restaurada, retomando tracking sem perder histórico.
+ */
+async function continueRestoredSession(args) {
+    const {
+        elements,
+        machine,
+        repository,
+        activeSession,
+        geoService,
+        removeWakeVisibilityListener,
+        setWakeListener,
+        sessionClockId,
+        setClockRef
+    } = args;
+
+    if (!activeSession.id) {
+        return;
+    }
+
+    const permissionState = await syncPermissionState(elements.permissionStatus);
+    if (permissionState === 'denied') {
+        appendEventLog(elements.eventLog, 'Continuação bloqueada: permissão negada.');
+        return;
+    }
+
+    if (!geoService.startTracking()) {
+        appendEventLog(elements.eventLog, 'Continuação bloqueada: GPS indisponível.');
+        return;
+    }
+
+    await repository.updateSessionState(activeSession.id, {
+        state: 'active',
+        phase: activeSession.phase,
+        metricsSnapshot: activeSession.metrics
+    });
+    await repository.appendEvent(activeSession.id, {
+        type: 'tracking-resumed-after-restore',
+        source: 'manual',
+        timestamp: Date.now()
+    });
+
+    machine.transition(activeSession.phase, { source: 'restore' });
+    renderSessionState(elements.sessionStatus, 'active');
+    renderPhase(elements.phaseIndicator, activeSession.phase);
+    renderRecoveryBlock(elements, false);
+    toggleTrackingButtons(elements, true);
+
+    startSessionClock(elements, activeSession, sessionClockId, setClockRef);
+
+    removeWakeVisibilityListener();
+    const wakeAcquired = await acquireWakeLock();
+    if (!wakeAcquired) {
+        renderWakeLockAlert(elements.wakeLockAlert, {
+            visible: true,
+            message: 'Wake lock indisponível durante continuação; mantenha ecrã ativo manualmente.'
+        });
+    }
+
+    setWakeListener(setupWakeLockAutoReacquire(() => {}));
+    appendEventLog(elements.eventLog, 'Sessão restaurada retomada com sucesso.');
+}
+
+/**
+ * Regista subscrição ao serviço de geolocalização.
+ * Atualiza UI e persiste pontos/eventos da sessão ativa de forma progressiva.
+ */
+function subscribeGeolocation(geoService, elements, activeSession, detector, machine, repository) {
+    geoService.subscribe(async event => {
         if (event.type === 'point') {
             const point = event.payload;
-            activeSession.pointsBuffer.push(point);
-            if (activeSession.pointsBuffer.length > FDR_CONFIG.maxPointsBuffer) {
-                activeSession.pointsBuffer.shift();
-            }
-
             const detectionResult = detector.evaluateSample(point, machine.getPhase());
-            applyDetectionDecision({ detectionResult, machine, activeSession, elements });
+
             activeSession.metrics = {
                 gpsAccuracy: point.accuracy,
                 speedKt: detectionResult.metrics.speedKt ?? (point.speed !== null ? msToKnots(point.speed) : null),
@@ -217,6 +402,28 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
                 renderGpsAlert(elements.gpsAlert, { visible: false });
             }
 
+            await applyDetectionDecision({
+                detectionResult,
+                machine,
+                activeSession,
+                elements,
+                repository
+            });
+
+            if (activeSession.id) {
+                await repository.appendPoint(activeSession.id, point, detectionResult.confidence);
+                const sessionPatch = {
+                    phase: activeSession.phase,
+                    metricsSnapshot: activeSession.metrics,
+                    confidence: activeSession.confidence
+                };
+                const updated = await repository.updateSessionState(activeSession.id, sessionPatch);
+                if (updated) {
+                    activeSession.confidence = updated.confidence ?? activeSession.confidence;
+                }
+            }
+
+            updateSummaryFromSession(elements, activeSession);
             updateDebug(elements.debugOutput, { activeSession, geo: geoService.getStatus() });
             return;
         }
@@ -227,8 +434,15 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
                 tone: 'error',
                 message: 'Erro de leitura GPS. Verifique permissões e sinal.'
             });
-            appendSessionEvent(activeSession, 'gps-error');
             appendEventLog(elements.eventLog, `Erro GPS: ${event.error.message}`);
+            if (activeSession.id) {
+                await repository.appendEvent(activeSession.id, {
+                    type: 'gps-error',
+                    source: 'system',
+                    payload: { message: event.error.message },
+                    timestamp: Date.now()
+                });
+            }
             return;
         }
 
@@ -238,22 +452,35 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
                 tone: 'error',
                 message: 'GPS sem suporte neste browser/dispositivo.'
             });
-            appendSessionEvent(activeSession, 'gps-unsupported');
             appendEventLog(elements.eventLog, 'Geolocation API indisponível.');
             return;
         }
 
         if (event.type === 'tracking-paused') {
             renderSessionState(elements.sessionStatus, 'paused');
-            appendSessionEvent(activeSession, 'tracking-paused');
             appendEventLog(elements.eventLog, 'Tracking em pausa.');
+            if (activeSession.id) {
+                await repository.appendEvent(activeSession.id, {
+                    type: 'tracking-paused',
+                    source: 'system',
+                    timestamp: Date.now()
+                });
+                await repository.updateSessionState(activeSession.id, { state: 'paused' });
+            }
             return;
         }
 
         if (event.type === 'tracking-resumed') {
             renderSessionState(elements.sessionStatus, 'active');
-            appendSessionEvent(activeSession, 'tracking-resumed');
             appendEventLog(elements.eventLog, 'Tracking retomado.');
+            if (activeSession.id) {
+                await repository.appendEvent(activeSession.id, {
+                    type: 'tracking-resumed',
+                    source: 'system',
+                    timestamp: Date.now()
+                });
+                await repository.updateSessionState(activeSession.id, { state: 'active' });
+            }
             return;
         }
 
@@ -267,7 +494,7 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
 }
 
 /**
- * Aplica estado inicial de alertas da página.
+ * Aplica estado inicial dos alertas da página.
  */
 function setupInitialAlerts(elements) {
     renderGpsAlert(elements.gpsAlert, { visible: false });
@@ -283,9 +510,9 @@ function setupInitialAlerts(elements) {
 }
 
 /**
- * Para sessão ativa e sincroniza UI/estado base.
+ * Para sessão ativa, finaliza-a em IndexedDB e sincroniza UI.
  */
-function stopSession({ elements, machine, geoService, activeSession, removeWakeVisibilityListener, sessionClockId }) {
+async function stopSession({ elements, machine, geoService, repository, activeSession, removeWakeVisibilityListener, sessionClockId }) {
     geoService.stopTracking();
     removeWakeVisibilityListener();
 
@@ -293,18 +520,32 @@ function stopSession({ elements, machine, geoService, activeSession, removeWakeV
         clearInterval(sessionClockId);
     }
 
+    if (activeSession.id) {
+        await repository.appendEvent(activeSession.id, {
+            type: 'tracking-stopped',
+            source: 'manual',
+            timestamp: Date.now()
+        });
+        await repository.finalizeSession(activeSession.id, { phase: FDR_PHASES.ENDED, endedAt: Date.now() });
+    }
+
     machine.reset();
     activeSession.phase = machine.getPhase();
-    appendSessionEvent(activeSession, 'tracking-stopped');
+    activeSession.state = 'stopped';
 
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
     toggleTrackingButtons(elements, false);
     renderGpsAlert(elements.gpsAlert, { visible: false });
+
+    updateSummaryFromSession(elements, {
+        ...activeSession,
+        endedAt: Date.now()
+    });
 }
 
 /**
- * Inicia relógio da sessão para atualizar resumo em tempo real.
+ * Inicia relógio para atualizar Session time e Fly time em tempo real.
  */
 function startSessionClock(elements, activeSession, clockRef, setClockRef) {
     if (clockRef) {
@@ -315,23 +556,16 @@ function startSessionClock(elements, activeSession, clockRef, setClockRef) {
         if (!activeSession.startedAt) {
             return;
         }
-
-        const elapsedSeconds = Math.floor((Date.now() - activeSession.startedAt) / 1000);
-        renderSummary(elements.summary, { sessionTime: formatDuration(elapsedSeconds) });
+        updateSummaryFromSession(elements, activeSession);
     }, FDR_CONFIG.updateIntervalMs);
 
     setClockRef(intervalId);
 }
 
 /**
- * Aplica decisão do motor (transição + eventos) sem acoplar lógica ao render.
- * @param {object} args dependências da atualização.
- * @param {object} args.detectionResult output do motor de deteção.
- * @param {object} args.machine máquina de estados ativa.
- * @param {object} args.activeSession estado corrente da sessão.
- * @param {object} args.elements referências dos elementos UI.
+ * Aplica sugestões do motor (fase + eventos auto) e persiste alterações da sessão.
  */
-function applyDetectionDecision({ detectionResult, machine, activeSession, elements }) {
+async function applyDetectionDecision({ detectionResult, machine, activeSession, elements, repository }) {
     if (detectionResult.phaseSuggestion) {
         const transitionResult = machine.transition(detectionResult.phaseSuggestion, {
             reasonCodes: detectionResult.reasonCodes,
@@ -340,60 +574,72 @@ function applyDetectionDecision({ detectionResult, machine, activeSession, eleme
 
         if (transitionResult.changed) {
             activeSession.phase = transitionResult.to;
-            appendSessionEvent(activeSession, 'phase-transition', {
-                from: transitionResult.from,
-                to: transitionResult.to,
-                reasonCodes: detectionResult.reasonCodes
-            });
             renderPhase(elements.phaseIndicator, transitionResult.to);
             appendEventLog(elements.eventLog, `Fase ${transitionResult.from} → ${transitionResult.to}`);
+
+            if (activeSession.id) {
+                await repository.appendEvent(activeSession.id, {
+                    type: 'phase-transition',
+                    source: 'auto',
+                    timestamp: Date.now(),
+                    payload: {
+                        from: transitionResult.from,
+                        to: transitionResult.to,
+                        reasonCodes: detectionResult.reasonCodes
+                    }
+                });
+                await repository.updateSessionState(activeSession.id, { phase: transitionResult.to });
+            }
         }
     }
 
-    if (detectionResult.event === 'takeoff' && !activeSession.takeoffAt) {
-        activeSession.takeoffAt = Date.now();
-        appendSessionEvent(activeSession, 'auto-takeoff', { reasonCodes: detectionResult.reasonCodes });
-        renderSummary(elements.summary, { takeoff: formatTimestamp(activeSession.takeoffAt) });
+    if (detectionResult.event === 'takeoff' && !activeSession.takeoffAutoAt) {
+        activeSession.takeoffAutoAt = Date.now();
+        if (!activeSession.manualTakeoffAt) {
+            activeSession.takeoffSource = 'auto';
+        }
+
+        if (activeSession.id) {
+            await repository.updateSessionState(activeSession.id, {
+                takeoffAutoAt: activeSession.takeoffAutoAt,
+                takeoffSource: activeSession.manualTakeoffAt ? 'manual' : 'auto'
+            });
+            await repository.appendEvent(activeSession.id, {
+                type: 'auto-takeoff',
+                source: 'auto',
+                timestamp: activeSession.takeoffAutoAt,
+                payload: { reasonCodes: detectionResult.reasonCodes }
+            });
+        }
+
         appendEventLog(elements.eventLog, 'Takeoff automático confirmado.');
     }
 
-    if (detectionResult.event === 'landing' && !activeSession.landingAt) {
-        activeSession.landingAt = Date.now();
-        appendSessionEvent(activeSession, 'auto-landing', { reasonCodes: detectionResult.reasonCodes });
-        renderSummary(elements.summary, {
-            landing: formatTimestamp(activeSession.landingAt),
-            flyTime: calculateFlyTime(activeSession)
-        });
+    if (detectionResult.event === 'landing' && !activeSession.landingAutoAt) {
+        activeSession.landingAutoAt = Date.now();
+        if (!activeSession.manualLandingAt) {
+            activeSession.landingSource = 'auto';
+        }
+
+        if (activeSession.id) {
+            await repository.updateSessionState(activeSession.id, {
+                landingAutoAt: activeSession.landingAutoAt,
+                landingSource: activeSession.manualLandingAt ? 'manual' : 'auto'
+            });
+            await repository.appendEvent(activeSession.id, {
+                type: 'auto-landing',
+                source: 'auto',
+                timestamp: activeSession.landingAutoAt,
+                payload: { reasonCodes: detectionResult.reasonCodes }
+            });
+        }
+
         appendEventLog(elements.eventLog, 'Landing automático confirmado.');
     }
 }
 
 /**
- * Calcula fly time entre takeoff e landing.
- * @param {object} activeSession sessão ativa.
- * @returns {string} duração HH:MM:SS.
- */
-function calculateFlyTime(activeSession) {
-    if (!activeSession.takeoffAt) {
-        return '00:00:00';
-    }
-
-    const endAt = activeSession.landingAt ?? Date.now();
-    return formatDuration(safeTimeDiffSeconds(activeSession.takeoffAt, endAt));
-}
-
-/**
- * Adiciona evento base ao estado em memória.
- * @param {object} activeSession estado da sessão.
- * @param {string} type tipo do evento.
- */
-function appendSessionEvent(activeSession, type, details = {}) {
-    activeSession.events.push({ type, at: Date.now(), ...details });
-}
-
-/**
  * Mapeia elementos DOM usados pelo módulo FDR.
- * @returns {object} referências aos elementos da interface.
  */
 function mapDomElements() {
     return {
@@ -402,6 +648,11 @@ function mapDomElements() {
         btnStop: document.getElementById('btn-stop'),
         btnTakeoff: document.getElementById('btn-takeoff'),
         btnLanding: document.getElementById('btn-landing'),
+        btnClearManual: document.getElementById('btn-clear-manual'),
+        btnContinueSession: document.getElementById('btn-continue-session'),
+        btnTerminateSession: document.getElementById('btn-terminate-session'),
+        recoveryPanel: document.getElementById('recovery-panel'),
+        recoveryDetails: document.getElementById('recovery-details'),
         permissionStatus: document.getElementById('permission-status'),
         sessionStatus: document.getElementById('session-status'),
         aircraftProfile: document.getElementById('aircraft-profile'),
@@ -421,14 +672,16 @@ function mapDomElements() {
             takeoff: document.getElementById('summary-takeoff'),
             landing: document.getElementById('summary-landing'),
             flyTime: document.getElementById('summary-fly-time'),
-            sessionTime: document.getElementById('summary-session-time')
+            sessionTime: document.getElementById('summary-session-time'),
+            confidence: document.getElementById('summary-confidence'),
+            takeoffSource: document.getElementById('summary-takeoff-source'),
+            landingSource: document.getElementById('summary-landing-source')
         }
     };
 }
 
 /**
  * Liga ações estáticas da página (ex: voltar ao menu).
- * @param {object} elements referências de UI.
  */
 function bindStaticActions(elements) {
     elements.btnBack.addEventListener('click', () => {
@@ -438,7 +691,6 @@ function bindStaticActions(elements) {
 
 /**
  * Sincroniza estado da permissão GPS com a UI.
- * @returns {Promise<'granted'|'prompt'|'denied'>}
  */
 async function syncPermissionState(permissionTarget) {
     const permissionState = await getLocationPermissionState();
@@ -449,7 +701,6 @@ async function syncPermissionState(permissionTarget) {
 
 /**
  * Carrega perfis de aeronave no seletor.
- * @param {HTMLSelectElement} select seletor de perfis.
  */
 async function populateAircraftProfiles(select) {
     try {
@@ -470,21 +721,106 @@ async function populateAircraftProfiles(select) {
 }
 
 /**
- * Ativa/desativa botões conforme estado de tracking.
- * @param {object} elements elementos do ecrã.
- * @param {boolean} isTracking indica sessão ativa.
+ * Mostra/oculta bloco de recuperação e atualiza respetivos detalhes.
+ */
+function renderRecoveryBlock(elements, visible, details = null) {
+    elements.recoveryPanel.hidden = !visible;
+    if (!visible) {
+        elements.recoveryDetails.textContent = '';
+        return;
+    }
+
+    elements.recoveryDetails.textContent = details
+        ? `Sessão ${details.sessionId.slice(0, 8)}… | fase ${details.phase} | pontos ${details.pointsCount ?? 0} | eventos ${details.eventsCount ?? 0}`
+        : 'Sessão ativa encontrada.';
+}
+
+/**
+ * Atualiza botão de tracking conforme estado ativo.
  */
 function toggleTrackingButtons(elements, isTracking) {
     elements.btnStart.disabled = isTracking;
     elements.btnStop.disabled = !isTracking;
     elements.btnTakeoff.disabled = !isTracking;
     elements.btnLanding.disabled = !isTracking;
+    elements.btnClearManual.disabled = !isTracking;
+}
+
+/**
+ * Hidrata estado em memória com sessão persistida.
+ */
+function hydrateSessionFromDb(activeSession, session, machine) {
+    activeSession.id = session.id;
+    activeSession.startedAt = session.startedAt;
+    activeSession.phase = session.phase ?? FDR_PHASES.IDLE;
+    activeSession.state = session.state ?? 'paused';
+    activeSession.metrics = session.metricsSnapshot ?? activeSession.metrics;
+    activeSession.takeoffAutoAt = session.takeoffAutoAt ?? null;
+    activeSession.landingAutoAt = session.landingAutoAt ?? null;
+    activeSession.manualTakeoffAt = session.manualTakeoffAt ?? null;
+    activeSession.manualLandingAt = session.manualLandingAt ?? null;
+    activeSession.takeoffSource = session.takeoffSource ?? null;
+    activeSession.landingSource = session.landingSource ?? null;
+    activeSession.confidence = session.confidence ?? { avg: 0, max: 0, samples: 0 };
+    syncMachineToPhase(machine, activeSession.phase);
+}
+
+/**
+ * Sincroniza máquina de estados para uma fase alvo seguindo o fluxo permitido.
+ */
+function syncMachineToPhase(machine, targetPhase) {
+    machine.reset();
+    if (targetPhase === FDR_PHASES.IDLE) {
+        return;
+    }
+
+    const phasePath = [
+        FDR_PHASES.PREFLIGHT,
+        FDR_PHASES.TAXI,
+        FDR_PHASES.TAKEOFF_ROLL,
+        FDR_PHASES.AIRBORNE,
+        FDR_PHASES.APPROACH,
+        FDR_PHASES.LANDING_ROLL,
+        FDR_PHASES.ENDED
+    ];
+
+    for (const phase of phasePath) {
+        if (machine.canTransition(phase)) {
+            machine.transition(phase, { source: 'restore-sync' });
+        }
+        if (phase === targetPhase) {
+            break;
+        }
+    }
+}
+
+/**
+ * Reinicia estado em memória após terminar sessão.
+ */
+function resetInMemorySession(activeSession, machine) {
+    machine.reset();
+    activeSession.id = null;
+    activeSession.startedAt = null;
+    activeSession.phase = FDR_PHASES.IDLE;
+    activeSession.state = 'stopped';
+    activeSession.takeoffAutoAt = null;
+    activeSession.landingAutoAt = null;
+    activeSession.manualTakeoffAt = null;
+    activeSession.manualLandingAt = null;
+    activeSession.takeoffSource = null;
+    activeSession.landingSource = null;
+    activeSession.confidence = { avg: 0, max: 0, samples: 0 };
+}
+
+/**
+ * Renderiza resumo a partir da sessão atual em memória.
+ */
+function updateSummaryFromSession(elements, activeSession) {
+    renderSummary(elements.summary, buildSessionSummary(activeSession));
 }
 
 /**
  * Renderiza estado simplificado na secção de debug.
- * @param {HTMLElement} debugTarget elemento pre de debug.
- * @param {object} payload dados a apresentar.
  */
 function updateDebug(debugTarget, payload) {
     debugTarget.textContent = JSON.stringify(payload, null, 2);

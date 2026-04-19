@@ -1,7 +1,6 @@
 /*
  * Módulo visual FDR.
- * Objetivo: disponibilizar a base visual da página fdr.html com foco mobile-first,
- * mantendo consistência com a identidade atual da app (cartões escuros e destaque laranja).
+ * Objetivo: disponibilizar UI mobile-first para sessão ativa, recuperação e resumo robusto.
  */
 
 :root {
@@ -44,6 +43,11 @@ body {
     box-shadow: var(--fdr-shadow);
 }
 
+.recovery-panel {
+    border-color: #fcd34d;
+    background: #fffbeb;
+}
+
 .fdr-header {
     display: flex;
     gap: 0.8rem;
@@ -56,7 +60,8 @@ body {
     margin: 0 0 0.35rem;
 }
 
-.fdr-header p {
+.fdr-header p,
+#recovery-details {
     margin: 0;
     color: var(--fdr-muted);
 }
@@ -85,6 +90,7 @@ body {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.6rem;
+    margin-top: 0.75rem;
     margin-bottom: 1rem;
 }
 
@@ -210,6 +216,14 @@ body {
     margin-bottom: 0.25rem;
 }
 
+.summary-grid strong {
+    text-transform: lowercase;
+}
+
+.summary-wide {
+    grid-column: 1 / -1;
+}
+
 .event-log {
     margin: 0;
     padding-left: 1.15rem;
@@ -258,5 +272,9 @@ body {
 @media (min-width: 980px) {
     .metric-grid {
         grid-template-columns: repeat(5, 1fr);
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }

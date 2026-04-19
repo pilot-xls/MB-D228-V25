@@ -17,10 +17,19 @@
             <header class="fdr-header">
                 <div>
                     <h1>FDR</h1>
-                    <p>Flight Data Recorder (base de integração)</p>
+                    <p>Flight Data Recorder (persistência IndexedDB + recuperação de sessão)</p>
                 </div>
                 <button type="button" id="btn-back" class="btn btn-secondary">Voltar ao menu</button>
             </header>
+
+            <section id="recovery-panel" class="fdr-panel recovery-panel" hidden>
+                <h2>Sessão restaurada</h2>
+                <p id="recovery-details">Sessão ativa encontrada.</p>
+                <div class="fdr-actions">
+                    <button type="button" id="btn-continue-session" class="btn btn-primary">Continuar sessão</button>
+                    <button type="button" id="btn-terminate-session" class="btn btn-danger">Terminar sessão</button>
+                </div>
+            </section>
 
             <section class="fdr-panel">
                 <h2>Controlo da sessão</h2>
@@ -50,6 +59,7 @@
                     <button type="button" id="btn-stop" class="btn btn-danger" disabled>Parar tracking</button>
                     <button type="button" id="btn-takeoff" class="btn btn-warning" disabled>Takeoff manual</button>
                     <button type="button" id="btn-landing" class="btn btn-warning" disabled>Landing manual</button>
+                    <button type="button" id="btn-clear-manual" class="btn btn-secondary" disabled>Limpar overrides manuais</button>
                 </div>
 
                 <div class="fdr-row phase-row">
@@ -95,9 +105,12 @@
                 <h2>Resumo da sessão</h2>
                 <div class="summary-grid">
                     <div><span>Takeoff time</span><strong id="summary-takeoff">--:--:--</strong></div>
+                    <div><span>Takeoff source</span><strong id="summary-takeoff-source">--</strong></div>
                     <div><span>Landing time</span><strong id="summary-landing">--:--:--</strong></div>
+                    <div><span>Landing source</span><strong id="summary-landing-source">--</strong></div>
                     <div><span>Fly time</span><strong id="summary-fly-time">00:00:00</strong></div>
                     <div><span>Session time</span><strong id="summary-session-time">00:00:00</strong></div>
+                    <div class="summary-wide"><span>Confidence summary</span><strong id="summary-confidence">--</strong></div>
                 </div>
             </section>
 
