@@ -1,0 +1,16 @@
+[
+    {
+        "id": "d228-standard",
+        "name": "Do228 Standard",
+        "type": "commuter",
+        "rotationSpeedKt": 87,
+        "landingSpeedKt": 82
+    },
+    {
+        "id": "d228-cargo",
+        "name": "Do228 Cargo",
+        "type": "cargo",
+        "rotationSpeedKt": 90,
+        "landingSpeedKt": 84
+    }
+]

@@ -1,0 +1,23 @@
+[
+    {
+        "timestamp": "2026-04-19T10:00:00Z",
+        "lat": 38.7813,
+        "lon": -9.134,
+        "altitudeFt": 170,
+        "speedKt": 0
+    },
+    {
+        "timestamp": "2026-04-19T10:01:20Z",
+        "lat": 38.7831,
+        "lon": -9.1202,
+        "altitudeFt": 450,
+        "speedKt": 78
+    },
+    {
+        "timestamp": "2026-04-19T10:02:35Z",
+        "lat": 38.7889,
+        "lon": -9.1044,
+        "altitudeFt": 1200,
+        "speedKt": 112
+    }
+]
