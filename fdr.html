@@ -31,11 +31,19 @@
                 </div>
 
                 <div class="fdr-row">
+                    <span>Estado do tracking</span>
+                    <output id="session-status" class="status-badge status-pending">Parado</output>
+                </div>
+
+                <div class="fdr-row">
                     <label for="aircraft-profile">Perfil de aeronave</label>
                     <select id="aircraft-profile" name="aircraft-profile">
                         <option value="" selected disabled>A carregar perfis...</option>
                     </select>
                 </div>
+
+                <div id="gps-alert" class="fdr-alert fdr-alert-warning" hidden></div>
+                <div id="wake-lock-alert" class="fdr-alert fdr-alert-warning" hidden></div>
 
                 <div class="fdr-actions">
                     <button type="button" id="btn-start" class="btn btn-primary">Iniciar tracking</button>

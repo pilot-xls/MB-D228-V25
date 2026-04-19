@@ -146,6 +146,26 @@ body {
     color: #991b1b;
 }
 
+.fdr-alert {
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
+}
+
+.fdr-alert-warning {
+    border-color: #fcd34d;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.fdr-alert-error {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
 .phase-row {
     border-top: 1px solid var(--fdr-panel-border);
     padding-top: 0.85rem;
