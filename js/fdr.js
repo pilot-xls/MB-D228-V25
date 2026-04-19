@@ -1,4 +1,4 @@
-import { FDR_CONFIG } from './fdr/config.js';
+import { FDR_CONFIG, FDR_PHASES } from './fdr/config.js';
 import { createStateMachine } from './fdr/core/state-machine.js';
 import { createDetectionEngine } from './fdr/core/detection-engine.js';
 import { createGeolocationService } from './fdr/services/geolocation.js';
@@ -21,7 +21,7 @@ import {
 } from './fdr/ui/fdr-screen.js';
 import { renderSummary } from './fdr/ui/fdr-summary.js';
 import { metersToFeet, msToKnots } from './fdr/utils/geo.js';
-import { formatDuration } from './fdr/utils/time.js';
+import { formatDuration, formatTimestamp, safeTimeDiffSeconds } from './fdr/utils/time.js';
 
 /**
  * Bootstrap do módulo FDR.
@@ -51,6 +51,8 @@ async function initFdrPage() {
             verticalSpeedFpm: null,
             confidence: 0
         },
+        takeoffAt: null,
+        landingAt: null,
         pointsBuffer: [],
         events: []
     };
@@ -91,16 +93,16 @@ async function initFdrPage() {
             return;
         }
 
-        const transitioned = machine.transition('TRACKING');
-        if (!transitioned) {
-            appendEventLog(elements.eventLog, 'Transição para TRACKING inválida.');
+        const toPreflight = machine.transition(FDR_PHASES.PREFLIGHT, { source: 'start-button' });
+        if (!toPreflight.changed) {
+            appendEventLog(elements.eventLog, 'Transição para preflight inválida.');
             geoService.stopTracking();
             return;
         }
 
         activeSession.startedAt = Date.now();
         activeSession.phase = machine.getPhase();
-        appendSessionEvent(activeSession, 'tracking-started');
+        appendSessionEvent(activeSession, 'tracking-started', { to: toPreflight.to });
 
         renderPhase(elements.phaseIndicator, machine.getPhase());
         renderSessionState(elements.sessionStatus, 'active');
@@ -147,23 +149,28 @@ async function initFdrPage() {
     });
 
     elements.btnTakeoff.addEventListener('click', () => {
-        const transitioned = machine.transition('AIRBORNE');
-        if (transitioned) {
+        const transitioned = machine.transition(FDR_PHASES.AIRBORNE, { source: 'manual' });
+        if (transitioned.changed) {
             activeSession.phase = machine.getPhase();
+            activeSession.takeoffAt = Date.now();
             appendSessionEvent(activeSession, 'manual-takeoff');
             renderPhase(elements.phaseIndicator, machine.getPhase());
-            renderSummary(elements.summary, { takeoff: new Date().toLocaleTimeString('pt-PT', { hour12: false }) });
+            renderSummary(elements.summary, { takeoff: formatTimestamp(activeSession.takeoffAt) });
             appendEventLog(elements.eventLog, 'Takeoff manual registado.');
         }
     });
 
     elements.btnLanding.addEventListener('click', () => {
-        const transitioned = machine.transition('TRACKING');
-        if (transitioned) {
+        const transitioned = machine.transition(FDR_PHASES.LANDING_ROLL, { source: 'manual' });
+        if (transitioned.changed) {
             activeSession.phase = machine.getPhase();
+            activeSession.landingAt = Date.now();
             appendSessionEvent(activeSession, 'manual-landing');
             renderPhase(elements.phaseIndicator, machine.getPhase());
-            renderSummary(elements.summary, { landing: new Date().toLocaleTimeString('pt-PT', { hour12: false }) });
+            renderSummary(elements.summary, {
+                landing: formatTimestamp(activeSession.landingAt),
+                flyTime: calculateFlyTime(activeSession)
+            });
             appendEventLog(elements.eventLog, 'Landing manual registado.');
         }
     });
@@ -182,24 +189,25 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
                 activeSession.pointsBuffer.shift();
             }
 
-            const detectionResult = detector.evaluateSample(point);
+            const detectionResult = detector.evaluateSample(point, machine.getPhase());
+            applyDetectionDecision({ detectionResult, machine, activeSession, elements });
             activeSession.metrics = {
                 gpsAccuracy: point.accuracy,
-                speedKt: point.speed !== null ? msToKnots(point.speed) : null,
-                altitudeFt: point.altitude !== null ? metersToFeet(point.altitude) : null,
-                verticalSpeedFpm: null,
+                speedKt: detectionResult.metrics.speedKt ?? (point.speed !== null ? msToKnots(point.speed) : null),
+                altitudeFt: detectionResult.metrics.altitudeFt ?? (point.altitude !== null ? metersToFeet(point.altitude) : null),
+                verticalSpeedFpm: detectionResult.metrics.smoothedVerticalFpm ?? detectionResult.metrics.verticalSpeedFpm ?? null,
                 confidence: detectionResult.confidence
             };
 
             renderLiveMetrics(elements.metrics, {
                 gpsAccuracy: `${Math.round(point.accuracy)} m`,
-                speed: point.speed !== null ? `${msToKnots(point.speed).toFixed(1)} kt` : '-- kt',
-                altitude: point.altitude !== null ? `${metersToFeet(point.altitude).toFixed(0)} ft` : '-- ft',
-                vspeed: '-- ft/min',
+                speed: activeSession.metrics.speedKt !== null ? `${activeSession.metrics.speedKt.toFixed(1)} kt` : '-- kt',
+                altitude: activeSession.metrics.altitudeFt !== null ? `${activeSession.metrics.altitudeFt.toFixed(0)} ft` : '-- ft',
+                vspeed: activeSession.metrics.verticalSpeedFpm !== null ? `${Math.round(activeSession.metrics.verticalSpeedFpm)} ft/min` : '-- ft/min',
                 confidence: `${Math.round(detectionResult.confidence)} %`
             });
 
-            if (point.accuracy > FDR_CONFIG.gpsWeakAccuracyThreshold) {
+            if (point.accuracy > FDR_CONFIG.gps.weakAccuracyThreshold) {
                 renderGpsAlert(elements.gpsAlert, {
                     visible: true,
                     tone: 'warning',
@@ -250,7 +258,7 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
         }
 
         if (event.type === 'tracking-stopped') {
-            machine.transition('IDLE');
+            machine.reset();
             activeSession.phase = machine.getPhase();
             renderPhase(elements.phaseIndicator, machine.getPhase());
             renderSessionState(elements.sessionStatus, 'stopped');
@@ -285,7 +293,7 @@ function stopSession({ elements, machine, geoService, activeSession, removeWakeV
         clearInterval(sessionClockId);
     }
 
-    machine.transition('IDLE');
+    machine.reset();
     activeSession.phase = machine.getPhase();
     appendSessionEvent(activeSession, 'tracking-stopped');
 
@@ -316,12 +324,71 @@ function startSessionClock(elements, activeSession, clockRef, setClockRef) {
 }
 
 /**
+ * Aplica decisão do motor (transição + eventos) sem acoplar lógica ao render.
+ * @param {object} args dependências da atualização.
+ * @param {object} args.detectionResult output do motor de deteção.
+ * @param {object} args.machine máquina de estados ativa.
+ * @param {object} args.activeSession estado corrente da sessão.
+ * @param {object} args.elements referências dos elementos UI.
+ */
+function applyDetectionDecision({ detectionResult, machine, activeSession, elements }) {
+    if (detectionResult.phaseSuggestion) {
+        const transitionResult = machine.transition(detectionResult.phaseSuggestion, {
+            reasonCodes: detectionResult.reasonCodes,
+            confidence: detectionResult.confidence
+        });
+
+        if (transitionResult.changed) {
+            activeSession.phase = transitionResult.to;
+            appendSessionEvent(activeSession, 'phase-transition', {
+                from: transitionResult.from,
+                to: transitionResult.to,
+                reasonCodes: detectionResult.reasonCodes
+            });
+            renderPhase(elements.phaseIndicator, transitionResult.to);
+            appendEventLog(elements.eventLog, `Fase ${transitionResult.from} → ${transitionResult.to}`);
+        }
+    }
+
+    if (detectionResult.event === 'takeoff' && !activeSession.takeoffAt) {
+        activeSession.takeoffAt = Date.now();
+        appendSessionEvent(activeSession, 'auto-takeoff', { reasonCodes: detectionResult.reasonCodes });
+        renderSummary(elements.summary, { takeoff: formatTimestamp(activeSession.takeoffAt) });
+        appendEventLog(elements.eventLog, 'Takeoff automático confirmado.');
+    }
+
+    if (detectionResult.event === 'landing' && !activeSession.landingAt) {
+        activeSession.landingAt = Date.now();
+        appendSessionEvent(activeSession, 'auto-landing', { reasonCodes: detectionResult.reasonCodes });
+        renderSummary(elements.summary, {
+            landing: formatTimestamp(activeSession.landingAt),
+            flyTime: calculateFlyTime(activeSession)
+        });
+        appendEventLog(elements.eventLog, 'Landing automático confirmado.');
+    }
+}
+
+/**
+ * Calcula fly time entre takeoff e landing.
+ * @param {object} activeSession sessão ativa.
+ * @returns {string} duração HH:MM:SS.
+ */
+function calculateFlyTime(activeSession) {
+    if (!activeSession.takeoffAt) {
+        return '00:00:00';
+    }
+
+    const endAt = activeSession.landingAt ?? Date.now();
+    return formatDuration(safeTimeDiffSeconds(activeSession.takeoffAt, endAt));
+}
+
+/**
  * Adiciona evento base ao estado em memória.
  * @param {object} activeSession estado da sessão.
  * @param {string} type tipo do evento.
  */
-function appendSessionEvent(activeSession, type) {
-    activeSession.events.push({ type, at: Date.now() });
+function appendSessionEvent(activeSession, type, details = {}) {
+    activeSession.events.push({ type, at: Date.now(), ...details });
 }
 
 /**
