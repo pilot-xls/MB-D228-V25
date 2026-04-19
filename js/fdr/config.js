@@ -7,5 +7,7 @@ export const FDR_CONFIG = {
     profilesPath: './data/fdr-aircraft-profiles.json',
     demoTrackPath: './data/fdr-demo-track.json',
     defaultPhase: 'IDLE',
-    updateIntervalMs: 1000
+    updateIntervalMs: 1000,
+    gpsWeakAccuracyThreshold: 60,
+    maxPointsBuffer: 120
 };
