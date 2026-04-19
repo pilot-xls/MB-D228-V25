@@ -18,6 +18,7 @@
 
 body {
     margin: 0;
+    margin-top: 85px;
     background: radial-gradient(circle at top, #1c2733, var(--fdr-bg));
     color: var(--fdr-text);
 }
