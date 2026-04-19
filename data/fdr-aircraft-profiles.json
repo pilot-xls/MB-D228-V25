@@ -1,16 +1,42 @@
 [
     {
-        "id": "d228-standard",
-        "name": "Do228 Standard",
-        "type": "commuter",
-        "rotationSpeedKt": 87,
-        "landingSpeedKt": 82
+        "id": "ga-single",
+        "name": "GA Single",
+        "type": "general-aviation",
+        "rotationSpeedKt": 55,
+        "landingSpeedKt": 60,
+        "taxiMaxKt": 30
     },
     {
-        "id": "d228-cargo",
-        "name": "Do228 Cargo",
-        "type": "cargo",
-        "rotationSpeedKt": 90,
-        "landingSpeedKt": 84
+        "id": "ultralight",
+        "name": "Ultralight",
+        "type": "light-sport",
+        "rotationSpeedKt": 40,
+        "landingSpeedKt": 45,
+        "taxiMaxKt": 25
+    },
+    {
+        "id": "helicopter",
+        "name": "Helicopter",
+        "type": "rotorcraft",
+        "rotationSpeedKt": 0,
+        "landingSpeedKt": 35,
+        "taxiMaxKt": 20
+    },
+    {
+        "id": "jet",
+        "name": "Jet",
+        "type": "jet-transport",
+        "rotationSpeedKt": 120,
+        "landingSpeedKt": 130,
+        "taxiMaxKt": 35
+    },
+    {
+        "id": "custom",
+        "name": "Custom",
+        "type": "user-defined",
+        "rotationSpeedKt": 65,
+        "landingSpeedKt": 70,
+        "taxiMaxKt": 30
     }
 ]
