@@ -74,7 +74,19 @@ async function initFdrPage() {
 
     await repository.initDb();
     await syncPermissionState(elements.permissionStatus);
-    const selectedAircraft = await bindDefaultAircraft(elements.aircraftProfile);
+    let selectedAircraft = await bindDefaultAircraft(elements.activeAircraftProfile);
+    appendEventLog(elements.eventLog, `Perfil em uso: ${selectedAircraft.label}.`);
+    appendAircraftProfileValidation(elements.eventLog, selectedAircraft.validation);
+
+    const refreshSelectedAircraft = async () => {
+        selectedAircraft = await bindDefaultAircraft(elements.activeAircraftProfile);
+    };
+    window.addEventListener('defaultAircraftChanged', refreshSelectedAircraft);
+    window.addEventListener('storage', event => {
+        if (event.key === 'defaultAircraft' || event.key === 'aircraftData') {
+            refreshSelectedAircraft();
+        }
+    });
 
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
@@ -127,6 +139,7 @@ async function initFdrPage() {
     });
 
     elements.btnStart.addEventListener('click', async () => {
+        selectedAircraft = await bindDefaultAircraft(elements.activeAircraftProfile);
         const permissionState = await syncPermissionState(elements.permissionStatus);
         if (permissionState === 'denied') {
             renderGpsAlert(elements.gpsAlert, {
@@ -633,7 +646,7 @@ function mapDomElements() {
         recoveryDetails: document.getElementById('recovery-details'),
         permissionStatus: document.getElementById('permission-status'),
         sessionStatus: document.getElementById('session-status'),
-        aircraftProfile: document.getElementById('aircraft-profile'),
+        activeAircraftProfile: document.getElementById('active-aircraft-profile'),
         phaseIndicator: document.getElementById('phase-indicator'),
         eventLog: document.getElementById('event-log'),
         uxState: document.getElementById('ux-state'),
@@ -684,22 +697,67 @@ async function syncPermissionState(permissionTarget) {
 /**
  * Carrega perfis de aeronave no seletor.
  */
-async function bindDefaultAircraft(select) {
-    const aircraftData = JSON.parse(localStorage.getItem('aircraftData') || '{}');
+async function bindDefaultAircraft(profileOutput) {
+    const aircraftData = safeParseJson(localStorage.getItem('aircraftData'), {});
     const defaultAircraftId = localStorage.getItem('defaultAircraft') || '';
     const aircraft = aircraftData[defaultAircraftId] ?? null;
+    const profileIdLabel = aircraft?.ID || defaultAircraftId || 'Sem aeronave default definida';
+    const profileLabel = defaultAircraftId && aircraft
+        ? `${profileIdLabel} (${defaultAircraftId})`
+        : profileIdLabel;
 
-    select.innerHTML = '';
-    const option = document.createElement('option');
-    option.value = defaultAircraftId;
-    option.textContent = aircraft?.ID || defaultAircraftId || 'Sem aeronave default definida';
-    select.appendChild(option);
-    select.disabled = true;
+    if (profileOutput) {
+        profileOutput.textContent = profileLabel;
+    }
 
     return {
         id: defaultAircraftId,
-        label: option.textContent
+        label: profileLabel,
+        aircraft,
+        validation: validateAircraftProfileForFdr(defaultAircraftId, aircraft)
     };
+}
+
+function validateAircraftProfileForFdr(defaultAircraftId, aircraft) {
+    const required = [
+        { field: 'defaultAircraft', valid: Boolean(defaultAircraftId), detail: defaultAircraftId || 'não definido' },
+        { field: 'aircraftData[defaultAircraft]', valid: Boolean(aircraft), detail: aircraft ? 'ok' : 'registo não encontrado' },
+        { field: 'ID', valid: Boolean(aircraft?.ID), detail: aircraft?.ID || 'em falta' }
+    ];
+
+    return {
+        isValid: required.every(item => item.valid),
+        required
+    };
+}
+
+function appendAircraftProfileValidation(eventLogElement, validation) {
+    if (!validation) {
+        return;
+    }
+
+    if (validation.isValid) {
+        appendEventLog(eventLogElement, 'Perfil FDR válido: defaultAircraft + registo + ID disponíveis.');
+        return;
+    }
+
+    const missing = validation.required
+        .filter(item => !item.valid)
+        .map(item => `${item.field} (${item.detail})`)
+        .join(', ');
+    appendEventLog(eventLogElement, `Perfil FDR incompleto: ${missing}.`);
+}
+
+function safeParseJson(value, fallback) {
+    if (!value) {
+        return fallback;
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return fallback;
+    }
 }
 
 /**
