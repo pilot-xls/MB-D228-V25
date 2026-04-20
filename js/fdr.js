@@ -74,7 +74,8 @@ async function initFdrPage() {
 
     await repository.initDb();
     await syncPermissionState(elements.permissionStatus);
-    const selectedAircraft = await bindDefaultAircraft(elements.aircraftProfile);
+    const selectedAircraft = await bindDefaultAircraft(elements.activeAircraftProfile);
+    appendEventLog(elements.eventLog, `Perfil em uso: ${selectedAircraft.label}.`);
 
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
@@ -633,7 +634,7 @@ function mapDomElements() {
         recoveryDetails: document.getElementById('recovery-details'),
         permissionStatus: document.getElementById('permission-status'),
         sessionStatus: document.getElementById('session-status'),
-        aircraftProfile: document.getElementById('aircraft-profile'),
+        activeAircraftProfile: document.getElementById('active-aircraft-profile'),
         phaseIndicator: document.getElementById('phase-indicator'),
         eventLog: document.getElementById('event-log'),
         uxState: document.getElementById('ux-state'),
@@ -684,21 +685,17 @@ async function syncPermissionState(permissionTarget) {
 /**
  * Carrega perfis de aeronave no seletor.
  */
-async function bindDefaultAircraft(select) {
+async function bindDefaultAircraft(profileOutput) {
     const aircraftData = JSON.parse(localStorage.getItem('aircraftData') || '{}');
     const defaultAircraftId = localStorage.getItem('defaultAircraft') || '';
     const aircraft = aircraftData[defaultAircraftId] ?? null;
+    const profileLabel = aircraft?.ID || defaultAircraftId || 'Sem aeronave default definida';
 
-    select.innerHTML = '';
-    const option = document.createElement('option');
-    option.value = defaultAircraftId;
-    option.textContent = aircraft?.ID || defaultAircraftId || 'Sem aeronave default definida';
-    select.appendChild(option);
-    select.disabled = true;
+    profileOutput.textContent = profileLabel;
 
     return {
         id: defaultAircraftId,
-        label: option.textContent
+        label: profileLabel
     };
 }
 
