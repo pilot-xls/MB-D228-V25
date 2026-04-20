@@ -17,9 +17,8 @@
             <header class="fdr-header">
                 <div>
                     <h1>FDR</h1>
-                    <p>Flight Data Recorder (persistência IndexedDB + recuperação de sessão)</p>
+                    <p>Flight Data Recorder</p>
                 </div>
-                <button type="button" id="btn-back" class="btn btn-secondary">Voltar ao menu</button>
             </header>
 
             <section id="recovery-panel" class="fdr-panel recovery-panel" hidden>
@@ -58,12 +57,7 @@
 
                 <div class="fdr-actions">
                     <button type="button" id="btn-start" class="btn btn-primary">Iniciar tracking</button>
-                    <button type="button" id="btn-stop" class="btn btn-danger" disabled>Parar tracking</button>
-                    <button type="button" id="btn-demo" class="btn btn-secondary">Demo track</button>
-                    <button type="button" id="btn-stop-demo" class="btn btn-secondary" disabled>Parar demo</button>
-                    <button type="button" id="btn-takeoff" class="btn btn-warning" disabled>Takeoff manual</button>
-                    <button type="button" id="btn-landing" class="btn btn-warning" disabled>Landing manual</button>
-                    <button type="button" id="btn-clear-manual" class="btn btn-secondary" disabled>Limpar overrides manuais</button>
+                    <button type="button" id="btn-stop" class="btn btn-danger" disabled>Terminar tracking</button>
                 </div>
 
                 <div class="fdr-row phase-row">
@@ -144,11 +138,6 @@
                 </details>
             </section>
 
-            <section class="fdr-warning">
-                <p>
-                    Para melhor desempenho do tracking em PWA, mantenha a app aberta e ativa durante a sessão.
-                </p>
-            </section>
         </main>
 
         <script src="js/general.js"></script>
