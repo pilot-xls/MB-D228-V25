@@ -38,7 +38,6 @@ async function initFdrPage() {
 
     let removeWakeVisibilityListener = () => {};
     let sessionClockId = null;
-    let demoTimer = null;
 
     /**
      * Estado em memória da sessão atual.
@@ -67,10 +66,6 @@ async function initFdrPage() {
             scores: {},
             windowMetrics: {},
             lastPoints: []
-        },
-        demo: {
-            active: false,
-            trackName: null
         }
     };
 
@@ -79,7 +74,7 @@ async function initFdrPage() {
 
     await repository.initDb();
     await syncPermissionState(elements.permissionStatus);
-    await populateAircraftProfiles(elements.aircraftProfile);
+    const selectedAircraft = await bindDefaultAircraft(elements.aircraftProfile);
 
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
@@ -125,7 +120,7 @@ async function initFdrPage() {
         renderSessionState(elements.sessionStatus, 'stopped');
         renderPhase(elements.phaseIndicator, machine.getPhase());
         updateSummaryFromSession(elements, activeSession);
-        toggleTrackingButtons(elements, false, false);
+        toggleTrackingButtons(elements, false);
         appendEventLog(elements.eventLog, 'Sessão restaurada foi terminada pelo utilizador.');
         renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão incompleta (terminada manualmente).' });
         updateDebug(elements.debug, activeSession, geoService.getStatus());
@@ -163,7 +158,7 @@ async function initFdrPage() {
 
         const newSession = await repository.createSession({
             phase: machine.getPhase(),
-            aircraftProfileId: elements.aircraftProfile.value || null,
+            aircraftProfileId: selectedAircraft.id || null,
             startedAt: Date.now()
         });
 
@@ -179,7 +174,7 @@ async function initFdrPage() {
 
         renderPhase(elements.phaseIndicator, machine.getPhase());
         renderSessionState(elements.sessionStatus, 'active');
-        toggleTrackingButtons(elements, true, false);
+        toggleTrackingButtons(elements, true);
         renderRecoveryBlock(elements, false);
         startSessionClock(elements, activeSession, sessionClockId, id => {
             sessionClockId = id;
@@ -234,143 +229,6 @@ async function initFdrPage() {
         updateDebug(elements.debug, activeSession, geoService.getStatus());
     });
 
-    elements.btnDemo.addEventListener('click', async () => {
-        if (demoTimer) {
-            return;
-        }
-
-        if (!activeSession.id) {
-            elements.btnStart.click();
-            if (!activeSession.id) {
-                return;
-            }
-        }
-
-        const track = await loadDemoTrack();
-        if (!track.length) {
-            appendEventLog(elements.eventLog, 'Demo track sem pontos válidos.');
-            return;
-        }
-
-        let index = 0;
-        activeSession.demo.active = true;
-        activeSession.demo.trackName = 'fdr-demo-track';
-        elements.btnDemo.disabled = true;
-        elements.btnStopDemo.disabled = false;
-
-        renderUxState(elements.uxState, {
-            visible: true,
-            tone: 'ok',
-            message: 'Modo demo ativo: a reproduzir track fictício.'
-        });
-
-        appendEventLog(elements.eventLog, `Demo track iniciado (${track.length} pontos).`);
-
-        demoTimer = setInterval(async () => {
-            const point = track[index];
-            if (!point) {
-                clearInterval(demoTimer);
-                demoTimer = null;
-                activeSession.demo.active = false;
-                elements.btnDemo.disabled = false;
-                elements.btnStopDemo.disabled = true;
-                appendEventLog(elements.eventLog, 'Demo track concluído.');
-                renderUxState(elements.uxState, {
-                    visible: true,
-                    tone: 'warning',
-                    message: 'Demo concluído. Valide takeoff/landing e resumo final.'
-                });
-                return;
-            }
-
-            await processIncomingPoint(point, detector, machine, activeSession, elements, repository, true);
-            index += 1;
-        }, 900);
-    });
-
-    elements.btnStopDemo.addEventListener('click', () => {
-        if (!demoTimer) {
-            return;
-        }
-
-        clearInterval(demoTimer);
-        demoTimer = null;
-        activeSession.demo.active = false;
-        elements.btnDemo.disabled = false;
-        elements.btnStopDemo.disabled = true;
-        appendEventLog(elements.eventLog, 'Demo track parado manualmente.');
-        renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão incompleta (demo interrompido).' });
-    });
-
-    elements.btnTakeoff.addEventListener('click', async () => {
-        if (!activeSession.id) {
-            return;
-        }
-
-        const transitioned = machine.transition(FDR_PHASES.AIRBORNE, { source: 'manual' });
-        if (transitioned.changed) {
-            const manualAt = Date.now();
-            activeSession.phase = machine.getPhase();
-            activeSession.manualTakeoffAt = manualAt;
-            await repository.saveManualTakeoff(activeSession.id, manualAt);
-            await repository.updateSessionState(activeSession.id, { phase: activeSession.phase });
-            await repository.appendEvent(activeSession.id, {
-                type: 'manual-takeoff',
-                source: 'manual',
-                timestamp: manualAt
-            });
-            renderPhase(elements.phaseIndicator, machine.getPhase());
-            appendTimelineEntry(activeSession, 'Takeoff manual', manualAt, 'manual');
-            updateSummaryFromSession(elements, activeSession);
-            appendEventLog(elements.eventLog, 'Takeoff manual registado (override).');
-            renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Takeoff manual registado.' });
-        }
-    });
-
-    elements.btnLanding.addEventListener('click', async () => {
-        if (!activeSession.id) {
-            return;
-        }
-
-        const transitioned = machine.transition(FDR_PHASES.LANDING_ROLL, { source: 'manual' });
-        if (transitioned.changed) {
-            const manualAt = Date.now();
-            activeSession.phase = machine.getPhase();
-            activeSession.manualLandingAt = manualAt;
-            await repository.saveManualLanding(activeSession.id, manualAt);
-            await repository.updateSessionState(activeSession.id, { phase: activeSession.phase });
-            await repository.appendEvent(activeSession.id, {
-                type: 'manual-landing',
-                source: 'manual',
-                timestamp: manualAt
-            });
-            renderPhase(elements.phaseIndicator, machine.getPhase());
-            appendTimelineEntry(activeSession, 'Landing manual', manualAt, 'manual');
-            updateSummaryFromSession(elements, activeSession);
-            appendEventLog(elements.eventLog, 'Landing manual registado (override).');
-            renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Landing manual registado.' });
-        }
-    });
-
-    elements.btnClearManual.addEventListener('click', async () => {
-        if (!activeSession.id) {
-            return;
-        }
-
-        const updated = await repository.clearManualOverrides(activeSession.id);
-        if (!updated) {
-            return;
-        }
-
-        hydrateSessionFromDb(activeSession, updated, machine);
-        await repository.appendEvent(activeSession.id, {
-            type: 'manual-overrides-cleared',
-            source: 'manual',
-            timestamp: Date.now()
-        });
-        updateSummaryFromSession(elements, activeSession);
-        appendEventLog(elements.eventLog, 'Overrides manuais removidos; tempos automáticos preservados.');
-    });
 }
 
 /**
@@ -446,7 +304,7 @@ async function continueRestoredSession(args) {
     renderSessionState(elements.sessionStatus, 'active');
     renderPhase(elements.phaseIndicator, activeSession.phase);
     renderRecoveryBlock(elements, false);
-    toggleTrackingButtons(elements, true, false);
+    toggleTrackingButtons(elements, true);
 
     startSessionClock(elements, activeSession, sessionClockId, setClockRef);
 
@@ -471,7 +329,7 @@ async function continueRestoredSession(args) {
 function subscribeGeolocation(geoService, elements, activeSession, detector, machine, repository) {
     geoService.subscribe(async event => {
         if (event.type === 'point') {
-            await processIncomingPoint(event.payload, detector, machine, activeSession, elements, repository, false);
+            await processIncomingPoint(event.payload, detector, machine, activeSession, elements, repository);
             return;
         }
 
@@ -545,9 +403,9 @@ function subscribeGeolocation(geoService, elements, activeSession, detector, mac
 }
 
 /**
- * Processa um ponto (real ou demo) para deteção, persistência e UI.
+ * Processa um ponto GPS para deteção, persistência e UI.
  */
-async function processIncomingPoint(point, detector, machine, activeSession, elements, repository, isDemoPoint) {
+async function processIncomingPoint(point, detector, machine, activeSession, elements, repository) {
     const detectionResult = detector.evaluateSample(point, machine.getPhase());
 
     activeSession.metrics = {
@@ -595,6 +453,9 @@ async function processIncomingPoint(point, detector, machine, activeSession, ele
         repository
     });
 
+    const phaseInfo = deriveOperationalPhase(detectionResult.metrics, activeSession.phase);
+    renderPhase(elements.phaseIndicator, phaseInfo.displayPhase);
+
     if (activeSession.id) {
         await repository.appendPoint(activeSession.id, point, detectionResult.confidence);
         const sessionPatch = {
@@ -608,12 +469,8 @@ async function processIncomingPoint(point, detector, machine, activeSession, ele
         }
     }
 
-    if (isDemoPoint) {
-        appendEventLog(elements.eventLog, `Demo point ${formatTimestamp(point.timestamp)} | ${Math.round(activeSession.metrics.speedKt ?? 0)}kt`);
-    }
-
     updateSummaryFromSession(elements, activeSession);
-    updateDebug(elements.debug, activeSession, { isTracking: !isDemoPoint, isPaused: false });
+    updateDebug(elements.debug, activeSession, { isTracking: true, isPaused: false });
 }
 
 /**
@@ -658,7 +515,7 @@ async function stopSession({ elements, machine, geoService, repository, activeSe
 
     renderPhase(elements.phaseIndicator, machine.getPhase());
     renderSessionState(elements.sessionStatus, 'stopped');
-    toggleTrackingButtons(elements, false, false);
+    toggleTrackingButtons(elements, false);
     renderGpsAlert(elements.gpsAlert, { visible: false });
 
     updateSummaryFromSession(elements, {
@@ -768,14 +625,8 @@ async function applyDetectionDecision({ detectionResult, machine, activeSession,
  */
 function mapDomElements() {
     return {
-        btnBack: document.getElementById('btn-back'),
         btnStart: document.getElementById('btn-start'),
         btnStop: document.getElementById('btn-stop'),
-        btnDemo: document.getElementById('btn-demo'),
-        btnStopDemo: document.getElementById('btn-stop-demo'),
-        btnTakeoff: document.getElementById('btn-takeoff'),
-        btnLanding: document.getElementById('btn-landing'),
-        btnClearManual: document.getElementById('btn-clear-manual'),
         btnContinueSession: document.getElementById('btn-continue-session'),
         btnTerminateSession: document.getElementById('btn-terminate-session'),
         recoveryPanel: document.getElementById('recovery-panel'),
@@ -818,14 +669,7 @@ function mapDomElements() {
     };
 }
 
-/**
- * Liga ações estáticas da página (ex: voltar ao menu).
- */
-function bindStaticActions(elements) {
-    elements.btnBack.addEventListener('click', () => {
-        location.href = 'index.html';
-    });
-}
+function bindStaticActions() {}
 
 /**
  * Sincroniza estado da permissão GPS com a UI.
@@ -840,47 +684,22 @@ async function syncPermissionState(permissionTarget) {
 /**
  * Carrega perfis de aeronave no seletor.
  */
-async function populateAircraftProfiles(select) {
-    try {
-        const response = await fetch(FDR_CONFIG.profilesPath);
-        const profiles = await response.json();
+async function bindDefaultAircraft(select) {
+    const aircraftData = JSON.parse(localStorage.getItem('aircraftData') || '{}');
+    const defaultAircraftId = localStorage.getItem('defaultAircraft') || '';
+    const aircraft = aircraftData[defaultAircraftId] ?? null;
 
-        select.innerHTML = '';
-        profiles.forEach(profile => {
-            const option = document.createElement('option');
-            option.value = profile.id;
-            option.textContent = `${profile.name} (${profile.type})`;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        select.innerHTML = '<option value="">Erro ao carregar perfis</option>';
-        console.warn('[FDR] Falha ao carregar perfis.', error);
-    }
-}
+    select.innerHTML = '';
+    const option = document.createElement('option');
+    option.value = defaultAircraftId;
+    option.textContent = aircraft?.ID || defaultAircraftId || 'Sem aeronave default definida';
+    select.appendChild(option);
+    select.disabled = true;
 
-/**
- * Carrega a demo track e converte o formato JSON para ponto normalizado de motor.
- */
-async function loadDemoTrack() {
-    try {
-        const response = await fetch(FDR_CONFIG.demoTrackPath);
-        const data = await response.json();
-
-        return data.map(item => ({
-            timestamp: new Date(item.timestamp).getTime(),
-            latitude: item.lat,
-            longitude: item.lon,
-            accuracy: item.accuracyM ?? 6,
-            altitude: item.altitudeFt / 3.28084,
-            altitudeAccuracy: null,
-            heading: item.heading ?? null,
-            speed: item.speedKt * 0.514444,
-            source: 'demo'
-        }));
-    } catch (error) {
-        console.warn('[FDR] Falha ao carregar demo track.', error);
-        return [];
-    }
+    return {
+        id: defaultAircraftId,
+        label: option.textContent
+    };
 }
 
 /**
@@ -899,16 +718,37 @@ function renderRecoveryBlock(elements, visible, details = null) {
 }
 
 /**
- * Atualiza botão de tracking/demo conforme estados ativos.
+ * Atualiza estado dos botões de controlo de tracking.
  */
-function toggleTrackingButtons(elements, isTracking, isDemo) {
+function toggleTrackingButtons(elements, isTracking) {
     elements.btnStart.disabled = isTracking;
     elements.btnStop.disabled = !isTracking;
-    elements.btnDemo.disabled = isDemo;
-    elements.btnStopDemo.disabled = !isDemo;
-    elements.btnTakeoff.disabled = !isTracking;
-    elements.btnLanding.disabled = !isTracking;
-    elements.btnClearManual.disabled = !isTracking;
+}
+
+function deriveOperationalPhase(metrics, machinePhase) {
+    if (machinePhase === FDR_PHASES.TAXI) {
+        return { displayPhase: 'TAXI' };
+    }
+    if (machinePhase === FDR_PHASES.TAKEOFF_ROLL) {
+        return { displayPhase: 'TAKEOFF' };
+    }
+    if (machinePhase === FDR_PHASES.LANDING_ROLL || machinePhase === FDR_PHASES.ENDED) {
+        return { displayPhase: 'LANDING' };
+    }
+    if (machinePhase === FDR_PHASES.AIRBORNE) {
+        const vertical = metrics?.smoothedVerticalFpm ?? 0;
+        if (vertical >= 300) {
+            return { displayPhase: 'CLIMB' };
+        }
+        if (vertical <= -300) {
+            return { displayPhase: 'DESCENT' };
+        }
+        return { displayPhase: 'CRUISE' };
+    }
+    if (machinePhase === FDR_PHASES.APPROACH) {
+        return { displayPhase: 'DESCENT' };
+    }
+    return { displayPhase: 'IDLE' };
 }
 
 /**
@@ -1005,7 +845,7 @@ function updateSummaryFromSession(elements, activeSession) {
 }
 
 /**
- * Renderiza painel de debug em formato operacional para validação em campo/demo.
+ * Renderiza painel de debug em formato operacional para validação em campo.
  */
 function updateDebug(debugFields, activeSession, geoStatus) {
     const takeoffAt = activeSession.manualTakeoffAt ?? activeSession.takeoffAutoAt;
