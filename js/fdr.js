@@ -94,7 +94,31 @@ async function initFdrPage() {
     renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Tracking parado.' });
     renderSummary(elements.summary, buildSessionSummary(null), []);
 
-    await restoreActiveSession(repository, elements, machine, activeSession);
+    const restoredSession = await restoreActiveSession(repository, elements, machine, activeSession);
+    if (restoredSession) {
+        const resumedAutomatically = await continueRestoredSession({
+            elements,
+            machine,
+            repository,
+            activeSession,
+            geoService,
+            removeWakeVisibilityListener,
+            setWakeListener: listener => {
+                removeWakeVisibilityListener = listener;
+            },
+            sessionClockId,
+            setClockRef: id => {
+                sessionClockId = id;
+            }
+        });
+
+        if (!resumedAutomatically) {
+            renderRecoveryBlock(elements, true, {
+                sessionId: activeSession.id,
+                phase: activeSession.phase
+            });
+        }
+    }
 
     elements.btnContinueSession.addEventListener('click', async () => {
         await continueRestoredSession({
@@ -250,24 +274,18 @@ async function initFdrPage() {
 async function restoreActiveSession(repository, elements, machine, activeSession) {
     const restored = await repository.getActiveSession();
     if (!restored) {
-        return;
+        return false;
     }
 
     hydrateSessionFromDb(activeSession, restored, machine);
     renderSessionState(elements.sessionStatus, 'paused');
     renderPhase(elements.phaseIndicator, activeSession.phase);
     updateSummaryFromSession(elements, activeSession);
+    renderRecoveryBlock(elements, false);
 
-    renderRecoveryBlock(elements, true, {
-        sessionId: restored.id,
-        startedAt: restored.startedAt,
-        phase: restored.phase,
-        pointsCount: restored.pointsCount,
-        eventsCount: restored.eventsCount
-    });
-
-    renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão restaurada. Escolha continuar ou terminar.' });
-    appendEventLog(elements.eventLog, `Sessão ativa restaurada (${restored.id.slice(0, 8)}...).`);
+    renderUxState(elements.uxState, { visible: true, tone: 'warning', message: 'Sessão restaurada. Retoma automática em curso...' });
+    appendEventLog(elements.eventLog, `Sessão ativa restaurada (${restored.id.slice(0, 8)}...). A retomar automaticamente.`);
+    return true;
 }
 
 /**
@@ -287,19 +305,19 @@ async function continueRestoredSession(args) {
     } = args;
 
     if (!activeSession.id) {
-        return;
+        return false;
     }
 
     const permissionState = await syncPermissionState(elements.permissionStatus);
     if (permissionState === 'denied') {
         appendEventLog(elements.eventLog, 'Continuação bloqueada: permissão negada.');
         renderUxState(elements.uxState, { visible: true, tone: 'error', message: 'Sem permissão de localização.' });
-        return;
+        return false;
     }
 
     if (!geoService.startTracking()) {
         appendEventLog(elements.eventLog, 'Continuação bloqueada: GPS indisponível.');
-        return;
+        return false;
     }
 
     await repository.updateSessionState(activeSession.id, {
@@ -333,6 +351,7 @@ async function continueRestoredSession(args) {
     setWakeListener(setupWakeLockAutoReacquire(() => {}));
     renderUxState(elements.uxState, { visible: true, tone: 'ok', message: 'Tracking ativo (sessão restaurada).' });
     appendEventLog(elements.eventLog, 'Sessão restaurada retomada com sucesso.');
+    return true;
 }
 
 /**
