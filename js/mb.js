@@ -118,37 +118,37 @@ function initPdfEmailButton() {
     btn.addEventListener("click", async () => {
         if (btn.disabled) return;
         btn.disabled = true;
-        setPdfStatus("A gerar PDF...");
+        setPdfStatus("A gerar imagem...");
 
         try {
-            const pdfBlob = await createMassBalancePdfBlob();
+            const imageBlob = await createMassBalanceImageBlob();
             const nomeLeg = (document.getElementById("nomeLeg")?.innerText || "mass-balance")
                 .trim()
                 .replace(/[^\w.-]+/g, "_");
-            const fileName = `${nomeLeg || "mass-balance"}.pdf`;
-            const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+            const fileName = `${nomeLeg || "mass-balance"}.png`;
+            const imageFile = new File([imageBlob], fileName, { type: "image/png" });
 
-            const mailSubject = "Mass & Balance - PDF";
+            const mailSubject = "Mass & Balance - Imagem";
             const mailBody = [
                 "Olá,",
                 "",
-                "Segue em anexo o PDF da página Mass & Balance.",
+                "Segue em anexo a imagem da página Mass & Balance.",
                 "",
                 "Cumprimentos."
             ].join("\n");
 
             const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
-            if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
                 await navigator.share({
                     title: "Mass & Balance",
-                    text: "Segue em anexo o PDF da página Mass & Balance.",
-                    files: [pdfFile]
+                    text: "Segue em anexo a imagem da página Mass & Balance.",
+                    files: [imageFile]
                 });
-                setPdfStatus("PDF partilhado com sucesso.");
+                setPdfStatus("Imagem partilhada com sucesso.");
                 return;
             }
 
-            const downloadUrl = URL.createObjectURL(pdfBlob);
+            const downloadUrl = URL.createObjectURL(imageBlob);
             const downloadLink = document.createElement("a");
             downloadLink.href = downloadUrl;
             downloadLink.download = fileName;
@@ -156,7 +156,7 @@ function initPdfEmailButton() {
             downloadLink.click();
             downloadLink.remove();
 
-            const previewUrl = URL.createObjectURL(pdfBlob);
+            const previewUrl = URL.createObjectURL(imageBlob);
             const previewWindow = window.open(previewUrl, "_blank", "noopener,noreferrer");
             if (previewWindow) {
                 setTimeout(() => URL.revokeObjectURL(previewUrl), 60000);
@@ -167,10 +167,10 @@ function initPdfEmailButton() {
 
             const mailto = `mailto:?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
             window.location.href = mailto;
-            setPdfStatus("PDF descarregado, preview aberto para impressão e email iniciado.");
+            setPdfStatus("");
         } catch (error) {
-            console.error("Erro ao gerar/enviar PDF:", error);
-            setPdfStatus("Não foi possível gerar o PDF. Tenta novamente.", true);
+            console.error("Erro ao gerar/enviar imagem:", error);
+            setPdfStatus("Não foi possível gerar a imagem. Tenta novamente.", true);
         } finally {
             btn.disabled = false;
         }
@@ -184,14 +184,12 @@ function setPdfStatus(message, isError = false) {
     statusEl.style.color = isError ? "#b00020" : "#2b353f";
 }
 
-async function createMassBalancePdfBlob() {
-    if (!window.html2canvas || !window.jspdf?.jsPDF) {
-        throw new Error("Bibliotecas PDF indisponíveis");
+async function createMassBalanceImageBlob() {
+    if (!window.html2canvas) {
+        throw new Error("Bibliotecas de captura indisponíveis");
     }
 
     const target = document.getElementById("pdfCaptureArea") || document.body;
-    const { jsPDF } = window.jspdf;
-
     const canvas = await window.html2canvas(target, {
         scale: 2,
         useCORS: true,
@@ -199,31 +197,12 @@ async function createMassBalancePdfBlob() {
         ignoreElements: element => element.id === "pdfEmailStatus"
     });
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const maxWidth = pageWidth - margin * 2;
-    const imgWidth = maxWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    const availablePageHeight = pageHeight - margin * 2;
-
-    let position = margin;
-    let heightLeft = imgHeight;
-
-    pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-    heightLeft -= availablePageHeight;
-
-    while (heightLeft > 0) {
-        pdf.addPage();
-        position = margin - (imgHeight - heightLeft);
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-        heightLeft -= availablePageHeight;
-    }
-
-    return pdf.output("blob");
+    return await new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error("Falha ao converter imagem"));
+        }, "image/png", 1);
+    });
 }
 
 
