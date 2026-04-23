@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let minutesBuffer = '';
     let history = [];
     let nextHistoryId = 1;
-    let editingId = null;
 
     const pad = (value) => String(value).padStart(2, '0');
 
@@ -79,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <small>Registo #${item.id}</small>
                 </div>
                 <div class="history-item-actions">
-                    <button type="button" data-action="edit" data-id="${item.id}">Editar</button>
                     <button type="button" data-action="delete" data-id="${item.id}">Apagar</button>
                 </div>
             `;
@@ -97,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         history = [];
         nextHistoryId = 1;
         clearBuffers();
-        finishEditing();
         renderHistory();
         renderTotal();
     };
@@ -106,43 +103,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const delta = parseBuffersToMinutes();
         if (delta <= 0) return;
 
-        if (editingId !== null) {
-            const target = history.find((item) => item.id === editingId);
-            if (!target) return;
-
-            target.minutes = delta;
-            finishEditing();
-        } else {
-            history.push({ id: nextHistoryId++, operator, minutes: delta });
-        }
+        history.push({ id: nextHistoryId++, operator, minutes: delta });
 
         clearBuffers();
         renderTotal();
         renderHistory();
     };
 
-    const startEditing = (id) => {
-        const target = history.find((item) => item.id === id);
-        if (!target) return;
-
-        editingId = id;
-        const hours = Math.floor(target.minutes / 60);
-        const minutes = target.minutes % 60;
-        hoursBuffer = String(hours);
-        minutesBuffer = String(minutes);
-        renderInputBuffers();
-    };
-
-    const finishEditing = () => {
-        editingId = null;
-    };
-
     const removeHistoryItem = (id) => {
         history = history.filter((item) => item.id !== id);
-        if (editingId === id) {
-            finishEditing();
-            clearBuffers();
-        }
         renderHistory();
         renderTotal();
     };
@@ -208,10 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const id = parseInt(target.dataset.id || '0', 10);
         if (!id) return;
-
-        if (target.dataset.action === 'edit') {
-            startEditing(id);
-        }
 
         if (target.dataset.action === 'delete') {
             removeHistoryItem(id);
