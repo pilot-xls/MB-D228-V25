@@ -108,270 +108,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- 5. Executa cálculo inicial ---
     exec_calculo();
-    initPdfEmailButton();
+    initMbPrintButton();
 });
 
-function initPdfEmailButton() {
-    const btn = document.getElementById("btnPdfEmail");
+function initMbPrintButton() {
+    const btn = document.getElementById("btnMbPrint");
     if (!btn) return;
 
     btn.addEventListener("click", async () => {
-        if (btn.disabled) return;
-        btn.disabled = true;
-        setPdfStatus("A gerar imagem PDF...");
-        let hasError = false;
-
         try {
             await exec_calculo();
-            const captureTarget = document.getElementById("pdfCaptureArea") || document.body;
-            await waitForPageReadyForCapture(captureTarget);
-            const imageBlob = await createMassBalanceImageBlob();
-            const nomeLeg = (document.getElementById("nomeLeg")?.innerText || "mass-balance")
-                .trim()
-                .replace(/[^\w.-]+/g, "_");
-            const fileName = `${nomeLeg || "mass-balance"}.png`;
-            const imageFile = new File([imageBlob], fileName, { type: "image/png" });
+            localStorage.setItem("mbPrintRequestedAt", String(Date.now()));
 
-            const mailSubject = "Mass & Balance - Imagem";
-            const mailBody = [
-                "Olá,",
-                "",
-                "Segue em anexo a imagem da página Mass & Balance.",
-                "",
-                "Cumprimentos."
-            ].join("\n");
+            const printUrl = new URL("mb-print.html", window.location.href).toString();
+            const newWindow = window.open(printUrl, "_blank", "noopener,noreferrer");
 
-            const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
-            if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-                await navigator.share({
-                    title: "Mass & Balance",
-                    text: "Segue em anexo a imagem da página Mass & Balance.",
-                    files: [imageFile]
-                });
-                return;
+            if (!newWindow) {
+                window.location.href = printUrl;
             }
-
-            const downloadUrl = URL.createObjectURL(imageBlob);
-            const downloadLink = document.createElement("a");
-            downloadLink.href = downloadUrl;
-            downloadLink.download = fileName;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            downloadLink.remove();
-
-            const previewUrl = URL.createObjectURL(imageBlob);
-            const previewWindow = window.open(previewUrl, "_blank", "noopener,noreferrer");
-            if (previewWindow) {
-                setTimeout(() => URL.revokeObjectURL(previewUrl), 60000);
-            } else {
-                URL.revokeObjectURL(previewUrl);
-            }
-            URL.revokeObjectURL(downloadUrl);
-
-            const mailto = `mailto:?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
-            window.location.href = mailto;
         } catch (error) {
-            console.error("Erro ao gerar/enviar imagem:", error);
-            hasError = true;
-            setPdfStatus("Tenta novamente.", true);
-        } finally {
-            btn.disabled = false;
-            if (!hasError) {
-                setPdfStatus("");
-            }
+            console.error("Erro ao abrir a página de impressão:", error);
+            alert("Não foi possível abrir a página de impressão.");
         }
     });
 }
-
-function setPdfStatus(message, isError = false) {
-    const statusEl = document.getElementById("pdfEmailStatus");
-    if (!statusEl) return;
-    statusEl.textContent = message;
-    statusEl.style.color = isError ? "#b00020" : "#2b353f";
-}
-
-async function createMassBalanceImageBlob() {
-    if (!window.html2canvas) {
-        throw new Error("Bibliotecas de captura indisponíveis");
-    }
-
-    const target = document.getElementById("pdfCaptureArea") || document.body;
-    const previousScrollX = window.scrollX;
-    const previousScrollY = window.scrollY;
-    target.scrollIntoView({ block: "start", inline: "nearest" });
-    await new Promise(resolve => requestAnimationFrame(resolve));
-
-    await waitForFontsReady();
-    await waitForImagesReady(target);
-    const targetRect = target.getBoundingClientRect();
-    const originalInputs = Array.from(target.querySelectorAll('input:not([type="hidden"])'));
-    const capturePaddingPx = Math.round((96 / 2.54) * 2); // 2 cm @96dpi
-
-    let canvas;
-    try {
-        canvas = await window.html2canvas(target, {
-            scale: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
-            useCORS: true,
-            foreignObjectRendering: false,
-            backgroundColor: "#ffffff",
-            scrollX: 0,
-            scrollY: 0,
-            width: Math.ceil(targetRect.width),
-            height: Math.ceil(targetRect.height),
-            imageTimeout: 15000,
-            ignoreElements: element => element.id === "pdfEmailStatus",
-            onclone: clonedDoc => {
-                const clonedTarget = clonedDoc.getElementById("pdfCaptureArea");
-                if (!clonedTarget) return;
-                const clonedWin = clonedDoc.defaultView;
-
-                // Remove navbar/header no documento clonado para não aparecer na captura.
-                clonedDoc.querySelectorAll("header, nav, #header").forEach(el => el.remove());
-
-                clonedTarget.style.width = `${targetRect.width}px`;
-                clonedTarget.style.maxWidth = "none";
-                clonedTarget.style.boxSizing = "border-box";
-                clonedTarget.style.padding = `${capturePaddingPx}px`;
-                clonedTarget.style.backgroundColor = "#fff";
-
-                const clonedHeading = clonedTarget.querySelector("#heading");
-                if (clonedHeading) {
-                    clonedHeading.style.display = "flex";
-                    clonedHeading.style.flexDirection = "column";
-                    clonedHeading.style.alignItems = "center";
-                    clonedHeading.style.justifyContent = "center";
-                    clonedHeading.style.marginTop = "0";
-                    clonedHeading.style.color = "#111";
-                }
-
-                const clonedAction = clonedTarget.querySelector(".mb-capture-actions");
-                if (clonedAction) clonedAction.remove();
-
-                const sourceImages = Array.from(target.querySelectorAll("img"));
-                const clonedImages = Array.from(clonedTarget.querySelectorAll("img"));
-                clonedImages.forEach((clonedImg, index) => {
-                    const sourceImg = sourceImages[index];
-                    if (!sourceImg) return;
-                    const resolvedSrc = sourceImg.currentSrc || sourceImg.src || "";
-                    if (resolvedSrc) clonedImg.src = resolvedSrc;
-                    clonedImg.removeAttribute("loading");
-                    clonedImg.style.width = sourceImg.getBoundingClientRect().width ? `${sourceImg.getBoundingClientRect().width}px` : clonedImg.style.width;
-                    clonedImg.style.height = "auto";
-                });
-
-                // Alguns elementos em mb.html têm font-size inline inválido (0px),
-                // o que faz o html2canvas ocultar texto na captura.
-                const textualEls = Array.from(clonedTarget.querySelectorAll("th, td, label, p, h2"));
-                textualEls.forEach(el => {
-                    if (!clonedWin) return;
-                    const style = clonedWin.getComputedStyle(el);
-                    const currentFontSize = parseFloat(style.fontSize) || 0;
-                    if (currentFontSize > 1) return;
-
-                    if (el.tagName === "H2") {
-                        el.style.fontSize = "1.5rem";
-                        el.style.fontWeight = "700";
-                    } else if (el.tagName === "TH") {
-                        el.style.fontSize = "0.95rem";
-                        el.style.fontWeight = "600";
-                    } else {
-                        el.style.fontSize = "0.95rem";
-                        el.style.fontWeight = style.fontWeight || "400";
-                    }
-                    el.style.lineHeight = "1.25";
-                });
-
-                const clonedInputs = Array.from(clonedTarget.querySelectorAll('input:not([type="hidden"])'));
-                clonedInputs.forEach((clonedInput, index) => {
-                    const sourceInput = originalInputs[index];
-                    if (!sourceInput) return;
-
-                    const computed = window.getComputedStyle(sourceInput);
-                    const valueEl = clonedDoc.createElement("div");
-                    valueEl.textContent = sourceInput.value || " ";
-                    valueEl.style.boxSizing = "border-box";
-                    valueEl.style.display = "flex";
-                    valueEl.style.alignItems = "center";
-                    valueEl.style.justifyContent = computed.textAlign === "left" ? "flex-start" : computed.textAlign === "right" ? "flex-end" : "center";
-                    valueEl.style.width = computed.width;
-                    valueEl.style.height = computed.height;
-                    valueEl.style.padding = computed.padding;
-                    valueEl.style.margin = computed.margin;
-                    valueEl.style.border = computed.border;
-                    valueEl.style.borderRadius = computed.borderRadius;
-                    valueEl.style.background = computed.backgroundColor;
-                    valueEl.style.fontFamily = computed.fontFamily;
-                    valueEl.style.fontSize = `${Math.max(14, parseFloat(computed.fontSize) || 0)}px`;
-                    valueEl.style.fontWeight = computed.fontWeight;
-                    valueEl.style.letterSpacing = computed.letterSpacing;
-                    valueEl.style.lineHeight = (parseFloat(computed.lineHeight) || 18) > 0
-                        ? computed.lineHeight
-                        : "1.2";
-                    valueEl.style.color = computed.color;
-
-                    clonedInput.replaceWith(valueEl);
-                });
-            }
-        });
-    } finally {
-        window.scrollTo(previousScrollX, previousScrollY);
-    }
-
-    return await new Promise((resolve, reject) => {
-        canvas.toBlob(blob => {
-            if (blob) resolve(blob);
-            else reject(new Error("Falha ao converter imagem"));
-        }, "image/png", 1);
-    });
-}
-
-async function waitForFontsReady() {
-    if (!document.fonts || typeof document.fonts.ready === "undefined") return;
-    try {
-        await document.fonts.ready;
-    } catch (error) {
-        console.warn("Não foi possível aguardar fonts.ready:", error);
-    }
-}
-
-async function waitForPageReadyForCapture(container) {
-    if (document.readyState !== "complete") {
-        await new Promise(resolve => window.addEventListener("load", resolve, { once: true }));
-    }
-
-    await waitForFontsReady();
-    await waitForImagesReady(container);
-
-    const images = Array.from(container.querySelectorAll("img"));
-    await Promise.allSettled(
-        images.map(img => {
-            if (img.complete && img.naturalWidth > 0 && typeof img.decode === "function") {
-                return img.decode().catch(() => undefined);
-            }
-            return Promise.resolve();
-        })
-    );
-
-    // Espera dois frames para garantir layout final antes do screenshot.
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-}
-
-async function waitForImagesReady(container) {
-    const images = Array.from(container.querySelectorAll("img"));
-    const pending = images.filter(img => !(img.complete && img.naturalWidth > 0));
-    if (!pending.length) return;
-
-    await Promise.allSettled(
-        pending.map(
-            img =>
-                new Promise(resolve => {
-                    img.addEventListener("load", resolve, { once: true });
-                    img.addEventListener("error", resolve, { once: true });
-                })
-        )
-    );
-}
-
 
 // =====================================================
 // Função de formatação numérica
