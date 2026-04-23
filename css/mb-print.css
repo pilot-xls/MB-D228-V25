@@ -186,7 +186,7 @@ body.mb-print-body {
     .mb-print-page {
         width: 190mm !important;
         margin: 0 auto !important;
-        padding: 2mm !important;
+        padding: 3mm 2mm 1mm 2mm !important;
         min-height: 0 !important;
         height: auto !important;
         box-shadow: none !important;
@@ -257,9 +257,9 @@ body.mb-print-body {
     .mb-print-page #loadsheet-img {
         position: relative !important;
         display: inline-block !important;
-        width: 112mm !important;
-        max-width: 112mm !important;
-        margin: 0 !important;
+        width: 122mm !important;
+        max-width: 122mm !important;
+        margin: 1mm 0 0 0 !important;
         overflow: hidden !important;
         vertical-align: top !important;
     }
@@ -279,7 +279,7 @@ body.mb-print-body {
     }
 
     .mb-print-footer {
-        margin: 1mm 0 0 0 !important;
+        margin: 0.5mm 0 0 0 !important;
         padding: 0 !important;
         display: flex !important;
         justify-content: center !important;
@@ -287,7 +287,7 @@ body.mb-print-body {
     }
 
     .mb-print-footer img {
-        width: 18mm !important;
+        width: 20mm !important;
         height: auto !important;
     }
 }
