@@ -202,7 +202,7 @@ async function createMassBalanceImageBlob() {
     await waitForImagesReady(target);
     const targetRect = target.getBoundingClientRect();
     const originalInputs = Array.from(target.querySelectorAll('input:not([type="hidden"])'));
-    const capturePaddingPx = Math.round((96 / 2.54) * 0.5); // 0,5 cm @96dpi
+    const capturePaddingPx = Math.round((96 / 2.54) * 2); // 2 cm @96dpi
 
     let canvas;
     try {
@@ -220,6 +220,7 @@ async function createMassBalanceImageBlob() {
             onclone: clonedDoc => {
                 const clonedTarget = clonedDoc.getElementById("pdfCaptureArea");
                 if (!clonedTarget) return;
+                const clonedWin = clonedDoc.defaultView;
 
                 clonedTarget.style.width = `${targetRect.width}px`;
                 clonedTarget.style.maxWidth = "none";
@@ -242,6 +243,28 @@ async function createMassBalanceImageBlob() {
                     clonedImg.style.height = "auto";
                 });
 
+                // Alguns elementos em mb.html têm font-size inline inválido (0px),
+                // o que faz o html2canvas ocultar texto na captura.
+                const textualEls = Array.from(clonedTarget.querySelectorAll("th, td, label, p, h2"));
+                textualEls.forEach(el => {
+                    if (!clonedWin) return;
+                    const style = clonedWin.getComputedStyle(el);
+                    const currentFontSize = parseFloat(style.fontSize) || 0;
+                    if (currentFontSize > 1) return;
+
+                    if (el.tagName === "H2") {
+                        el.style.fontSize = "1.5rem";
+                        el.style.fontWeight = "700";
+                    } else if (el.tagName === "TH") {
+                        el.style.fontSize = "0.95rem";
+                        el.style.fontWeight = "600";
+                    } else {
+                        el.style.fontSize = "0.95rem";
+                        el.style.fontWeight = style.fontWeight || "400";
+                    }
+                    el.style.lineHeight = "1.25";
+                });
+
                 const clonedInputs = Array.from(clonedTarget.querySelectorAll('input:not([type="hidden"])'));
                 clonedInputs.forEach((clonedInput, index) => {
                     const sourceInput = originalInputs[index];
@@ -261,11 +284,13 @@ async function createMassBalanceImageBlob() {
                     valueEl.style.border = computed.border;
                     valueEl.style.borderRadius = computed.borderRadius;
                     valueEl.style.background = computed.backgroundColor;
-                    valueEl.style.font = computed.font;
-                    valueEl.style.fontSize = computed.fontSize;
+                    valueEl.style.fontFamily = computed.fontFamily;
+                    valueEl.style.fontSize = `${Math.max(14, parseFloat(computed.fontSize) || 0)}px`;
                     valueEl.style.fontWeight = computed.fontWeight;
                     valueEl.style.letterSpacing = computed.letterSpacing;
-                    valueEl.style.lineHeight = computed.lineHeight;
+                    valueEl.style.lineHeight = (parseFloat(computed.lineHeight) || 18) > 0
+                        ? computed.lineHeight
+                        : "1.2";
                     valueEl.style.color = computed.color;
 
                     clonedInput.replaceWith(valueEl);
