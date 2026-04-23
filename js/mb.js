@@ -195,21 +195,20 @@ async function createMassBalancePdfBlob() {
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const margin = 8;
+    const maxWidth = pageWidth - margin * 2;
+    const maxHeight = pageHeight - margin * 2;
 
-    let heightLeft = imgHeight;
-    let position = 0;
+    const widthRatio = maxWidth / canvas.width;
+    const heightRatio = maxHeight / canvas.height;
+    const ratio = Math.min(widthRatio, heightRatio);
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    const imgWidth = canvas.width * ratio;
+    const imgHeight = canvas.height * ratio;
+    const offsetX = (pageWidth - imgWidth) / 2;
+    const offsetY = (pageHeight - imgHeight) / 2;
 
-    while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-    }
+    pdf.addImage(imgData, "PNG", offsetX, offsetY, imgWidth, imgHeight);
 
     return pdf.output("blob");
 }
