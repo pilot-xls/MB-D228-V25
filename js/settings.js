@@ -22,6 +22,26 @@ const manInput = document.getElementById("std-man");
 const womanInput = document.getElementById("std-woman");
 const childInput = document.getElementById("std-child");
 
+function normalizeDecimalSeparator(inputEl) {
+  if (!inputEl) return;
+  const nextValue = inputEl.value.replace(/,/g, ".");
+  if (nextValue !== inputEl.value) {
+    inputEl.value = nextValue;
+  }
+}
+
+function setupDecimalSeparatorNormalization(scopeEl) {
+  if (!scopeEl) return;
+  const decimalInputs = scopeEl.querySelectorAll('input[inputmode="decimal"]');
+  decimalInputs.forEach(inputEl => {
+    inputEl.addEventListener("input", () => normalizeDecimalSeparator(inputEl));
+    inputEl.addEventListener("blur", () => normalizeDecimalSeparator(inputEl));
+  });
+}
+
+setupDecimalSeparatorNormalization(editForm);
+setupDecimalSeparatorNormalization(addForm);
+
 // inicializar dados
 (async () => {
   // vai buscar os dados actuais já tratados pela função
