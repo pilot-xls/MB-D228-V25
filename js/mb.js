@@ -170,7 +170,7 @@ function initPdfEmailButton() {
         } catch (error) {
             console.error("Erro ao gerar/enviar imagem:", error);
             hasError = true;
-            setPdfStatus("Não foi possível gerar a imagem. Tenta novamente.", true);
+            setPdfStatus("Tenta novamente.", true);
         } finally {
             btn.disabled = false;
             if (!hasError) {
