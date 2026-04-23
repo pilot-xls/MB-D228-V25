@@ -186,7 +186,7 @@ body.mb-print-body {
     .mb-print-page {
         width: 190mm !important;
         margin: 0 auto !important;
-        padding: 0.5mm 2mm 1mm 2mm !important;
+        padding: 0mm 2mm 0mm 2mm !important;
         min-height: 0 !important;
         height: auto !important;
         box-shadow: none !important;
