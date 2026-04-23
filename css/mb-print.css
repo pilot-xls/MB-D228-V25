@@ -261,4 +261,63 @@ body.mb-print-body {
     }
 }
 
+@media print and (max-width: 768px) {
+    .mb-print-page {
+        width: 190mm;
+        min-height: 277mm;
+        margin: 0 auto;
+        padding: 3mm;
+        gap: 2mm;
+        overflow: hidden;
+    }
+
+    .mb-print-page #heading h2 {
+        font-size: 13pt;
+        margin: 0 0 1px 0;
+    }
+
+    .mb-print-page #heading p {
+        font-size: 8pt;
+        margin: 0;
+    }
+
+    .mb-print-page .mb-table {
+        margin-bottom: 2mm;
+    }
+
+    .mb-print-page .mb-table th,
+    .mb-print-page .mb-table td,
+    .mb-print-page .mb-table label,
+    .mb-print-page .mb-table input,
+    .mb-print-page .mb-table .mb-static-value {
+        font-size: 7.2pt !important;
+        line-height: 1 !important;
+    }
+
+    .mb-print-page .mb-table th {
+        padding: 1.2mm 1mm;
+    }
+
+    .mb-print-page .mb-table td {
+        padding: 0.8mm 1mm;
+    }
+
+    .mb-print-page .mb-table tbody tr {
+        height: 6mm;
+    }
+
+    .mb-print-page #loadsheet-img {
+        width: 124mm;
+        max-width: 124mm;
+        margin: 0;
+    }
+
+    .mb-print-footer {
+        padding-top: 0.5mm;
+    }
+
+    .mb-print-footer img {
+        width: 22mm;
+    }
+}
 
