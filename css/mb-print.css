@@ -159,7 +159,7 @@ body.mb-print-body {
 
 @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 0mm;
 }
 
 @media print {
