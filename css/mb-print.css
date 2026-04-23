@@ -266,5 +266,9 @@ body.mb-print-body {
         transform: scale(0.80);
         transform-origin: top center;
     }
+    .mb-print-footer {
+        margin-top: 1mm;
+        padding-top: 0;
+    }
 }
 
