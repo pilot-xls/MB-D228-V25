@@ -145,11 +145,11 @@ body.mb-print-body {
 }
 
 .mb-print-footer {
-    margin-top: auto;
+    margin-top: 1mm;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-top: 2mm;
+    padding-top: 1mm;
 }
 
 .mb-print-footer img {
@@ -263,31 +263,53 @@ body.mb-print-body {
 
 
 @media print and (max-width: 768px) {
+    html,
+    body {
+        width: 210mm;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        overflow: visible;
+    }
+
+    .mb-print-toolbar {
+        display: none !important;
+    }
+
     .mb-print-page {
         width: 190mm;
-        min-height: 277mm;
+        min-height: 0;
+        height: auto;
         margin: 0 auto;
         padding: 2mm;
-        gap: 1.5mm;
-        overflow: hidden;
+        gap: 1mm;
+        overflow: visible;
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
 
     .mb-print-page #heading {
-        margin: 0 0 1mm 0;
+        margin: 0 0 0.5mm 0;
     }
 
     .mb-print-page #heading h2 {
-        font-size: 12pt;
-        margin: 0 0 1px 0;
-    }
-
-    .mb-print-page #heading p {
-        font-size: 7.5pt;
+        font-size: 11pt;
         margin: 0;
     }
 
+    .mb-print-page #heading p {
+        font-size: 7pt;
+        margin: 0;
+    }
+
+    #mbPrintTimestamp {
+        font-size: 7pt;
+        margin: 0 0 1mm 0;
+    }
+
     .mb-print-page .mb-table {
-        margin-bottom: 1.5mm;
+        margin: 0 0 1mm 0;
     }
 
     .mb-print-page .mb-table th,
@@ -295,25 +317,25 @@ body.mb-print-body {
     .mb-print-page .mb-table label,
     .mb-print-page .mb-table input,
     .mb-print-page .mb-table .mb-static-value {
-        font-size: 6.8pt !important;
+        font-size: 6.4pt !important;
         line-height: 1 !important;
     }
 
     .mb-print-page .mb-table th {
-        padding: 1mm 0.8mm;
+        padding: 0.8mm 0.6mm;
     }
 
     .mb-print-page .mb-table td {
-        padding: 0.6mm 0.8mm;
+        padding: 0.5mm 0.6mm;
     }
 
     .mb-print-page .mb-table tbody tr {
-        height: 5.4mm;
+        height: 5mm;
     }
 
     .mb-print-page #loadsheet-img {
-        width: 118mm;
-        max-width: 118mm;
+        width: 112mm;
+        max-width: 112mm;
         margin: 0;
     }
 
@@ -323,6 +345,6 @@ body.mb-print-body {
     }
 
     .mb-print-footer img {
-        width: 20mm;
+        width: 18mm;
     }
 }
