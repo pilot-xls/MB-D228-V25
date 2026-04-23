@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             atualizarDataHoraImpressao();
 
             // Abre o diálogo de impressão do browser
-            window.print();
+            //window.print();
         }
     } catch (error) {
         // Mostra erro na consola caso algo falhe na preparação da página
