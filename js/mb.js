@@ -191,6 +191,7 @@ async function createMassBalanceImageBlob() {
 
     const target = document.getElementById("pdfCaptureArea") || document.body;
     await waitForFontsReady();
+    await waitForImagesReady(target);
     const targetRect = target.getBoundingClientRect();
     const originalInputs = Array.from(target.querySelectorAll('input:not([type="hidden"])'));
 
@@ -199,6 +200,11 @@ async function createMassBalanceImageBlob() {
         useCORS: true,
         foreignObjectRendering: true,
         backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        width: Math.ceil(targetRect.width),
+        height: Math.ceil(targetRect.height),
+        imageTimeout: 15000,
         ignoreElements: element => element.id === "pdfEmailStatus",
         onclone: clonedDoc => {
             const clonedTarget = clonedDoc.getElementById("pdfCaptureArea");
@@ -209,6 +215,18 @@ async function createMassBalanceImageBlob() {
 
             const clonedAction = clonedTarget.querySelector(".mb-capture-actions");
             if (clonedAction) clonedAction.remove();
+
+            const sourceImages = Array.from(target.querySelectorAll("img"));
+            const clonedImages = Array.from(clonedTarget.querySelectorAll("img"));
+            clonedImages.forEach((clonedImg, index) => {
+                const sourceImg = sourceImages[index];
+                if (!sourceImg) return;
+                const resolvedSrc = sourceImg.currentSrc || sourceImg.src || "";
+                if (resolvedSrc) clonedImg.src = resolvedSrc;
+                clonedImg.removeAttribute("loading");
+                clonedImg.style.width = sourceImg.getBoundingClientRect().width ? `${sourceImg.getBoundingClientRect().width}px` : clonedImg.style.width;
+                clonedImg.style.height = "auto";
+            });
 
             const clonedInputs = Array.from(clonedTarget.querySelectorAll('input:not([type="hidden"])'));
             clonedInputs.forEach((clonedInput, index) => {
@@ -256,6 +274,22 @@ async function waitForFontsReady() {
     } catch (error) {
         console.warn("Não foi possível aguardar fonts.ready:", error);
     }
+}
+
+async function waitForImagesReady(container) {
+    const images = Array.from(container.querySelectorAll("img"));
+    const pending = images.filter(img => !(img.complete && img.naturalWidth > 0));
+    if (!pending.length) return;
+
+    await Promise.allSettled(
+        pending.map(
+            img =>
+                new Promise(resolve => {
+                    img.addEventListener("load", resolve, { once: true });
+                    img.addEventListener("error", resolve, { once: true });
+                })
+        )
+    );
 }
 
 
