@@ -137,7 +137,8 @@ function initPdfEmailButton() {
                 "Cumprimentos."
             ].join("\n");
 
-            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+            if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                 await navigator.share({
                     title: "Mass & Balance",
                     text: "Segue em anexo o PDF da página Mass & Balance.",
@@ -154,11 +155,19 @@ function initPdfEmailButton() {
             document.body.appendChild(downloadLink);
             downloadLink.click();
             downloadLink.remove();
+
+            const previewUrl = URL.createObjectURL(pdfBlob);
+            const previewWindow = window.open(previewUrl, "_blank", "noopener,noreferrer");
+            if (previewWindow) {
+                setTimeout(() => URL.revokeObjectURL(previewUrl), 60000);
+            } else {
+                URL.revokeObjectURL(previewUrl);
+            }
             URL.revokeObjectURL(downloadUrl);
 
             const mailto = `mailto:?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
             window.location.href = mailto;
-            setPdfStatus("PDF descarregado. O email foi aberto para anexar o ficheiro.");
+            setPdfStatus("PDF descarregado, preview aberto para impressão e email iniciado.");
         } catch (error) {
             console.error("Erro ao gerar/enviar PDF:", error);
             setPdfStatus("Não foi possível gerar o PDF. Tenta novamente.", true);
