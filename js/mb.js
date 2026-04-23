@@ -189,7 +189,7 @@ async function createMassBalancePdfBlob() {
         throw new Error("Bibliotecas PDF indisponíveis");
     }
 
-    const target = document.body;
+    const target = document.getElementById("pdfCaptureArea") || document.body;
     const { jsPDF } = window.jspdf;
 
     const canvas = await window.html2canvas(target, {
@@ -204,20 +204,24 @@ async function createMassBalancePdfBlob() {
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 8;
+    const margin = 10;
     const maxWidth = pageWidth - margin * 2;
-    const maxHeight = pageHeight - margin * 2;
+    const imgWidth = maxWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const availablePageHeight = pageHeight - margin * 2;
 
-    const widthRatio = maxWidth / canvas.width;
-    const heightRatio = maxHeight / canvas.height;
-    const ratio = Math.min(widthRatio, heightRatio);
+    let position = margin;
+    let heightLeft = imgHeight;
 
-    const imgWidth = canvas.width * ratio;
-    const imgHeight = canvas.height * ratio;
-    const offsetX = (pageWidth - imgWidth) / 2;
-    const offsetY = (pageHeight - imgHeight) / 2;
+    pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+    heightLeft -= availablePageHeight;
 
-    pdf.addImage(imgData, "PNG", offsetX, offsetY, imgWidth, imgHeight);
+    while (heightLeft > 0) {
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= availablePageHeight;
+    }
 
     return pdf.output("blob");
 }
