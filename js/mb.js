@@ -122,6 +122,9 @@ function initPdfEmailButton() {
         let hasError = false;
 
         try {
+            await exec_calculo();
+            const captureTarget = document.getElementById("pdfCaptureArea") || document.body;
+            await waitForPageReadyForCapture(captureTarget);
             const imageBlob = await createMassBalanceImageBlob();
             const nomeLeg = (document.getElementById("nomeLeg")?.innerText || "mass-balance")
                 .trim()
@@ -222,11 +225,24 @@ async function createMassBalanceImageBlob() {
                 if (!clonedTarget) return;
                 const clonedWin = clonedDoc.defaultView;
 
+                // Remove navbar/header no documento clonado para não aparecer na captura.
+                clonedDoc.querySelectorAll("header, nav, #header").forEach(el => el.remove());
+
                 clonedTarget.style.width = `${targetRect.width}px`;
                 clonedTarget.style.maxWidth = "none";
                 clonedTarget.style.boxSizing = "border-box";
                 clonedTarget.style.padding = `${capturePaddingPx}px`;
                 clonedTarget.style.backgroundColor = "#fff";
+
+                const clonedHeading = clonedTarget.querySelector("#heading");
+                if (clonedHeading) {
+                    clonedHeading.style.display = "flex";
+                    clonedHeading.style.flexDirection = "column";
+                    clonedHeading.style.alignItems = "center";
+                    clonedHeading.style.justifyContent = "center";
+                    clonedHeading.style.marginTop = "0";
+                    clonedHeading.style.color = "#111";
+                }
 
                 const clonedAction = clonedTarget.querySelector(".mb-capture-actions");
                 if (clonedAction) clonedAction.remove();
@@ -316,6 +332,28 @@ async function waitForFontsReady() {
     } catch (error) {
         console.warn("Não foi possível aguardar fonts.ready:", error);
     }
+}
+
+async function waitForPageReadyForCapture(container) {
+    if (document.readyState !== "complete") {
+        await new Promise(resolve => window.addEventListener("load", resolve, { once: true }));
+    }
+
+    await waitForFontsReady();
+    await waitForImagesReady(container);
+
+    const images = Array.from(container.querySelectorAll("img"));
+    await Promise.allSettled(
+        images.map(img => {
+            if (img.complete && img.naturalWidth > 0 && typeof img.decode === "function") {
+                return img.decode().catch(() => undefined);
+            }
+            return Promise.resolve();
+        })
+    );
+
+    // Espera dois frames para garantir layout final antes do screenshot.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
 async function waitForImagesReady(container) {
