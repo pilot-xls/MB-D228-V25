@@ -28,10 +28,10 @@ body.mb-print-body {
 }
 
 .mb-print-page {
-    width: 190mm;
-    min-height: 273mm;
+    width: min(100%, 190mm);
+    min-height: auto;
     margin: 12px auto 24px;
-    padding: 8mm;
+    padding: 12px;
     box-sizing: border-box;
     background: #fff;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
@@ -39,7 +39,7 @@ body.mb-print-body {
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
-    gap: 5mm;
+    gap: 12px;
     overflow: hidden;
 }
 
