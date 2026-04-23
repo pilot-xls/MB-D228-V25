@@ -108,7 +108,111 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- 5. Executa cálculo inicial ---
     exec_calculo();
+    initPdfEmailButton();
 });
+
+function initPdfEmailButton() {
+    const btn = document.getElementById("btnPdfEmail");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        setPdfStatus("A gerar PDF...");
+
+        try {
+            const pdfBlob = await createMassBalancePdfBlob();
+            const nomeLeg = (document.getElementById("nomeLeg")?.innerText || "mass-balance")
+                .trim()
+                .replace(/[^\w.-]+/g, "_");
+            const fileName = `${nomeLeg || "mass-balance"}.pdf`;
+            const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+            const mailSubject = "Mass & Balance - PDF";
+            const mailBody = [
+                "Olá,",
+                "",
+                "Segue em anexo o PDF da página Mass & Balance.",
+                "",
+                "Cumprimentos."
+            ].join("\n");
+
+            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                await navigator.share({
+                    title: "Mass & Balance",
+                    text: "Segue em anexo o PDF da página Mass & Balance.",
+                    files: [pdfFile]
+                });
+                setPdfStatus("PDF partilhado com sucesso.");
+                return;
+            }
+
+            const downloadUrl = URL.createObjectURL(pdfBlob);
+            const downloadLink = document.createElement("a");
+            downloadLink.href = downloadUrl;
+            downloadLink.download = fileName;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            URL.revokeObjectURL(downloadUrl);
+
+            const mailto = `mailto:?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+            window.location.href = mailto;
+            setPdfStatus("PDF descarregado. O email foi aberto para anexar o ficheiro.");
+        } catch (error) {
+            console.error("Erro ao gerar/enviar PDF:", error);
+            setPdfStatus("Não foi possível gerar o PDF. Tenta novamente.", true);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
+
+function setPdfStatus(message, isError = false) {
+    const statusEl = document.getElementById("pdfEmailStatus");
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.style.color = isError ? "#b00020" : "#2b353f";
+}
+
+async function createMassBalancePdfBlob() {
+    if (!window.html2canvas || !window.jspdf?.jsPDF) {
+        throw new Error("Bibliotecas PDF indisponíveis");
+    }
+
+    const target = document.body;
+    const { jsPDF } = window.jspdf;
+
+    const canvas = await window.html2canvas(target, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        ignoreElements: element => element.id === "pdfEmailStatus"
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+    }
+
+    return pdf.output("blob");
+}
 
 
 // =====================================================
@@ -609,4 +713,3 @@ function desenharPontos(resultados) {
         if (clickedOutside) modal.close();
     });
 })();
-

@@ -120,8 +120,14 @@
         <div style="display: flex; justify-content: space-around; align-items: flex-end; margin-top: 40px; margin-bottom: 90px; border-top-width: 1px; border-top-style: inset; padding-top: 25px;">
             <img src="img/sevenair.png" loading="lazy" style="width: 200px;">
         </div>
+        <div class="mb-pdf-actions">
+            <button id="btnPdfEmail" type="button" class="btn mb-pdf-btn">Gerar PDF e enviar por email</button>
+            <p id="pdfEmailStatus" class="mb-pdf-status" aria-live="polite"></p>
+        </div>
         <script src="js/general.js"></script>         
         <script src="js/dataLoader.js"></script>         
+        <script src="js/vendor/html2canvas.min.js" defer onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';"></script>
+        <script src="js/vendor/jspdf.umd.min.js" defer onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';"></script>
         <script src="js/mb.js"></script>         
     </body>     
 </html>
