@@ -1,4 +1,4 @@
-const CACHE_NAME = 'd228-cache-v1.4.1';
+const CACHE_NAME = 'd228-cache-v1.4.2';
 const APP_SHELL_FALLBACK = './index.html';
 const NETWORK_TIMEOUT_MS = 4000;
 
