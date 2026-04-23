@@ -118,7 +118,8 @@ function initPdfEmailButton() {
     btn.addEventListener("click", async () => {
         if (btn.disabled) return;
         btn.disabled = true;
-        setPdfStatus("A gerar imagem...");
+        setPdfStatus("A gerar imagem PDF...");
+        let hasError = false;
 
         try {
             const imageBlob = await createMassBalanceImageBlob();
@@ -144,7 +145,6 @@ function initPdfEmailButton() {
                     text: "Segue em anexo a imagem da página Mass & Balance.",
                     files: [imageFile]
                 });
-                setPdfStatus("Imagem partilhada com sucesso.");
                 return;
             }
 
@@ -167,12 +167,15 @@ function initPdfEmailButton() {
 
             const mailto = `mailto:?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
             window.location.href = mailto;
-            setPdfStatus("");
         } catch (error) {
             console.error("Erro ao gerar/enviar imagem:", error);
+            hasError = true;
             setPdfStatus("Não foi possível gerar a imagem. Tenta novamente.", true);
         } finally {
             btn.disabled = false;
+            if (!hasError) {
+                setPdfStatus("");
+            }
         }
     });
 }
