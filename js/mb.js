@@ -190,11 +190,55 @@ async function createMassBalanceImageBlob() {
     }
 
     const target = document.getElementById("pdfCaptureArea") || document.body;
+    await waitForFontsReady();
+    const targetRect = target.getBoundingClientRect();
+    const originalInputs = Array.from(target.querySelectorAll('input:not([type="hidden"])'));
+
     const canvas = await window.html2canvas(target, {
-        scale: 2,
+        scale: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
         useCORS: true,
+        foreignObjectRendering: true,
         backgroundColor: "#ffffff",
-        ignoreElements: element => element.id === "pdfEmailStatus"
+        ignoreElements: element => element.id === "pdfEmailStatus",
+        onclone: clonedDoc => {
+            const clonedTarget = clonedDoc.getElementById("pdfCaptureArea");
+            if (!clonedTarget) return;
+
+            clonedTarget.style.width = `${targetRect.width}px`;
+            clonedTarget.style.maxWidth = "none";
+
+            const clonedAction = clonedTarget.querySelector(".mb-capture-actions");
+            if (clonedAction) clonedAction.remove();
+
+            const clonedInputs = Array.from(clonedTarget.querySelectorAll('input:not([type="hidden"])'));
+            clonedInputs.forEach((clonedInput, index) => {
+                const sourceInput = originalInputs[index];
+                if (!sourceInput) return;
+
+                const computed = window.getComputedStyle(sourceInput);
+                const valueEl = clonedDoc.createElement("div");
+                valueEl.textContent = sourceInput.value || " ";
+                valueEl.style.boxSizing = "border-box";
+                valueEl.style.display = "flex";
+                valueEl.style.alignItems = "center";
+                valueEl.style.justifyContent = computed.textAlign === "left" ? "flex-start" : computed.textAlign === "right" ? "flex-end" : "center";
+                valueEl.style.width = computed.width;
+                valueEl.style.height = computed.height;
+                valueEl.style.padding = computed.padding;
+                valueEl.style.margin = computed.margin;
+                valueEl.style.border = computed.border;
+                valueEl.style.borderRadius = computed.borderRadius;
+                valueEl.style.background = computed.backgroundColor;
+                valueEl.style.font = computed.font;
+                valueEl.style.fontSize = computed.fontSize;
+                valueEl.style.fontWeight = computed.fontWeight;
+                valueEl.style.letterSpacing = computed.letterSpacing;
+                valueEl.style.lineHeight = computed.lineHeight;
+                valueEl.style.color = computed.color;
+
+                clonedInput.replaceWith(valueEl);
+            });
+        }
     });
 
     return await new Promise((resolve, reject) => {
@@ -203,6 +247,15 @@ async function createMassBalanceImageBlob() {
             else reject(new Error("Falha ao converter imagem"));
         }, "image/png", 1);
     });
+}
+
+async function waitForFontsReady() {
+    if (!document.fonts || typeof document.fonts.ready === "undefined") return;
+    try {
+        await document.fonts.ready;
+    } catch (error) {
+        console.warn("Não foi possível aguardar fonts.ready:", error);
+    }
 }
 
 
