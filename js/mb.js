@@ -193,74 +193,88 @@ async function createMassBalanceImageBlob() {
     }
 
     const target = document.getElementById("pdfCaptureArea") || document.body;
+    const previousScrollX = window.scrollX;
+    const previousScrollY = window.scrollY;
+    target.scrollIntoView({ block: "start", inline: "nearest" });
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
     await waitForFontsReady();
     await waitForImagesReady(target);
     const targetRect = target.getBoundingClientRect();
     const originalInputs = Array.from(target.querySelectorAll('input:not([type="hidden"])'));
+    const capturePaddingPx = Math.round((96 / 2.54) * 0.5); // 0,5 cm @96dpi
 
-    const canvas = await window.html2canvas(target, {
-        scale: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
-        useCORS: true,
-        foreignObjectRendering: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        width: Math.ceil(targetRect.width),
-        height: Math.ceil(targetRect.height),
-        imageTimeout: 15000,
-        ignoreElements: element => element.id === "pdfEmailStatus",
-        onclone: clonedDoc => {
-            const clonedTarget = clonedDoc.getElementById("pdfCaptureArea");
-            if (!clonedTarget) return;
+    let canvas;
+    try {
+        canvas = await window.html2canvas(target, {
+            scale: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
+            useCORS: true,
+            foreignObjectRendering: false,
+            backgroundColor: "#ffffff",
+            scrollX: 0,
+            scrollY: 0,
+            width: Math.ceil(targetRect.width),
+            height: Math.ceil(targetRect.height),
+            imageTimeout: 15000,
+            ignoreElements: element => element.id === "pdfEmailStatus",
+            onclone: clonedDoc => {
+                const clonedTarget = clonedDoc.getElementById("pdfCaptureArea");
+                if (!clonedTarget) return;
 
-            clonedTarget.style.width = `${targetRect.width}px`;
-            clonedTarget.style.maxWidth = "none";
+                clonedTarget.style.width = `${targetRect.width}px`;
+                clonedTarget.style.maxWidth = "none";
+                clonedTarget.style.boxSizing = "border-box";
+                clonedTarget.style.padding = `${capturePaddingPx}px`;
+                clonedTarget.style.backgroundColor = "#fff";
 
-            const clonedAction = clonedTarget.querySelector(".mb-capture-actions");
-            if (clonedAction) clonedAction.remove();
+                const clonedAction = clonedTarget.querySelector(".mb-capture-actions");
+                if (clonedAction) clonedAction.remove();
 
-            const sourceImages = Array.from(target.querySelectorAll("img"));
-            const clonedImages = Array.from(clonedTarget.querySelectorAll("img"));
-            clonedImages.forEach((clonedImg, index) => {
-                const sourceImg = sourceImages[index];
-                if (!sourceImg) return;
-                const resolvedSrc = sourceImg.currentSrc || sourceImg.src || "";
-                if (resolvedSrc) clonedImg.src = resolvedSrc;
-                clonedImg.removeAttribute("loading");
-                clonedImg.style.width = sourceImg.getBoundingClientRect().width ? `${sourceImg.getBoundingClientRect().width}px` : clonedImg.style.width;
-                clonedImg.style.height = "auto";
-            });
+                const sourceImages = Array.from(target.querySelectorAll("img"));
+                const clonedImages = Array.from(clonedTarget.querySelectorAll("img"));
+                clonedImages.forEach((clonedImg, index) => {
+                    const sourceImg = sourceImages[index];
+                    if (!sourceImg) return;
+                    const resolvedSrc = sourceImg.currentSrc || sourceImg.src || "";
+                    if (resolvedSrc) clonedImg.src = resolvedSrc;
+                    clonedImg.removeAttribute("loading");
+                    clonedImg.style.width = sourceImg.getBoundingClientRect().width ? `${sourceImg.getBoundingClientRect().width}px` : clonedImg.style.width;
+                    clonedImg.style.height = "auto";
+                });
 
-            const clonedInputs = Array.from(clonedTarget.querySelectorAll('input:not([type="hidden"])'));
-            clonedInputs.forEach((clonedInput, index) => {
-                const sourceInput = originalInputs[index];
-                if (!sourceInput) return;
+                const clonedInputs = Array.from(clonedTarget.querySelectorAll('input:not([type="hidden"])'));
+                clonedInputs.forEach((clonedInput, index) => {
+                    const sourceInput = originalInputs[index];
+                    if (!sourceInput) return;
 
-                const computed = window.getComputedStyle(sourceInput);
-                const valueEl = clonedDoc.createElement("div");
-                valueEl.textContent = sourceInput.value || " ";
-                valueEl.style.boxSizing = "border-box";
-                valueEl.style.display = "flex";
-                valueEl.style.alignItems = "center";
-                valueEl.style.justifyContent = computed.textAlign === "left" ? "flex-start" : computed.textAlign === "right" ? "flex-end" : "center";
-                valueEl.style.width = computed.width;
-                valueEl.style.height = computed.height;
-                valueEl.style.padding = computed.padding;
-                valueEl.style.margin = computed.margin;
-                valueEl.style.border = computed.border;
-                valueEl.style.borderRadius = computed.borderRadius;
-                valueEl.style.background = computed.backgroundColor;
-                valueEl.style.font = computed.font;
-                valueEl.style.fontSize = computed.fontSize;
-                valueEl.style.fontWeight = computed.fontWeight;
-                valueEl.style.letterSpacing = computed.letterSpacing;
-                valueEl.style.lineHeight = computed.lineHeight;
-                valueEl.style.color = computed.color;
+                    const computed = window.getComputedStyle(sourceInput);
+                    const valueEl = clonedDoc.createElement("div");
+                    valueEl.textContent = sourceInput.value || " ";
+                    valueEl.style.boxSizing = "border-box";
+                    valueEl.style.display = "flex";
+                    valueEl.style.alignItems = "center";
+                    valueEl.style.justifyContent = computed.textAlign === "left" ? "flex-start" : computed.textAlign === "right" ? "flex-end" : "center";
+                    valueEl.style.width = computed.width;
+                    valueEl.style.height = computed.height;
+                    valueEl.style.padding = computed.padding;
+                    valueEl.style.margin = computed.margin;
+                    valueEl.style.border = computed.border;
+                    valueEl.style.borderRadius = computed.borderRadius;
+                    valueEl.style.background = computed.backgroundColor;
+                    valueEl.style.font = computed.font;
+                    valueEl.style.fontSize = computed.fontSize;
+                    valueEl.style.fontWeight = computed.fontWeight;
+                    valueEl.style.letterSpacing = computed.letterSpacing;
+                    valueEl.style.lineHeight = computed.lineHeight;
+                    valueEl.style.color = computed.color;
 
-                clonedInput.replaceWith(valueEl);
-            });
-        }
-    });
+                    clonedInput.replaceWith(valueEl);
+                });
+            }
+        });
+    } finally {
+        window.scrollTo(previousScrollX, previousScrollY);
+    }
 
     return await new Promise((resolve, reject) => {
         canvas.toBlob(blob => {
