@@ -167,7 +167,7 @@ function initPdfEmailButton() {
 
             const mailto = `mailto:?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
             window.location.href = mailto;
-            setPdfStatus("Imagem descarregada e app de email aberta.");
+            setPdfStatus("");
         } catch (error) {
             console.error("Erro ao gerar/enviar imagem:", error);
             setPdfStatus("Não foi possível gerar a imagem. Tenta novamente.", true);
