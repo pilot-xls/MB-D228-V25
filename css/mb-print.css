@@ -267,25 +267,27 @@ body.mb-print-body {
         width: 190mm;
         min-height: 277mm;
         margin: 0 auto;
-        padding: 3mm;
-        gap: 2mm;
+        padding: 2mm;
+        gap: 1.5mm;
         overflow: hidden;
-        transform: scale(0.74);
-        transform-origin: top center;
+    }
+
+    .mb-print-page #heading {
+        margin: 0 0 1mm 0;
     }
 
     .mb-print-page #heading h2 {
-        font-size: 13pt;
+        font-size: 12pt;
         margin: 0 0 1px 0;
     }
 
     .mb-print-page #heading p {
-        font-size: 8pt;
+        font-size: 7.5pt;
         margin: 0;
     }
 
     .mb-print-page .mb-table {
-        margin-bottom: 2mm;
+        margin-bottom: 1.5mm;
     }
 
     .mb-print-page .mb-table th,
@@ -293,34 +295,34 @@ body.mb-print-body {
     .mb-print-page .mb-table label,
     .mb-print-page .mb-table input,
     .mb-print-page .mb-table .mb-static-value {
-        font-size: 7.2pt !important;
+        font-size: 6.8pt !important;
         line-height: 1 !important;
     }
 
     .mb-print-page .mb-table th {
-        padding: 1.2mm 1mm;
+        padding: 1mm 0.8mm;
     }
 
     .mb-print-page .mb-table td {
-        padding: 0.8mm 1mm;
+        padding: 0.6mm 0.8mm;
     }
 
     .mb-print-page .mb-table tbody tr {
-        height: 6mm;
+        height: 5.4mm;
     }
 
     .mb-print-page #loadsheet-img {
-        width: 124mm;
-        max-width: 124mm;
+        width: 118mm;
+        max-width: 118mm;
         margin: 0;
     }
 
     .mb-print-footer {
-        margin-top: 1mm;
-        padding-top: 0.5mm;
-    }   
+        margin-top: 0.5mm;
+        padding-top: 0;
+    }
 
     .mb-print-footer img {
-        width: 22mm;
+        width: 20mm;
     }
 }
