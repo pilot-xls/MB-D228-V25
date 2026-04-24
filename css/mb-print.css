@@ -123,8 +123,8 @@ body.mb-print-body {
 .mb-print-page #loadsheet-img {
     position: relative;
     display: inline-block;
-    width: 112mm;
-    max-width: 112mm;
+    width: 90mm;
+    max-width: 90mm;
     margin: 0;
     overflow: hidden;
     vertical-align: top;
@@ -291,6 +291,22 @@ body.mb-print-body {
         height: auto !important;
     }
 }
+
+.mb-print-logo {
+    max-width: 90px;
+    width: 100%;
+    height: auto;
+    display: flex;
+    align-items: center;
+    margin: 0 auto;
+}
+
+@media screen and (max-width: 768px) {
+    .mb-print-logo {
+        max-width: 120px;
+    }
+}
+
 @media print and (max-width: 768px) {
     .mb-print-page #loadsheet-img {
         width: 142mm !important;
