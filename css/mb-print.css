@@ -323,7 +323,7 @@ body.mb-print-body {
     }
 }
 
-@media screen and (max-width: 375px) {
+@media screen and (max-width: 480px) {
     .mb-print-logo {
         max-width: 100px;
     }
@@ -334,7 +334,7 @@ body.mb-print-body {
     }
 }
 
-@media screen and (max-width: 320px) {
+@media screen and (max-width: 360px) {
     .mb-print-logo {
         max-width: 90px;
     }
