@@ -305,6 +305,10 @@ body.mb-print-body {
     .mb-print-logo {
         max-width: 120px;
     }
+    .mb-print-page #loadsheet-img {
+        width: 90mm;
+        max-width: 90mm;
+    }
 }
 
 @media print and (max-width: 768px) {
