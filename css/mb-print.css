@@ -345,8 +345,34 @@ body.mb-print-body {
     }
 }
 @media print and (max-width: 768px) {
+
+    .mb-print-page {
+        width: 190mm !important;
+        margin: 0 auto !important;
+        padding: 0mm 2mm 0mm 2mm !important;
+        min-height: 0 !important;
+        height: auto !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+    
     .mb-print-page #loadsheet-img {
         width: 132mm !important;
         max-width: 132mm !important;
     }    
+     .mb-print-footer {
+        margin: 0.5mm 0 0 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .mb-print-footer img {
+        width: 20mm !important;
+        height: auto !important;
+    }
+
+    
 } 
