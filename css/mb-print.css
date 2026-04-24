@@ -123,8 +123,8 @@ body.mb-print-body {
 .mb-print-page #loadsheet-img {
     position: relative;
     display: inline-block;
-    width: 138mm;
-    max-width: 138mm;
+    width: 112mm;
+    max-width: 112mm;
     margin: 0;
     overflow: hidden;
     vertical-align: top;
