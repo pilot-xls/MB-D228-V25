@@ -303,14 +303,47 @@ body.mb-print-body {
 
 @media screen and (max-width: 768px) {
     .mb-print-logo {
-        max-width: 90px;
+        max-width: 120px;
     }
+
+    .mb-print-page #loadsheet-img {
+        width: 120mm;
+        max-width: 120mm;
+    }
+}
+
+@media screen and (max-width: 415px) {
+    .mb-print-logo {
+        max-width: 110px;
+    }
+
+    .mb-print-page #loadsheet-img {
+        width: 105mm;
+        max-width: 105mm;
+    }
+}
+
+@media screen and (max-width: 375px) {
+    .mb-print-logo {
+        max-width: 100px;
+    }
+
     .mb-print-page #loadsheet-img {
         width: 90mm;
         max-width: 90mm;
     }
 }
 
+@media screen and (max-width: 320px) {
+    .mb-print-logo {
+        max-width: 90px;
+    }
+
+    .mb-print-page #loadsheet-img {
+        width: 75mm;
+        max-width: 75mm;
+    }
+}
 @media print and (max-width: 768px) {
     .mb-print-page #loadsheet-img {
         width: 142mm !important;
