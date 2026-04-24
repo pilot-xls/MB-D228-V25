@@ -346,7 +346,7 @@ body.mb-print-body {
 }
 @media print and (max-width: 768px) {
     .mb-print-page #loadsheet-img {
-        width: 136mm !important;
-        max-width: 136mm !important;
+        width: 132mm !important;
+        max-width: 132mm !important;
     }    
 } 
