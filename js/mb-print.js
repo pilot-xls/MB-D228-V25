@@ -1,25 +1,15 @@
 // Espera que o HTML da página esteja carregado antes de executar o resto do código
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        // Espera que a página fique pronta para impressão: imagens, fontes e layout
+        // Espera que a página fique pronta para renderizar
         await waitForPrintPageReady();
 
-        // Preenche a página de impressão com os dados e converte inputs em valores estáticos
+        // Preenche a página de impressão
         await hydratePrintPage();
 
-        // Volta a esperar pelo layout final depois de preencher a página
-        await waitForPrintPageReady();
-
-        // Dá um pequeno atraso extra para garantir estabilidade visual antes de imprimir
-        await new Promise(resolve => setTimeout(resolve, 250));
-
-        // Se esta página foi aberta a partir do botão de impressão, atualiza a data/hora e imprime logo
+        // Actualiza a data/hora se a página tiver sido aberta a partir do botão exportar
         if (localStorage.getItem("mbPrintRequestedAt")) {
-            // Atualiza o texto com a data/hora exacta da impressão
             atualizarDataHoraImpressao();
-
-            // Abre o diálogo de impressão do browser
-            //window.print();
         }
     } catch (error) {
         // Mostra erro na consola caso algo falhe na preparação da página
@@ -57,11 +47,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Depois da impressão, limpa a marca usada para auto-impressão
+    // Depois da impressão, limpa a marca usada para abrir esta página
     window.addEventListener("afterprint", () => {
-        // Remove a flag que indica que a impressão foi pedida a partir da página anterior
         localStorage.removeItem("mbPrintRequestedAt");
-    }, { once: true });
+    });
 });
 
 // Preenche a página com os dados finais necessários para impressão
@@ -79,6 +68,9 @@ async function hydratePrintPage() {
 function convertInputsToStaticValues() {
     // Procura todos os inputs visíveis dentro da área de impressão
     const inputs = Array.from(document.querySelectorAll('#mbPrintCapture input:not([type="hidden"])'));
+
+    // Se já não houver inputs, sai logo
+    if (!inputs.length) return;
 
     // Percorre cada input encontrado
     inputs.forEach(input => {
@@ -143,8 +135,8 @@ function atualizarDataHoraImpressao() {
     // Cria um objecto com a data e hora actuais
     const agora = new Date();
 
-    // Formata a data e hora em português de Portugal
-    const texto = agora.toLocaleString("pt-PT", {
+    // Formata a data e hora em inglês
+    const texto = agora.toLocaleString("en-GB", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -178,13 +170,8 @@ async function waitForPrintPageReady() {
 
     // Espera que todas as imagens terminem de carregar ou falhar
     await Promise.allSettled(images.map(img => {
-        // Se a imagem já estiver pronta, tenta decodificá-la
+        // Se a imagem já estiver pronta, continua
         if (img.complete && img.naturalWidth > 0) {
-            if (typeof img.decode === "function") {
-                return img.decode().catch(() => undefined);
-            }
-
-            // Se não existir decode, continua de imediato
             return Promise.resolve();
         }
 
