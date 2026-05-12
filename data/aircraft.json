@@ -40,14 +40,14 @@
     "CS-ATI": {
       "ID": "CS-ATI",
       "Serie": "212",
-      "BEW": "3960",
+      "BEW": "3938",
       "MZFW": "5940",
       "MRW": "6430",
       "MTOW": "6400",
       "MLOW": "6100",
       "FuelTank": "4251",
       "consumo": "600",
-      "armBEW": "7.89686",
+      "armBEW": "7.85876",
       "armPilotos": "4.21",      
       "armFuel": "7.936",
       "armPayload": "8.7"
