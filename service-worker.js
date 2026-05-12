@@ -1,12 +1,12 @@
 // Nome da cache actual da aplicação.
 // Sempre que mudares ficheiros importantes, incrementa esta versão.
-const CACHE_NAME = 'd228-cache-v1.4.9';
+const CACHE_NAME = 'd228-cache-v1.5.0';
 
 // Página principal usada como fallback quando uma navegação falha.
 const APP_SHELL_FALLBACK = './index.html';
 
 // Tempo máximo para esperar pela rede antes de desistir.
-const NETWORK_TIMEOUT_MS = 2000;
+const NETWORK_TIMEOUT_MS = 800;
 
 // Lista de ficheiros críticos para funcionamento offline.
 // Evita meter aqui ficheiros que possam não existir.

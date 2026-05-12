@@ -4,6 +4,11 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error("Erro ao registar SW:", err));
 }
 
+const CONNECTION_PROBE_URL = './manifest.json';
+const CONNECTION_PROBE_INTERVAL_MS = 5000;
+const CONNECTION_PROBE_TIMEOUT_MS = 1200;
+const STABLE_ONLINE_MIN_PASSES = 2;
+
 const SHEET_ID = "install-sheet";
 const WARN_ID = "install-warning";
 const LAST_KEY = "pwa-install-last";
@@ -126,20 +131,74 @@ function bootstrapFirstRunDefaults() {
 document.addEventListener("DOMContentLoaded", bootstrapFirstRunDefaults);
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (window.__d228ConnectionMonitorInitialized) return;
+  window.__d228ConnectionMonitorInitialized = true;
+
   const connectionDot = document.getElementById("connection-status-dot");
   if (!connectionDot) return;
 
-  const updateConnectionDot = () => {
-    const online = navigator.onLine;
+  let stablePasses = 0;
+  let wasStableOnline = false;
+
+  const paintConnectionDot = (online) => {
     connectionDot.classList.toggle("is-online", online);
     connectionDot.classList.toggle("is-offline", !online);
     connectionDot.title = online ? "Online" : "Offline";
     connectionDot.setAttribute("aria-label", online ? "Online" : "Offline");
   };
 
-  updateConnectionDot();
-  window.addEventListener("online", updateConnectionDot);
-  window.addEventListener("offline", updateConnectionDot);
+  const checkRealConnection = async () => {
+    if (!navigator.onLine) {
+      stablePasses = 0;
+      paintConnectionDot(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONNECTION_PROBE_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${CONNECTION_PROBE_URL}?_t=${Date.now()}`, {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+
+      const online = response.ok;
+      if (online) {
+        stablePasses += 1;
+      } else {
+        stablePasses = 0;
+        wasStableOnline = false;
+      }
+
+      paintConnectionDot(online);
+
+      const isStableOnline = stablePasses >= STABLE_ONLINE_MIN_PASSES;
+      if (isStableOnline && !wasStableOnline && 'serviceWorker' in navigator) {
+        wasStableOnline = true;
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          reg.update().catch(() => {});
+        }
+      }
+    } catch (error) {
+      stablePasses = 0;
+      wasStableOnline = false;
+      paintConnectionDot(false);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
+  checkRealConnection();
+  window.addEventListener("online", checkRealConnection);
+  window.addEventListener("offline", () => {
+    stablePasses = 0;
+    wasStableOnline = false;
+    paintConnectionDot(false);
+  });
+  window.setInterval(checkRealConnection, CONNECTION_PROBE_INTERVAL_MS);
 });
 
 
