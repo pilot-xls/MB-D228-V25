@@ -267,14 +267,21 @@ async function exec_calculo() {
     let mzfwInfo = MZFW; // por defeito mostra o MZFW atual
 
     if (ac.ID === "CS-ATH") {
-        // calcula o MZFW máximo permitido com base no fuel atual
-        mzfwInfo = csath_MZFW_fromFuel(fuelTO);
+        // Regra operacional CS-ATH:
+        // - até TOW 6200, o limite de MZFW mantém-se no máximo estrutural (5590)
+        // - acima de 6200, o MZFW passa a variar pela reta de envelope
+        if (tow <= 6200) {
+            mzfwInfo = 5590;
+        } else {
+            mzfwInfo = csath_MZFW_fromFuel(fuelTO);
+        }
 
-        // limita ao máximo estrutural do CS-ATH
+        // limita ao intervalo estrutural do CS-ATH
         if (mzfwInfo > 5590) mzfwInfo = 5590;
+        if (mzfwInfo < 5400) mzfwInfo = 5400;
 
         // evita valores inválidos
-        if (mzfwInfo < 0 || !isFinite(mzfwInfo)) mzfwInfo = 0;
+        if (!isFinite(mzfwInfo)) mzfwInfo = 0;
     }
 
     // --- Infos cruzadas Payload/Fuel ---
