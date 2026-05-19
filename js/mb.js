@@ -301,10 +301,10 @@ async function exec_calculo() {
         `MAC: ${macLanding.toFixed(1)}%`;
 
     const payloadInfoCell = document.getElementById("manualPayload").closest("tr").querySelector("td:last-child");
-    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}`;
+    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg.toFixed(0)} kg`;
 
     const fuelInfoCell = document.getElementById("fuel").closest("tr").querySelector("td:last-child");
-    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg.toFixed(0)} kg (${maxFuelLb.toFixed(0)} lb)<br>LIMITE: ${minFuelLimit.label}`;
+    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg.toFixed(0)} kg (${maxFuelLb.toFixed(0)} lb)`;
 
     // --- Limites ---
     function checkLimit(rowOrCellId, value, limit, label = "") {

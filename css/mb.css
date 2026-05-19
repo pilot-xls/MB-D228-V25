@@ -42,9 +42,9 @@ body {
     color: #fff;
 }
 
-/* quando não excede, .info-warning continua a ser vermelho */
+/* .info-warning mantém texto branco para legibilidade em linha vermelha */
 .info-warning {
-    color: red;
+    color: #fff;
     font-weight: bold;
     font-size: 11px;
 }
