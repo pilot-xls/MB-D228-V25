@@ -271,12 +271,11 @@ async function exec_calculo() {
         if (tow <= 6200) {
             mzfwInfo = MZFW;
         } else {
-            mzfwInfo = csath_MZFW_fromTow(tow);
+            mzfwInfo = csath_MZFW_fromTow(tow, MZFW);
         }
 
-        // limita ao intervalo estrutural do CS-ATH
-        if (mzfwInfo > 5590) mzfwInfo = 5590;
-        if (mzfwInfo < 5400) mzfwInfo = 5400;
+        // limita ao máximo estrutural/configurado do CS-ATH
+        if (mzfwInfo > MZFW) mzfwInfo = MZFW;
 
         // evita valores inválidos
         if (!isFinite(mzfwInfo)) mzfwInfo = 0;
@@ -369,12 +368,12 @@ function csath_MZFW_fromFuel(fuelTO) {
     return (12084.21 - fuelTO) / 2.05263;
 }
 
-function csath_MZFW_fromTow(tow) {
-    // reta do CS-ATH:
-    // MTOW = -1.05263 * ZFW + 12084.21
-    // no limite com TOW acima de 6200: TOW ≈ MTOW
-    // logo: ZFW = (12084.21 - TOW) / 1.05263
-    return (12084.21 - tow) / 1.05263;
+function csath_MZFW_fromTow(tow, mzfwStandard) {
+    // Interpolação linear pedida para CS-ATH:
+    // (TOW=6200 -> MZFW=valor standard configurado) e decréscimo de 190kg aos 6400
+    // slope = -190/(6400-6200) = -0.95
+    // MZFW = MZFW_standard - 0.95 * (TOW - 6200)
+    return mzfwStandard - 0.95 * (tow - 6200);
 }
 
 // ============================================
