@@ -274,11 +274,12 @@ async function exec_calculo() {
             mzfwInfo = csath_MZFW_fromTow(tow);
         }
 
-        // limita ao máximo estrutural do CS-ATH
+        // limita ao intervalo estrutural do CS-ATH
         if (mzfwInfo > 5590) mzfwInfo = 5590;
+        if (mzfwInfo < 5400) mzfwInfo = 5400;
 
         // evita valores inválidos
-        if (mzfwInfo < 0 || !isFinite(mzfwInfo)) mzfwInfo = 0;
+        if (!isFinite(mzfwInfo)) mzfwInfo = 0;
     }
 
     // --- Infos cruzadas Payload/Fuel ---
