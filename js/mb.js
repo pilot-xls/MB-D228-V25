@@ -263,14 +263,20 @@ async function exec_calculo() {
     const maxFuelByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
     const maxFuelByMTOW = (parseFloat(MTOW) || 0) - (basicWeight + pilots + payload) + fuelTaxi;
     const maxFuelByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
-    const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW);
+    const maxFuelByZfwTowRule = ac.ID === "CS-ATH"
+        ? csath_maxFuelForZfwLimit(zfw, fuelTaxi)
+        : Infinity;
+    const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW, maxFuelByZfwTowRule);
     const maxFuelLb = maxFuelKg * 2.20462;
 
     const maxPayloadByMZFW = (parseFloat(MZFW) || Infinity) - (basicWeight + pilots);
     const maxPayloadByMTOW = (parseFloat(MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
     const maxPayloadByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + fuel);
     const maxPayloadByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
-    const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW);
+    const maxPayloadByZfwTowRule = ac.ID === "CS-ATH"
+        ? csath_maxPayloadForZfwLimit(basicWeight, pilots, fuel, fuelTaxi)
+        : Infinity;
+    const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW, maxPayloadByZfwTowRule);
     const maxPayloadLb = maxPayloadKg * 2.20462;
 
     // --- Atualiza células INFO ---
@@ -345,6 +351,28 @@ function csath_MZFW_fromTow(tow) {
 
     const slope = (5400 - 5590) / (6400 - 6200); // -0.95 kg/kg
     return 5590 + slope * (tow - 6200);
+}
+
+
+function csath_maxFuelForZfwLimit(zfw, fuelTaxi) {
+    // Resolve fuel máximo tal que ZFW <= MZFW(TOW), com TOW = ZFW + fuel - fuelTaxi
+    // Para TOW <= 6200, MZFW=5590 (sempre satisfaz se zfw<=5590)
+    // Entre 6200 e 6400: MZFW=11480-0.95*TOW -> zfw <= 11480-0.95*(zfw+fuel-fuelTaxi)
+    // fuel <= (11480 + 0.95*fuelTaxi - 1.95*zfw) / 0.95
+    const fuelBoundLinear = (11480 + 0.95 * fuelTaxi - 1.95 * zfw) / 0.95;
+    if (!isFinite(fuelBoundLinear)) return 0;
+    return Math.max(0, fuelBoundLinear);
+}
+
+function csath_maxPayloadForZfwLimit(basicWeight, pilots, fuel, fuelTaxi) {
+    // payload máximo tal que ZFW <= MZFW(TOW), com ZFW=basic+pilots+payload e TOW=ZFW+fuel-fuelTaxi
+    // Regime limitante (6200..6400):
+    // (basic+pilots+payload) <= 11480 - 0.95*(basic+pilots+payload+fuel-fuelTaxi)
+    // payload <= (11480 - 1.95*(basic+pilots) - 0.95*fuel + 0.95*fuelTaxi) / 1.95
+    const base = basicWeight + pilots;
+    const payloadBoundLinear = (11480 - 1.95 * base - 0.95 * fuel + 0.95 * fuelTaxi) / 1.95;
+    if (!isFinite(payloadBoundLinear)) return 0;
+    return Math.max(0, payloadBoundLinear);
 }
 
 // ============================================
