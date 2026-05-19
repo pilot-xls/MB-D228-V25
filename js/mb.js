@@ -262,18 +262,16 @@ async function exec_calculo() {
         }
     }
 
-    const fuelTO = fuel - fuelTaxi; // fuel efetivo à descolagem
-
     let mzfwInfo = MZFW; // por defeito mostra o MZFW atual
 
     if (ac.ID === "CS-ATH") {
         // Regra operacional CS-ATH:
-        // - até TOW 6200, o limite de MZFW mantém-se no máximo estrutural (5590)
-        // - acima de 6200, o MZFW passa a variar pela reta de envelope
+        // - até TOW 6200, o limite de MZFW mantém-se no MZFW standard da aeronave
+        // - acima de 6200, o MZFW passa a variar pela reta de envelope em função do TOW
         if (tow <= 6200) {
-            mzfwInfo = 5590;
+            mzfwInfo = MZFW;
         } else {
-            mzfwInfo = csath_MZFW_fromFuel(fuelTO);
+            mzfwInfo = csath_MZFW_fromTow(tow);
         }
 
         // limita ao intervalo estrutural do CS-ATH
@@ -369,6 +367,14 @@ function csath_MZFW_fromFuel(fuelTO) {
     // no limite: ZFW + fuelTO = MTOW
     // logo: ZFW = (12084.21 - fuelTO) / 2.05263
     return (12084.21 - fuelTO) / 2.05263;
+}
+
+function csath_MZFW_fromTow(tow) {
+    // reta do CS-ATH:
+    // MTOW = -1.05263 * ZFW + 12084.21
+    // no limite com TOW acima de 6200: TOW ≈ MTOW
+    // logo: ZFW = (12084.21 - TOW) / 1.05263
+    return (12084.21 - tow) / 1.05263;
 }
 
 // ============================================
