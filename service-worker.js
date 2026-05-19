@@ -1,6 +1,6 @@
 // Nome da cache actual da aplicação.
 // Sempre que mudares ficheiros importantes, incrementa esta versão.
-const CACHE_NAME = 'd228-cache-v1.5.0';
+const CACHE_NAME = 'd228-cache-v1.5.1';
 
 // Página principal usada como fallback quando uma navegação falha.
 const APP_SHELL_FALLBACK = './index.html';
@@ -17,7 +17,6 @@ const ASSETS = [
 
   './Popup-TrafficLoad.html',
   './calculadora.html',
-  './fdr.html',
   './mb-print.html',
   './mb.html',
   './performance.html',
@@ -28,7 +27,6 @@ const ASSETS = [
   './header.html',
 
   './css/calculadora.css',
-  './css/fdr.css',
   './css/index.css',
   './css/mb-print.css',
   './css/mb.css',
@@ -46,8 +44,6 @@ const ASSETS = [
   './data/TrafficLoad.json',
   './data/aircraft.json',
   './data/airportsList.json',
-  './data/fdr-aircraft-profiles.json',
-  './data/fdr-demo-track.json',
   './data/payload.json',
   './data/rotas.json',
 
@@ -65,20 +61,6 @@ const ASSETS = [
   './js/cgRequired2Seg_CSATH.js',
   './js/cgRequired34Seg_CSATH.js',
   './js/dataLoader.js',
-  './js/fdr.js',
-  './js/fdr/config.js',
-  './js/fdr/core/detection-engine.js',
-  './js/fdr/core/state-machine.js',
-  './js/fdr/services/geolocation.js',
-  './js/fdr/services/permissions.js',
-  './js/fdr/services/wake-lock.js',
-  './js/fdr/storage/fdr-db.js',
-  './js/fdr/storage/fdr-repository.js',
-  './js/fdr/ui/fdr-screen.js',
-  './js/fdr/ui/fdr-summary.js',
-  './js/fdr/utils/geo.js',
-  './js/fdr/utils/smoothing.js',
-  './js/fdr/utils/time.js',
   './js/general.js',
   './js/index.js',
   './js/mb-print.js',

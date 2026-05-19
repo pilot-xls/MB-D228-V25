@@ -278,7 +278,7 @@ async function exec_calculo() {
         if (mzfwInfo > MZFW) mzfwInfo = MZFW;
 
         // evita valores inválidos
-        if (mzfwInfo < 0 || !isFinite(mzfwInfo)) mzfwInfo = 0;
+        if (!isFinite(mzfwInfo)) mzfwInfo = 0;
     }
 
     // --- Infos cruzadas Payload/Fuel ---
