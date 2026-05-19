@@ -332,6 +332,8 @@ async function exec_calculo() {
         }
     }
     const zfwLimitForCheck = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
+    checkLimit("manualPayload", payload, maxPayloadKg, "kg");
+    checkLimit("fuel", fuel, maxFuelKg, "kg");
     checkLimit("zfw", zfw, parseFloat(zfwLimitForCheck) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
     checkLimit("takeoffRow", tow, parseFloat(MTOW) || Infinity, "kg");
