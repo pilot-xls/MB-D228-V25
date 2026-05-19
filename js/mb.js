@@ -247,38 +247,16 @@ async function exec_calculo() {
 
     const toNum = v => Number(String(v ?? "").replace(",", "."));
 
-    let MZFW = toNum(ac.MZFW) || 0;
-    let MTOW = toNum(ac.MTOW) || 0;
+    const mzfwSettings = toNum(ac.MZFW) || 0;
+    const MZFW = mzfwSettings;
+    const MTOW = toNum(ac.MTOW) || 0;
 
-    // SET MAXIMOS PARA CS-ATH
+    let mzfwInfo = MZFW;
     if (ac.ID === "CS-ATH") {
-        if (zfw > 5400 && zfw <= 5590) {
-            MZFW = zfw;
-            MTOW = csath_MTOW(zfw);
-        }
-        else if (zfw > 5590) {
-            MZFW = 5590;
-            MTOW = 6200;
-        }
-    }
-
-    let mzfwInfo = MZFW; // por defeito mostra o MZFW atual
-
-    if (ac.ID === "CS-ATH") {
-        // Regra operacional CS-ATH:
-        // - até TOW 6200, o limite de MZFW mantém-se no MZFW standard da aeronave
-        // - acima de 6200, o MZFW passa a variar pela reta de envelope em função do TOW
-        if (tow <= 6200) {
-            mzfwInfo = MZFW;
-        } else {
-            mzfwInfo = csath_MZFW_fromTow(tow, MZFW);
-        }
-
-        // limita ao máximo estrutural/configurado do CS-ATH
-        if (mzfwInfo > MZFW) mzfwInfo = MZFW;
-
-        // evita valores inválidos
-        if (!isFinite(mzfwInfo)) mzfwInfo = 0;
+        // No CS-ATH a nota da coluna INFO mostra MZFW variável com o TOW,
+        // mas os cálculos/limites continuam com os valores normais de settings.
+        mzfwInfo = csath_MZFW_fromTow(tow);
+        if (!isFinite(mzfwInfo)) mzfwInfo = MZFW;
     }
 
     // --- Infos cruzadas Payload/Fuel ---
@@ -315,12 +293,13 @@ async function exec_calculo() {
     fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Payload: ${maxPayloadKg >= 0 ? maxPayloadKg.toFixed(0) : 0} kg `;
 
     // --- Limites ---
-    function checkLimit(rowId, value, limit, label = "") {
+    function checkLimit(rowOrCellId, value, limit, label = "") {
 
-        const weightCell = document.getElementById(rowId);
-        if (!weightCell) return; // sai se a célula não existir
+        const el = document.getElementById(rowOrCellId);
+        if (!el) return; // sai se a célula/linha não existir
 
-        const row = weightCell.closest("tr"); // encontra a linha da tabela
+        const row = el.tagName === "TR" ? el : el.closest("tr"); // aceita id da linha ou célula
+        if (!row) return;
         const infoCell = row.querySelector("td:last-child"); // última coluna (INFO)
 
         row.classList.remove("limit-exceed"); // remove aviso anterior
@@ -339,7 +318,8 @@ async function exec_calculo() {
             }
         }
     }
-    checkLimit("zfw", zfw, parseFloat(MZFW) || Infinity, "kg");
+    const zfwLimitForCheck = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
+    checkLimit("zfw", zfw, parseFloat(zfwLimitForCheck) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
     checkLimit("takeoffRow", tow, parseFloat(MTOW) || Infinity, "kg");
     checkLimit("landingRow", lw, parseFloat(ac.MLOW) || Infinity, "kg");
@@ -355,25 +335,16 @@ async function exec_calculo() {
     }
 }
 
-function csath_MTOW(zfw) {
-    //apenas para interpolação no intervalo entre ZFW = 5400 e 5590
-    return -1.05263 * zfw + 12084.21;
-}
+function csath_MZFW_fromTow(tow) {
+    // Regra CS-ATH:
+    // - TOW <= 6200: MZFW = 5590
+    // - 6200 < TOW < 6400: interpolação linear até 5400
+    // - TOW >= 6400: MZFW = 5400
+    if (tow <= 6200) return 5590;
+    if (tow >= 6400) return 5400;
 
-function csath_MZFW_fromFuel(fuelTO) {
-    // inversa da reta do CS-ATH:
-    // MTOW = -1.05263 * ZFW + 12084.21
-    // no limite: ZFW + fuelTO = MTOW
-    // logo: ZFW = (12084.21 - fuelTO) / 2.05263
-    return (12084.21 - fuelTO) / 2.05263;
-}
-
-function csath_MZFW_fromTow(tow, mzfwStandard) {
-    // Interpolação linear pedida para CS-ATH:
-    // (TOW=6200 -> MZFW=valor standard configurado) e decréscimo de 190kg aos 6400
-    // slope = -190/(6400-6200) = -0.95
-    // MZFW = MZFW_standard - 0.95 * (TOW - 6200)
-    return mzfwStandard - 0.95 * (tow - 6200);
+    const slope = (5400 - 5590) / (6400 - 6200); // -0.95 kg/kg
+    return 5590 + slope * (tow - 6200);
 }
 
 // ============================================
