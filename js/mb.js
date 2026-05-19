@@ -260,23 +260,30 @@ async function exec_calculo() {
     }
 
     // --- Infos cruzadas Payload/Fuel ---
-    const maxFuelByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + payload);
-    const maxFuelByMTOW = (parseFloat(MTOW) || 0) - (basicWeight + pilots + payload) + fuelTaxi;
-    const maxFuelByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
+    const MRW = toNum(ac.MRW) || 0;
+    const MLOW = toNum(ac.MLOW) || Infinity;
+    const fuelTank = toNum(ac.FuelTank) || Infinity;
+
+    const maxFuelByMRW = MRW - (basicWeight + pilots + payload);
+    const maxFuelByMTOW = MTOW - (basicWeight + pilots + payload) + fuelTaxi;
+    const maxFuelByMLW = MLOW - (basicWeight + pilots + payload) + fuelTaxi + fuelDest;
+    const maxFuelByTank = fuelTank;
     const maxFuelByZfwTowRule = ac.ID === "CS-ATH"
         ? csath_maxFuelForZfwLimit(zfw, fuelTaxi)
         : Infinity;
-    const maxFuelKg = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW, maxFuelByZfwTowRule);
+    const maxFuelKgRaw = Math.min(maxFuelByMRW, maxFuelByMTOW, maxFuelByMLW, maxFuelByTank, maxFuelByZfwTowRule);
+    const maxFuelKg = Math.max(0, isFinite(maxFuelKgRaw) ? maxFuelKgRaw : 0);
     const maxFuelLb = maxFuelKg * 2.20462;
 
-    const maxPayloadByMZFW = (parseFloat(MZFW) || Infinity) - (basicWeight + pilots);
-    const maxPayloadByMTOW = (parseFloat(MTOW) || 0) - (basicWeight + pilots + fuel - fuelTaxi);
-    const maxPayloadByMRW = (parseFloat(ac.MRW) || 0) - (basicWeight + pilots + fuel);
-    const maxPayloadByMLW = (parseFloat(ac.MLOW) || Infinity) - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
+    const maxPayloadByMZFW = MZFW - (basicWeight + pilots);
+    const maxPayloadByMTOW = MTOW - (basicWeight + pilots + fuel - fuelTaxi);
+    const maxPayloadByMRW = MRW - (basicWeight + pilots + fuel);
+    const maxPayloadByMLW = MLOW - (basicWeight + pilots + fuel - fuelTaxi - fuelDest);
     const maxPayloadByZfwTowRule = ac.ID === "CS-ATH"
         ? csath_maxPayloadForZfwLimit(basicWeight, pilots, fuel, fuelTaxi)
         : Infinity;
-    const maxPayloadKg = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW, maxPayloadByZfwTowRule);
+    const maxPayloadKgRaw = Math.min(maxPayloadByMZFW, maxPayloadByMTOW, maxPayloadByMRW, maxPayloadByMLW, maxPayloadByZfwTowRule);
+    const maxPayloadKg = Math.max(0, isFinite(maxPayloadKgRaw) ? maxPayloadKgRaw : 0);
     const maxPayloadLb = maxPayloadKg * 2.20462;
 
     // --- Atualiza células INFO ---
@@ -293,10 +300,10 @@ async function exec_calculo() {
         `MAC: ${macLanding.toFixed(1)}%`;
 
     const payloadInfoCell = document.getElementById("manualPayload").closest("tr").querySelector("td:last-child");
-    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg >= 0 ? maxPayloadKg.toFixed(0) : 0} kg`;
+    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg.toFixed(0)} kg`;
 
     const fuelInfoCell = document.getElementById("fuel").closest("tr").querySelector("td:last-child");
-    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg >= 0 ? maxFuelKg.toFixed(0) : 0} kg (${maxFuelLb >= 0 ? maxFuelLb.toFixed(0) : 0} lb)`;
+    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg.toFixed(0)} kg (${maxFuelLb.toFixed(0)} lb)`;
 
     // --- Limites ---
     function checkLimit(rowOrCellId, value, limit, label = "") {
