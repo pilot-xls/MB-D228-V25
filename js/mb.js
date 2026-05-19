@@ -247,38 +247,27 @@ async function exec_calculo() {
 
     const toNum = v => Number(String(v ?? "").replace(",", "."));
 
-    let MZFW = toNum(ac.MZFW) || 0;
-    let MTOW = toNum(ac.MTOW) || 0;
+    const mzfwSetting = toNum(ac.MZFW) || 0;
+    let MZFW = mzfwSetting;
+    const MTOW = toNum(ac.MTOW) || 0;
 
-    // SET MAXIMOS PARA CS-ATH
+    // Limite dinâmico CS-ATH:
+    // - TOW <= 6200 kg  -> MZFW fixo no valor de setting (normalmente 5590)
+    // - TOW > 6200 kg   -> MZFW desce linearmente com o TOW até ao MTOW de setting
+    let mzfwInfo = MZFW;
     if (ac.ID === "CS-ATH") {
-        if (zfw > 5400 && zfw <= 5590) {
-            MZFW = zfw;
-            MTOW = csath_MTOW(zfw);
-        }
-        else if (zfw > 5590) {
-            MZFW = 5590;
-            MTOW = 6200;
-        }
-    }
-
-    let mzfwInfo = MZFW; // por defeito mostra o MZFW atual
-
-    if (ac.ID === "CS-ATH") {
-        // Regra operacional CS-ATH:
-        // - até TOW 6200, o limite de MZFW mantém-se no MZFW standard da aeronave
-        // - acima de 6200, o MZFW passa a variar pela reta de envelope em função do TOW
         if (tow <= 6200) {
-            mzfwInfo = MZFW;
+            mzfwInfo = mzfwSetting;
         } else {
-            mzfwInfo = csath_MZFW_fromTow(tow, MZFW);
+            mzfwInfo = csath_MZFW_fromTow(tow, mzfwSetting);
         }
 
-        // limita ao máximo estrutural/configurado do CS-ATH
-        if (mzfwInfo > MZFW) mzfwInfo = MZFW;
-
-        // evita valores inválidos
+        // não deixar mostrar valor acima do setting
+        if (mzfwInfo > mzfwSetting) mzfwInfo = mzfwSetting;
         if (!isFinite(mzfwInfo)) mzfwInfo = 0;
+
+        // usa este limite para validação de ZFW na condição atual
+        MZFW = mzfwInfo;
     }
 
     // --- Infos cruzadas Payload/Fuel ---
