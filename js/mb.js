@@ -318,7 +318,8 @@ async function exec_calculo() {
             }
         }
     }
-    checkLimit("zfw", zfw, parseFloat(MZFW) || Infinity, "kg");
+    const zfwLimitForCheck = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
+    checkLimit("zfw", zfw, parseFloat(zfwLimitForCheck) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
     checkLimit("takeoffRow", tow, parseFloat(MTOW) || Infinity, "kg");
     checkLimit("landingRow", lw, parseFloat(ac.MLOW) || Infinity, "kg");
