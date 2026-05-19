@@ -28,14 +28,23 @@ body {
     font-weight: bold;
 }
 
+.limit-exceed td {
+    background-color: #f69b9b !important;
+}
+
+.limit-input-exceed {
+    border: 2px solid #d40000 !important;
+    background-color: #ffe8e8 !important;
+}
+
 /* quando há .info-warning dentro de .limit-exceed, também fica branco */
 .limit-exceed .info-warning {
     color: #fff;
 }
 
-/* quando não excede, .info-warning continua a ser vermelho */
+/* .info-warning mantém texto branco para legibilidade em linha vermelha */
 .info-warning {
-    color: red;
+    color: #fff;
     font-weight: bold;
     font-size: 11px;
 }
