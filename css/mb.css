@@ -28,6 +28,15 @@ body {
     font-weight: bold;
 }
 
+.limit-exceed td {
+    background-color: #f69b9b !important;
+}
+
+.limit-input-exceed {
+    border: 2px solid #d40000 !important;
+    background-color: #ffe8e8 !important;
+}
+
 /* quando há .info-warning dentro de .limit-exceed, também fica branco */
 .limit-exceed .info-warning {
     color: #fff;
