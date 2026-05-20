@@ -32,6 +32,10 @@ body {
     background-color: #f69b9b !important;
 }
 
+.limit-exceed td#Info-maxpayload {
+    color: #fff !important;
+}
+
 
 .limit-input-exceed {
     border: 2px solid #d40000 !important;
