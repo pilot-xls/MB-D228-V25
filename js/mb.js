@@ -253,8 +253,8 @@ async function exec_calculo() {
 
     let mzfwInfo = MZFW;
     if (ac.ID === "CS-ATH") {
-        // No CS-ATH a nota da coluna INFO mostra MZFW variável com o TOW,
-        // mas os cálculos/limites continuam com os valores normais de settings.
+        // No CS-ATH, a INFO mostra MZFW variável com o TOW e
+        // os limites de payload também usam esse MZFW dinâmico.
         mzfwInfo = csath_MZFW_fromTow(tow);
         if (!isFinite(mzfwInfo)) mzfwInfo = MZFW;
     }
@@ -277,8 +277,11 @@ async function exec_calculo() {
     const maxFuelKg = Math.floor(maxFuelKgSafe);
     const maxFuelLb = maxFuelKg * 2.20462;
 
+    const payloadMZFWLimit = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
+    const payloadMZFWLabel = ac.ID === "CS-ATH" ? "MZFW(TOW)" : "MZFW";
+
     const payloadLimits = [
-        { label: "MZFW", value: MZFW - (basicWeight + pilots) },
+        { label: payloadMZFWLabel, value: payloadMZFWLimit - (basicWeight + pilots) },
         { label: "MTOW", value: MTOW - (basicWeight + pilots + fuel - fuelTaxi) },
         { label: "MRW", value: MRW - (basicWeight + pilots + fuel) },
         { label: "MLW", value: MLOW - (basicWeight + pilots + fuel - fuelTaxi - fuelDest) },
