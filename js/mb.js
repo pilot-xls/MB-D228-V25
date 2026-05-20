@@ -313,7 +313,7 @@ async function exec_calculo() {
     fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg} kg (${maxFuelLb.toFixed(0)} lb, ${minFuelLimit.label})`;
 
     // --- Limites ---
-    function checkLimit(rowOrCellId, value, limit, label = "") {
+    function checkLimit(rowOrCellId, value, limit, label = "", highlight = true) {
 
         const el = document.getElementById(rowOrCellId);
         if (!el) return; // sai se a célula/linha não existir
@@ -333,8 +333,10 @@ async function exec_calculo() {
         // compara já arredondado
         if (valueCmp > limitCmp) {
 
-            row.classList.add("limit-exceed"); // pinta a linha a vermelho
-            if (rowInput) rowInput.classList.add("limit-input-exceed");
+            if (highlight) {
+                row.classList.add("limit-exceed"); // pinta a linha a vermelho
+                if (rowInput) rowInput.classList.add("limit-input-exceed");
+            }
 
             if (infoCell) {
                 infoCell.innerHTML += `<br><span class="info-warning">EXCEDE LIMITE (${limitCmp} ${label})</span>`;
@@ -342,7 +344,7 @@ async function exec_calculo() {
         }
     }
     const zfwLimitForCheck = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
-    checkLimit("fuel", fuel, maxFuelKg, "kg");
+    checkLimit("fuel", fuel, maxFuelKg, "kg", false);
     checkLimit("zfw", zfw, parseFloat(zfwLimitForCheck) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
     checkLimit("takeoffRow", tow, parseFloat(MTOW) || Infinity, "kg");
