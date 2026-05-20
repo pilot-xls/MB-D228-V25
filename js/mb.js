@@ -273,7 +273,8 @@ async function exec_calculo() {
     ];
     const minFuelLimit = fuelLimits.reduce((min, cur) => cur.value < min.value ? cur : min, fuelLimits[0]);
     const maxFuelKgRaw = minFuelLimit.value;
-    const maxFuelKg = Math.max(0, isFinite(maxFuelKgRaw) ? maxFuelKgRaw : 0);
+    const maxFuelKgSafe = Math.max(0, isFinite(maxFuelKgRaw) ? maxFuelKgRaw : 0);
+    const maxFuelKg = Math.floor(maxFuelKgSafe);
     const maxFuelLb = maxFuelKg * 2.20462;
 
     const payloadLimits = [
@@ -285,7 +286,8 @@ async function exec_calculo() {
     ];
     const minPayloadLimit = payloadLimits.reduce((min, cur) => cur.value < min.value ? cur : min, payloadLimits[0]);
     const maxPayloadKgRaw = minPayloadLimit.value;
-    const maxPayloadKg = Math.max(0, isFinite(maxPayloadKgRaw) ? maxPayloadKgRaw : 0);
+    const maxPayloadKgSafe = Math.max(0, isFinite(maxPayloadKgRaw) ? maxPayloadKgRaw : 0);
+    const maxPayloadKg = Math.floor(maxPayloadKgSafe);
 
     // --- Atualiza células INFO ---
     document.getElementById("zfw").closest("tr").querySelector("td:last-child").innerHTML =
@@ -301,10 +303,10 @@ async function exec_calculo() {
         `MAC: ${macLanding.toFixed(1)}%`;
 
     const payloadInfoCell = document.getElementById("manualPayload").closest("tr").querySelector("td:last-child");
-    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg.toFixed(0)} kg`;
+    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg} kg (${minPayloadLimit.label})`;
 
     const fuelInfoCell = document.getElementById("fuel").closest("tr").querySelector("td:last-child");
-    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg.toFixed(0)} kg (${maxFuelLb.toFixed(0)} lb)`;
+    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg} kg (${maxFuelLb.toFixed(0)} lb, ${minFuelLimit.label})`;
 
     // --- Limites ---
     function checkLimit(rowOrCellId, value, limit, label = "") {
