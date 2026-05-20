@@ -253,8 +253,8 @@ async function exec_calculo() {
 
     let mzfwInfo = MZFW;
     if (ac.ID === "CS-ATH") {
-        // No CS-ATH a nota da coluna INFO mostra MZFW variável com o TOW,
-        // mas os cálculos/limites continuam com os valores normais de settings.
+        // No CS-ATH, a INFO mostra MZFW variável com o TOW e
+        // os limites de payload também usam esse MZFW dinâmico.
         mzfwInfo = csath_MZFW_fromTow(tow);
         if (!isFinite(mzfwInfo)) mzfwInfo = MZFW;
     }
@@ -273,11 +273,15 @@ async function exec_calculo() {
     ];
     const minFuelLimit = fuelLimits.reduce((min, cur) => cur.value < min.value ? cur : min, fuelLimits[0]);
     const maxFuelKgRaw = minFuelLimit.value;
-    const maxFuelKg = Math.max(0, isFinite(maxFuelKgRaw) ? maxFuelKgRaw : 0);
+    const maxFuelKgSafe = Math.max(0, isFinite(maxFuelKgRaw) ? maxFuelKgRaw : 0);
+    const maxFuelKg = Math.floor(maxFuelKgSafe);
     const maxFuelLb = maxFuelKg * 2.20462;
 
+    const payloadMZFWLimit = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
+    const payloadMZFWLabel = ac.ID === "CS-ATH" ? "MZFW(TOW)" : "MZFW";
+
     const payloadLimits = [
-        { label: "MZFW", value: MZFW - (basicWeight + pilots) },
+        { label: payloadMZFWLabel, value: payloadMZFWLimit - (basicWeight + pilots) },
         { label: "MTOW", value: MTOW - (basicWeight + pilots + fuel - fuelTaxi) },
         { label: "MRW", value: MRW - (basicWeight + pilots + fuel) },
         { label: "MLW", value: MLOW - (basicWeight + pilots + fuel - fuelTaxi - fuelDest) },
@@ -285,7 +289,8 @@ async function exec_calculo() {
     ];
     const minPayloadLimit = payloadLimits.reduce((min, cur) => cur.value < min.value ? cur : min, payloadLimits[0]);
     const maxPayloadKgRaw = minPayloadLimit.value;
-    const maxPayloadKg = Math.max(0, isFinite(maxPayloadKgRaw) ? maxPayloadKgRaw : 0);
+    const maxPayloadKgSafe = Math.max(0, isFinite(maxPayloadKgRaw) ? maxPayloadKgRaw : 0);
+    const maxPayloadKg = Math.floor(maxPayloadKgSafe);
 
     // --- Atualiza células INFO ---
     document.getElementById("zfw").closest("tr").querySelector("td:last-child").innerHTML =
@@ -301,10 +306,11 @@ async function exec_calculo() {
         `MAC: ${macLanding.toFixed(1)}%`;
 
     const payloadInfoCell = document.getElementById("manualPayload").closest("tr").querySelector("td:last-child");
-    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg.toFixed(0)} kg`;
+    const payloadLimitSuffix = ac.ID === "CS-ATH" && minPayloadLimit?.label ? ` (${minPayloadLimit.label})` : "";
+    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg} kg${payloadLimitSuffix}`;
 
     const fuelInfoCell = document.getElementById("fuel").closest("tr").querySelector("td:last-child");
-    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg.toFixed(0)} kg (${maxFuelLb.toFixed(0)} lb)`;
+    fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg} kg (${maxFuelLb.toFixed(0)} lb, ${minFuelLimit.label})`;
 
     // --- Limites ---
     function checkLimit(rowOrCellId, value, limit, label = "") {
