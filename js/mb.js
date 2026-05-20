@@ -334,8 +334,9 @@ async function exec_calculo() {
         if (valueCmp > limitCmp) {
 
             if (highlight) {
+                const isFuelRow = rowOrCellId === "fuel";
                 row.classList.add("limit-exceed"); // pinta a linha a vermelho
-                if (rowInput) rowInput.classList.add("limit-input-exceed");
+                if (rowInput && !isFuelRow) rowInput.classList.add("limit-input-exceed");
             }
 
             if (infoCell) {
@@ -344,7 +345,7 @@ async function exec_calculo() {
         }
     }
     const zfwLimitForCheck = ac.ID === "CS-ATH" ? mzfwInfo : MZFW;
-    checkLimit("fuel", fuel, maxFuelKg, "kg", false);
+    checkLimit("fuel", fuel, maxFuelKg, "kg");
     checkLimit("zfw", zfw, parseFloat(zfwLimitForCheck) || Infinity, "kg");
     checkLimit("rampRow", rampWeight, parseFloat(ac.MRW) || Infinity, "kg");
     checkLimit("takeoffRow", tow, parseFloat(MTOW) || Infinity, "kg");
