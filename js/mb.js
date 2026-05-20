@@ -334,8 +334,9 @@ async function exec_calculo() {
         if (valueCmp > limitCmp) {
 
             if (highlight) {
+                const isFuelRow = rowOrCellId === "fuel";
                 row.classList.add("limit-exceed"); // pinta a linha a vermelho
-                if (rowInput) rowInput.classList.add("limit-input-exceed");
+                if (rowInput && !isFuelRow) rowInput.classList.add("limit-input-exceed");
             }
 
             if (infoCell) {
