@@ -306,7 +306,8 @@ async function exec_calculo() {
         `MAC: ${macLanding.toFixed(1)}%`;
 
     const payloadInfoCell = document.getElementById("manualPayload").closest("tr").querySelector("td:last-child");
-    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg} kg (${minPayloadLimit.label})`;
+    const payloadLimitSuffix = ac.ID === "CS-ATH" && minPayloadLimit?.label ? ` (${minPayloadLimit.label})` : "";
+    payloadInfoCell.innerHTML = `ARM ${isFinite(armPayload) ? armPayload.toFixed(1) : "0.0"}<br>MAX Payload: ${maxPayloadKg} kg${payloadLimitSuffix}`;
 
     const fuelInfoCell = document.getElementById("fuel").closest("tr").querySelector("td:last-child");
     fuelInfoCell.innerHTML = `ARM ${armFuel.toFixed(3)}<br>MAX Fuel: ${maxFuelKg} kg (${maxFuelLb.toFixed(0)} lb, ${minFuelLimit.label})`;
