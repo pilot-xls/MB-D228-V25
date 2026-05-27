@@ -376,13 +376,17 @@ function recomputeRoute(rota, aircraft) {
 
     let prev = null;
 
-    rota.legs.forEach((leg) => {
+    rota.legs.forEach((leg, index) => {
+        if (index === 0) delete leg.nextSuggestedFuel;
+
         computeLegDerived(leg, prev, aircraft);
 
-        if (prev && (!leg.fuelOB || leg.fuelOB === "")) {
+        if (prev) {
             const prevLanding = Number(prev.landingFuelLb) || 0;
             if (prevLanding > 0) {
                 leg.nextSuggestedFuel = `${Math.round(prevLanding)} lb`;
+            } else {
+                delete leg.nextSuggestedFuel;
             }
         }
 
@@ -564,6 +568,9 @@ function aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData) {
         const maxPayloadEl = el.querySelector("#leg-max-traffic-load");
         if (maxFuelEl) maxFuelEl.textContent = leg.maxFuelInfo || "";
         if (maxPayloadEl) maxPayloadEl.textContent = leg.maxPayloadInfo || "";
+
+        const fuelInputEl = el.querySelector(".fuel-ob-input");
+        if (fuelInputEl) fuelInputEl.placeholder = leg?.nextSuggestedFuel || "Lb";
 
         const summary = buildLegSummary(leg);
         const fuelMaxSummaryEl = el.querySelector(".leg-summary-fuel-max");
@@ -881,7 +888,7 @@ function attachEvents(container, estado, aircraft) {
 
         }
 
-        recomputeRoute(rotaData, aircraft);
+        recomputeRoute(rota, aircraft);
         guardarEstadoRotas(estado);
         aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData);
 
