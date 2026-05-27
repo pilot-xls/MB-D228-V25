@@ -767,7 +767,7 @@ function attachEvents(container, estado, aircraft) {
             delete leg.nextSuggestedFuel;
         });
 
-        recomputeRoute(rota, aircraft);
+        recomputeRoute(rotaData, aircraft);
         guardarEstadoRotas(estado);
         renderRotas(container, estado);
 
@@ -804,7 +804,7 @@ function attachEvents(container, estado, aircraft) {
             rota.legs.splice(legIndex, 1);
         }
 
-        recomputeRoute(rota, aircraft);
+        recomputeRoute(rotaData, aircraft);
         guardarEstadoRotas(estado);
         renderRotas(container, estado);
 
@@ -888,7 +888,7 @@ function attachEvents(container, estado, aircraft) {
 
         }
 
-        recomputeRoute(rota, aircraft);
+        recomputeRoute(rotaData, aircraft);
         guardarEstadoRotas(estado);
         aplicarCoresLimitsDaRotaNoDOM(rotaCard, rotaData);
 
@@ -896,7 +896,10 @@ function attachEvents(container, estado, aircraft) {
         rotaData.legs.forEach((ldata, i) => {
             if (rotaData.legs[i + 1] && !rotaData.legs[i + 1].fuelOB) {
                 const nextEl = legEls[i + 1]?.querySelector(".fuel-ob-input");
-                if (nextEl) nextEl.placeholder = `${Math.round(ldata.landingFuelLb)} lb`;
+                if (nextEl) {
+                    const suggested = Number(ldata.landingFuelLb) || 0;
+                    nextEl.placeholder = suggested > 0 ? `${Math.round(suggested)} lb` : "Lb";
+                }
             }
         });
     });
