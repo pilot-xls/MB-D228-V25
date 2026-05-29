@@ -767,7 +767,7 @@ function attachEvents(container, estado, aircraft) {
             delete leg.nextSuggestedFuel;
         });
 
-        recomputeRoute(rotaData, aircraft);
+        recomputeRoute(rota, aircraft);
         guardarEstadoRotas(estado);
         renderRotas(container, estado);
 
@@ -804,7 +804,7 @@ function attachEvents(container, estado, aircraft) {
             rota.legs.splice(legIndex, 1);
         }
 
-        recomputeRoute(rotaData, aircraft);
+        recomputeRoute(rota, aircraft);
         guardarEstadoRotas(estado);
         renderRotas(container, estado);
 
