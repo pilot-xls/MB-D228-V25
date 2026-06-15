@@ -175,6 +175,18 @@ function getAircraftActiveSync() {
 
 async function getAircraftActive() {
     const activeId = lsGet(AIRCRAFT_ACTIVE_KEY) || localStorage.getItem("defaultAircraft");
+
+    // Usar sempre os dados do localStorage (onde estão as edições do utilizador via Settings)
+    const storedAircraftData = lsGet("aircraftData");
+    if (storedAircraftData && Object.keys(storedAircraftData).length > 0) {
+        if (activeId && storedAircraftData[activeId]) {
+            return storedAircraftData[activeId];
+        }
+        const firstKey = Object.keys(storedAircraftData)[0];
+        return storedAircraftData[firstKey] || null;
+    }
+
+    // Fallback: ler do ficheiro JSON se localStorage estiver vazio
     const data = await loadJSON("data/aircraft.json");
 
     // Estrutura do tipo: { default, aircraft: { ... } }
