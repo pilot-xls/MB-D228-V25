@@ -46,10 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (dadosGuardados.trafficLoad && typeof dadosGuardados.trafficLoad.total === "number")
             document.getElementById("manualPayload").value = dadosGuardados.trafficLoad.total || 0;
 
-        console.log("verificar momento guardado...");
-
         const momentoGuardado = Number(dadosGuardados?.trafficLoad?.moment) || 0;
-        console.log("dados guardados (momento) =", momentoGuardado);
 
         if (momentoGuardado > 0) {
             const inputMom = document.getElementById("momentPayloadInput");
@@ -87,11 +84,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             const inputMom = document.getElementById("momentPayloadInput");
             const momentoAtual = Number(inputMom?.value) || 0;
 
+            const legAtual = JSON.parse(localStorage.getItem("mbLegSelecionada") || "null") || {};
             const atualizado = {
-                ...(JSON.parse(localStorage.getItem("mbLegSelecionada") || "null") || {}),
+                ...legAtual,
                 nome: document.getElementById("nomeLeg").innerText || "",
                 trafficLoad: {
-                    ...(JSON.parse(localStorage.getItem("mbLegSelecionada") || "null")?.trafficLoad || {}),
+                    ...(legAtual.trafficLoad || {}),
                     total: Number(document.getElementById("manualPayload").value) || 0,
                     moment: momentoAtual
                 },
@@ -102,7 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             };
 
             localStorage.setItem("mbLegSelecionada", JSON.stringify(atualizado));
-            exec_calculo(); // recalcula imediatamente
+            exec_calculo();
         });
     });
 
@@ -175,14 +173,8 @@ async function exec_calculo() {
     const momentPilots = pilots * armPilots;
     let momentPayload = 0;
 
-    console.log("usar momento importado? " + usarMomentoImportado);
-
     const inputMom = document.getElementById("momentPayloadInput");
     const momImportado = Number(inputMom?.value) || 0;
-
-    console.log("usarMomentoImportado =", usarMomentoImportado);
-    console.log("payload =", payload);
-    console.log("momImportado =", momImportado);
 
     if (usarMomentoImportado && momImportado > 0) {
         // usa o momento vindo de fora
