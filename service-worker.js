@@ -1,6 +1,6 @@
 // Nome da cache actual da aplicação.
 // Sempre que mudares ficheiros importantes, incrementa esta versão.
-const CACHE_NAME = 'd228-cache-v1.5.1';
+const CACHE_NAME = 'd228-cache-v1.5.2';
 
 // Página principal usada como fallback quando uma navegação falha.
 const APP_SHELL_FALLBACK = './index.html';
@@ -272,8 +272,11 @@ self.addEventListener('fetch', (event) => {
       caches.match(request, { ignoreSearch: true }).then(async (cachedResponse) => {
         // Se existir em cache, devolve já.
         if (cachedResponse) {
-          // Actualiza em segundo plano.
-          event.waitUntil(updateCacheInBackground(request));
+          // Só actualiza em segundo plano para URLs sem query string.
+          // URLs com ?_t= (probes de ligação) nunca devem acumular entradas na cache.
+          if (!requestUrl.search) {
+            event.waitUntil(updateCacheInBackground(request));
+          }
 
           // Devolve a versão em cache.
           return cachedResponse;
