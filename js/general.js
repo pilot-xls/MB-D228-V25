@@ -1,0 +1,358 @@
+// Seleciona todo o conteúdo de qualquer INPUT ao focar
+document.addEventListener("DOMContentLoaded", () => {
+    // Seleciona todos os campos <input> na página
+    document.querySelectorAll("input").forEach(inp => {
+        // Adiciona um 'listener' para o evento 'focus' (quando o campo é ativado)
+        inp.addEventListener("focus", function () {
+            // Ignorar a calculadora de tempo
+            if (this.id === "timeInput") return;
+            this.select();
+        });
+    });
+});
+
+
+// Fecha teclado ao clicar fora dos inputs
+document.addEventListener("touchstart", function (event) {
+    const isInput = event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA";
+    if (!isInput) {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+            activeElement.blur();
+        }
+    }
+});
+//Forçar a janela a rolar e centrar o input ativo logo acima do teclado virtual.
+document.addEventListener('DOMContentLoaded', () => {
+    // Atraso necessário para dar tempo ao teclado virtual para abrir e estabilizar
+    const SCROLL_DELAY = 300;
+
+    // Seleciona todos os campos de entrada (input, select, textarea)
+    const inputFields = document.querySelectorAll('input, select, textarea');
+
+     // Função para detetar se é dispositivo móvel
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (!isMobile) return; // Sai logo se for desktop
+
+    inputFields.forEach(input => {
+        input.addEventListener('focus', function () {
+            const currentInput = this;
+
+            // Usa um atraso para permitir que o teclado virtual abra
+            setTimeout(() => {
+                // Calcula a posição do topo do input em relação ao topo da página
+                const inputTop = currentInput.getBoundingClientRect().top;
+
+                // Ponto ideal de rolagem: a posição atual do scroll + a posição do input 
+                // menos uma margem de segurança (e.g., 50px)
+                const scrollTarget = window.scrollY + inputTop - 50;
+
+                // Força a janela a rolar suavemente até à posição desejada
+                window.scrollTo({
+                    top: scrollTarget,
+                    behavior: 'smooth'
+                });
+            }, SCROLL_DELAY);
+        });
+    });
+
+});
+
+// Fecha o menu sempre que se clica ou toca fora do botão hamburger e do próprio menu
+document.addEventListener('DOMContentLoaded', () => {
+    const menu = document.querySelector('.menu');
+    const hamburger = document.querySelector('.hamburger');
+
+    if (!menu || !hamburger) return; // <-- evita erro se não existir menu na página
+
+    // abre/fecha ao clicar no botão
+    hamburger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('active');
+    });
+
+    // fecha ao clicar fora do menu
+    document.addEventListener('click', (e) => {
+        if (menu.classList.contains('active') &&
+            !menu.contains(e.target) &&
+            !hamburger.contains(e.target)) {
+            menu.classList.remove('active');
+        }
+    });
+});
+
+
+// Carrega o ficheiro header.html em todas as páginas e ativa a lógica de abrir/fechar o menu
+document.addEventListener('DOMContentLoaded', () => {
+    // Procura o elemento onde o header vai ser inserido
+    const headerContainer = document.getElementById('header');
+
+    // Se esta página não tiver esse elemento, termina sem erro
+    if (!headerContainer) {
+        return;
+    }
+
+    // Carrega o ficheiro do header
+    fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+            // Insere o HTML do header no contentor
+            headerContainer.innerHTML = data;
+
+            const smallLabel = headerContainer.querySelector("small");
+
+            const updateDefaultAircraftLabel = async () => {
+                // garante que existem dados no arranque (primeira abertura da PWA)
+                if (typeof ensureSettingsData === "function") {
+                    await ensureSettingsData();
+                }
+
+                const defaultKey = localStorage.getItem("defaultAircraft");
+                const aircraftData = JSON.parse(localStorage.getItem("aircraftData") || "{}");
+                const defaultId = defaultKey && aircraftData[defaultKey]
+                    ? aircraftData[defaultKey].ID || defaultKey
+                    : "";
+
+                if (smallLabel) {
+                    smallLabel.textContent = defaultId;
+                }
+            };
+
+            // atualiza logo após carregar o header
+            updateDefaultAircraftLabel();
+
+            // atualiza na própria página quando o settings muda o default
+            window.addEventListener("defaultAircraftChanged", updateDefaultAircraftLabel);
+
+            // atualiza quando a mudança vier de outro separador/janela
+            window.addEventListener("storage", (e) => {
+                if (e.key === "defaultAircraft" || e.key === "aircraftData") {
+                    updateDefaultAircraftLabel();
+                }
+            });
+
+            const connectionDot = document.getElementById('connection-status-dot');
+            if (window.__d228ConnectionMonitorInitialized) return;
+            window.__d228ConnectionMonitorInitialized = true;
+
+            const CONNECTION_PROBE_URL = './manifest.json';
+            const CONNECTION_PROBE_INTERVAL_MS = 5000;
+            const CONNECTION_PROBE_TIMEOUT_MS = 1200;
+            const STABLE_ONLINE_MIN_PASSES = 2;
+            let stablePasses = 0;
+            let wasStableOnline = false;
+
+            const paintConnectionDot = (online) => {
+                if (!connectionDot) return;
+
+                connectionDot.classList.toggle('is-online', online);
+                connectionDot.classList.toggle('is-offline', !online);
+                connectionDot.title = online ? 'Online' : 'Offline';
+                connectionDot.setAttribute('aria-label', online ? 'Online' : 'Offline');
+            };
+
+            const checkRealConnection = async () => {
+                if (!navigator.onLine) {
+                    stablePasses = 0;
+                    paintConnectionDot(false);
+                    return;
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), CONNECTION_PROBE_TIMEOUT_MS);
+
+                try {
+                    const response = await fetch(`${CONNECTION_PROBE_URL}?_t=${Date.now()}`, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+
+                    const online = response.ok;
+                    if (online) {
+                        stablePasses += 1;
+                    } else {
+                        stablePasses = 0;
+                        wasStableOnline = false;
+                    }
+
+                    paintConnectionDot(online);
+
+                    const isStableOnline = stablePasses >= STABLE_ONLINE_MIN_PASSES;
+                    if (isStableOnline && !wasStableOnline && 'serviceWorker' in navigator) {
+                        wasStableOnline = true;
+                        const reg = await navigator.serviceWorker.getRegistration();
+                        if (reg) {
+                            reg.update().catch(() => {});
+                        }
+                    }
+                } catch (error) {
+                    stablePasses = 0;
+                    wasStableOnline = false;
+                    paintConnectionDot(false);
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            };
+
+            checkRealConnection();
+            window.addEventListener('online', checkRealConnection);
+            window.addEventListener('offline', () => {
+                stablePasses = 0;
+                wasStableOnline = false;
+                paintConnectionDot(false);
+            });
+            window.setInterval(checkRealConnection, CONNECTION_PROBE_INTERVAL_MS);
+
+            // Procura os elementos do menu já depois de inserir o header
+            const menu = document.querySelector('.menu');
+            const hamburger = document.querySelector('.hamburger');
+
+            // Se faltar algum elemento do menu, termina sem erro
+            if (!menu || !hamburger) {
+                return;
+            }
+
+            // Abre/fecha o menu ao clicar no botão hamburger
+            hamburger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('active');
+            });
+
+            // Fecha o menu ao clicar fora dele
+            document.addEventListener('click', (e) => {
+                if (
+                    menu.classList.contains('active') &&
+                    !menu.contains(e.target) &&
+                    !hamburger.contains(e.target)
+                ) {
+                    menu.classList.remove('active');
+                }
+            });
+        });
+});
+
+// Injeta o footer diretamente (sem fetch) para evitar flicker na navegação
+(function () {
+    const footerContainer = document.getElementById('footer');
+    if (!footerContainer) return;
+
+    footerContainer.innerHTML = `<nav class="footer-nav">
+    <a href="calculadora.html" class="footer-nav__item">
+        <img src="img/calculator.png" alt="Calculadora" class="footer-nav__icon">
+        <span class="footer-nav__label">Calculator</span>
+    </a>
+    <a href="mb.html" class="footer-nav__item">
+        <img src="img/balance.png" alt="Weight &amp; Balance" class="footer-nav__icon">
+        <span class="footer-nav__label">W&amp;B</span>
+    </a>
+    <a href="index.html" class="footer-nav__item footer-nav__item--home">
+        <span class="footer-nav__home-bubble">
+            <svg viewBox="0 0 24 24" class="footer-nav__home-svg">
+                <path fill="#ffffff" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+        </span>
+    </a>
+    <a href="rotas.html" class="footer-nav__item">
+        <img src="img/waypoint.png" alt="Rotas" class="footer-nav__icon">
+        <span class="footer-nav__label">Routes</span>
+    </a>
+    <a href="https://chat.whatsapp.com/FIYPIW9mRn42HTzPFxXhOX?mode=hqctswi" target="_blank" rel="noopener noreferrer" class="footer-nav__item footer-nav__item--whatsapp">
+        <span class="footer-nav__wa-bubble">
+            <svg viewBox="0 0 24 24" class="footer-nav__wa-svg">
+                <path fill="#ffffff" d="M16.75 13.96c.25.13 1.47.72 1.7.85.23.13.39.2.45.31.06.11.06.64-.15 1.26-.21.62-1.23 1.2-1.69 1.26-.43.06-.97.09-1.56-.11-.36-.12-.82-.27-1.42-.53-2.5-1.08-4.13-3.59-4.25-3.76-.12-.17-1.02-1.36-1.02-2.6 0-1.23.64-1.83.87-2.08.23-.25.5-.31.67-.31h.48c.15 0 .36-.06.56.43.21.5.71 1.73.77 1.85.06.13.1.28.02.45-.08.17-.12.28-.23.43-.11.15-.23.34-.33.46-.11.13-.22.27-.09.53.13.25.58.96 1.24 1.56.85.75 1.57.98 1.82 1.09.25.11.39.09.53-.06.17-.2.73-.85.92-1.14.19-.28.38-.23.64-.14zM12.04 2C6.57 2 2.13 6.42 2.13 11.88c0 1.91.5 3.77 1.45 5.4L2 22l4.86-1.27c1.58.86 3.37 1.31 5.18 1.31 5.46 0 9.91-4.42 9.91-9.88C21.95 6.42 17.5 2 12.04 2z"/>
+            </svg>
+        </span>
+        <span class="footer-nav__label">WhatsApp</span>
+    </a>
+</nav>`;
+
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    footerContainer.querySelectorAll('.footer-nav__item').forEach(link => {
+        if (link.getAttribute('href') === currentPage) {
+            link.classList.add('active');
+        }
+    });
+}());
+
+// ATIVAR / DESATIVAR SWIPE
+const ENABLE_SWIPE_NAV = false; // ← mete false para suspender
+
+/*
+ Script para navegação por gestos (swipe) no telemóvel
+ ...
+*/
+
+if (ENABLE_SWIPE_NAV) {
+
+    const paginas = [
+        "index.html",
+        "mb.html",
+        "rotas.html",
+        "performance.html",
+        "calculadora.html",
+        "settings.html"
+    ];
+
+    const atual = window.location.pathname.split("/").pop();
+    const pos = paginas.indexOf(atual);
+
+    let touchStartX = 0;
+    let deltaX = 0;
+    let preview = null;
+
+    function preloadNextPage(nextUrl, direction) {
+        preview = document.createElement("iframe");
+        preview.src = nextUrl;
+        preview.style.position = "fixed";
+        preview.style.top = "0";
+        preview.style.left = direction === "left" ? "100%" : "-100%";
+        preview.style.width = "100%";
+        preview.style.height = "100%";
+        preview.style.border = "none";
+        preview.style.opacity = "0";
+        preview.style.transition = "transform 0.25s ease, opacity 0.25s ease";
+        document.body.appendChild(preview);
+        requestAnimationFrame(() => (preview.style.opacity = "1"));
+    }
+
+    document.addEventListener("touchstart", e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener("touchmove", e => {
+        deltaX = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(deltaX) < 20) return;
+
+        if (deltaX < 0 && pos < paginas.length - 1) {
+            if (!preview) preloadNextPage(paginas[pos + 1], "left");
+            preview.style.transform = `translateX(${deltaX}px)`;
+        } else if (deltaX > 0 && pos > 0) {
+            if (!preview) preloadNextPage(paginas[pos - 1], "right");
+            preview.style.transform = `translateX(${deltaX - window.innerWidth}px)`;
+        }
+    });
+
+    document.addEventListener("touchend", () => {
+        if (!preview) return;
+
+        if (deltaX < -100 && pos < paginas.length - 1) {
+            preview.style.transform = "translateX(-100%)";
+            preview.style.opacity = "1";
+            setTimeout(() => (window.location.href = paginas[pos + 1]), 200);
+        } else if (deltaX > 100 && pos > 0) {
+            preview.style.transform = "translateX(0)";
+            preview.style.opacity = "1";
+            setTimeout(() => (window.location.href = paginas[pos - 1]), 200);
+        } else {
+            preview.style.transform = "translateX(0)";
+            preview.style.opacity = "0";
+            setTimeout(() => {
+                preview.remove();
+                preview = null;
+            }, 200);
+        }
+    });
+
+}

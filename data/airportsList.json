@@ -1,0 +1,244 @@
+[
+    {
+        "icao": "LIRJ",
+        "rwy": "16",
+        "heading": 160,
+        "elevation": 29.6,
+        "tora": 1100,
+        "toda": 1220,
+        "asda": 1100,
+        "lda": 949,
+        "slope": -0.5,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRJ",
+        "rwy": "34",
+        "heading": 340,
+        "elevation": 12.7,
+        "tora": 1095,
+        "toda": 1234,
+        "asda": 1095,
+        "lda": 949,
+        "slope": 0.5,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "casa",
+                "obstacle_ft": 60,
+                "obstacle_dist": 1830
+            },
+            {
+                "name": "vale",
+                "obstacle_ft": 200,
+                "obstacle_dist": 2700
+            }
+        ]
+    },
+    {
+        "icao": "LIRQ",
+        "rwy": "5",
+        "heading": 48,
+        "elevation": 122,
+        "tora": 1605,
+        "toda": 1719,
+        "asda": 1605,
+        "lda": 1455,
+        "slope": 0.4,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRQ",
+        "rwy": "23",
+        "heading": 340,
+        "elevation": 12.7,
+        "tora": 1560,
+        "toda": 1665,
+        "asda": 1560,
+        "lda": 977,
+        "slope": -0.4,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "casa",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "vale",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "03L",
+        "heading": 36,
+        "elevation": 1,
+        "tora": 2736,
+        "toda": 3011,
+        "asda": 2736,
+        "lda": 2495,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "03R",
+        "heading": 36,
+        "elevation": 3,
+        "tora": 2992,
+        "toda": 3291,
+        "asda": 2992,
+        "lda": 2849,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "21L",
+        "heading": 216,
+        "elevation": 6,
+        "tora": 2992,
+        "toda": 3148,
+        "asda": 2992,
+        "lda": 2735,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "0",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LIRP",
+        "rwy": "21R",
+        "heading": 216,
+        "elevation": 5,
+        "tora": 2736,
+        "toda": 2853,
+        "asda": 2736,
+        "lda": 2736,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "casa",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "vale",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    }
+]

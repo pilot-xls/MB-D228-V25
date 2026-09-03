@@ -1,0 +1,107 @@
+{
+  "rotas": [
+    {
+      "nome": "RVP951",
+      "legs": [
+        {
+          "nome": "BGC-VRL",
+          "minFuel": "900",
+          "tripFuel": "250"
+        },
+        {
+          "nome": "VRL-VSE",
+          "minFuel": "800",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-CAT",
+          "minFuel": "1000",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "CAT-PRM",
+          "minFuel": "900",
+          "tripFuel": "400"
+        }
+      ]
+    },
+    {
+      "nome": "RVP952",
+      "legs": [
+        {
+          "nome": "PRM-CAT",
+          "minFuel": "1100",
+          "fuelOB": "2000",
+          "tripFuel": "400"
+        },
+        {
+          "nome": "CAT-VSE",
+          "minFuel": "1100",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-VRL",
+          "minFuel": "800",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "VRL-BGC",
+          "minFuel": "1000",
+          "tripFuel": "400"
+        }
+      ]
+    },
+    {
+      "nome": "RVP953",
+      "legs": [
+        {
+          "nome": "BGC-VRL",
+          "minFuel": "900",
+          "fuelOB": "2000",
+          "tripFuel": "250"
+        },
+        {
+          "nome": "VRL-VSE",
+          "minFuel": "800",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-CAT",
+          "minFuel": "1000",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "CAT-PRM",
+          "minFuel": "900",
+          "tripFuel": "400"
+        }
+      ]
+    },
+    {
+      "nome": "RVP954",
+      "legs": [
+        {
+          "nome": "PRM-CAT",
+          "minFuel": "1100",
+          "fuelOB": "2000",
+          "tripFuel": "400"
+        },
+        {
+          "nome": "CAT-VSE",
+          "minFuel": "1100",
+          "tripFuel": "150"
+        },
+        {
+          "nome": "VSE-VRL",
+          "minFuel": "800",
+          "tripFuel": "500"
+        },
+        {
+          "nome": "VRL-BGC",
+          "minFuel": "1000",
+          "tripFuel": "400"
+        }
+      ]
+    }
+  ]
+}

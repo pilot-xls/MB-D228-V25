@@ -1,0 +1,91 @@
+/* =====================================================
+   mb-print-thermal.css
+   Esta página constrói o talão como um PDF a sério (texto vetorial
+   real + imagem do envelope, ver js/mb-print-thermal.js), em vez de o
+   desenhar como uma imagem rasterizada — o PDF já sai com o tamanho
+   de página (80mm) embutido, por isso nem o iOS nem apps como o
+   Thermer têm de o reformatar. A página em si só mostra o resultado.
+   ===================================================== */
+
+body.mb-thermal-body {
+    margin: 0;
+    background: #f2f2f2;
+    color: #111;
+}
+
+.mb-thermal-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.97);
+    border-bottom: 1px solid #d9d9d9;
+}
+
+.mb-thermal-toolbar .btn-secondary {
+    background: #5b6570;
+}
+
+.mb-thermal-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    line-height: 0;
+}
+
+.mb-thermal-icon-btn svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.mb-thermal-toolbar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.mb-thermal-btn-label {
+    font-size: 10px;
+    color: #666;
+}
+
+/* --- Pré-visualização do PDF gerado --- */
+.mb-thermal-preview-wrap {
+    max-width: 480px;
+    margin: 24px auto 32px;
+    padding: 0 12px;
+    text-align: center;
+}
+
+/* A pré-visualização é o nosso próprio render (via pdf.js) da página 1
+   do PDF para um <canvas>, em vez de um <iframe> a confiar no
+   visualizador de PDF nativo do browser/SO para se ajustar à caixa —
+   esse comportamento varia entre motores (ex.: Safari/iOS não enche a
+   caixa da mesma forma que o Chromium), o que deixava espaço em
+   branco a mais por baixo do talão. Um <canvas> dimensiona-se com
+   CSS normal, por isso a altura vem sempre certa com a largura. */
+.mb-thermal-preview-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0 auto 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    background: #fff;
+}
+
+/* --- Fonte dos dados usados para construir o PDF: nunca é mostrada
+   ao utilizador — só existe no DOM para js/mb-print-thermal.js ler os
+   valores e o SVG do envelope CG. --- */
+.mb-thermal-source {
+    display: none !important;
+}

@@ -1,0 +1,330 @@
+// settings.js
+
+let aircraftData = {};
+let currentAircraft = null;
+
+// elementos globais
+const select = document.getElementById("aircraft-select");
+const tableBody = document.querySelector(".settings-table tbody");
+const editForm = document.getElementById("edit-form");
+const addForm = document.getElementById("add-form");
+const editModal = document.getElementById("edit-modal");
+const addModal = document.getElementById("add-modal");
+const deleteBtn = document.getElementById("delete-aircraft");
+const defaultCheckbox = document.getElementById("default-aircraft");
+
+function notifyDefaultAircraftChanged() {
+  window.dispatchEvent(new Event("defaultAircraftChanged"));
+}
+
+// payload inputs
+const manInput = document.getElementById("std-man");
+const womanInput = document.getElementById("std-woman");
+const childInput = document.getElementById("std-child");
+
+function normalizeDecimalSeparator(inputEl) {
+  if (!inputEl) return;
+  const nextValue = inputEl.value.replace(/,/g, ".");
+  if (nextValue !== inputEl.value) {
+    inputEl.value = nextValue;
+  }
+}
+
+function setupDecimalSeparatorNormalization(scopeEl) {
+  if (!scopeEl) return;
+  const decimalInputs = scopeEl.querySelectorAll('input[inputmode="decimal"]');
+  decimalInputs.forEach(inputEl => {
+    inputEl.addEventListener("input", () => normalizeDecimalSeparator(inputEl));
+    inputEl.addEventListener("blur", () => normalizeDecimalSeparator(inputEl));
+  });
+}
+
+setupDecimalSeparatorNormalization(editForm);
+setupDecimalSeparatorNormalization(addForm);
+
+// inicializar dados
+(async () => {
+  // vai buscar os dados actuais já tratados pela função
+  const { aircraftData: acData, defaultId, payloadDefaults } = await ensureSettingsData();
+
+  // vai buscar o JSON original com os defaults
+  const aircraftJson = await fetch("data/aircraft.json").then(r => r.json());
+
+  // no teu JSON, os aviões estão dentro de "aircraft"
+  const defaultAircraftData = aircraftJson.aircraft || {};
+
+  // guarda os dados actuais na variável global
+  aircraftData = acData || {};
+
+  // começa pelos dados já guardados para não perder aviões criados manualmente
+  const mergedAircraftData = { ...aircraftData };
+
+  // para cada avião do ficheiro JSON
+  Object.keys(defaultAircraftData).forEach(key => {
+    // faz fusão:
+    // 1) campos do JSON entram todos, incluindo campos novos
+    // 2) dados já guardados do utilizador ficam por cima
+    mergedAircraftData[key] = {
+      ...defaultAircraftData[key],
+      ...(aircraftData[key] || {})
+    };
+  });
+
+  // substitui os dados globais pelos dados já fundidos
+  aircraftData = mergedAircraftData;
+
+  // guarda os dados actualizados no localStorage
+  localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
+
+  // se não houver avião por defeito guardado, usa o do JSON
+  const finalDefaultId = defaultId || aircraftJson.default || null;
+
+  if (finalDefaultId) {
+    localStorage.setItem("defaultAircraft", finalDefaultId);
+  }
+
+  // preenche o select com os aviões
+  populateSelect();
+
+  // selecciona o avião por defeito ou o primeiro da lista
+  if (finalDefaultId && aircraftData[finalDefaultId]) {
+    updateTable(select.value = finalDefaultId);
+  } else if (Object.keys(aircraftData).length > 0) {
+    updateTable(select.value = Object.keys(aircraftData)[0]);
+  }
+
+  notifyDefaultAircraftChanged();
+
+  // preenche os valores por defeito do payload
+  manInput.value = payloadDefaults.man || "";
+  womanInput.value = payloadDefaults.woman || "";
+  childInput.value = payloadDefaults.child || "";
+
+  // guarda os payload defaults se ainda não existirem
+  if (!localStorage.getItem("payloadDefaults")) {
+    localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
+  }
+})();
+// preencher dropdown
+function populateSelect() {
+  select.innerHTML = "";
+  Object.keys(aircraftData).forEach(key => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = `${aircraftData[key].ID}`;
+    select.appendChild(opt);
+  });
+}
+
+// atualizar tabela e formulário de edição
+function updateTable(key) {
+  currentAircraft = key;
+  const ac = aircraftData[key];
+  if (!ac) return;
+
+  tableBody.innerHTML = `
+  <tr><td>ID</td><td>${ac.ID || ""}</td></tr>
+  <tr><td>Série</td><td>${ac.Serie || ""}</td></tr>
+  <tr><td>BEW</td><td>${ac.BEW || ""}</td></tr>
+  <tr><td>MZFW</td><td>${ac.MZFW || ""}</td></tr>
+  <tr><td>MRW</td><td>${ac.MRW || ""}</td></tr>
+  <tr><td>MTOW</td><td>${ac.MTOW || ""}</td></tr>
+  <tr><td>MLOW</td><td>${ac.MLOW || ""}</td></tr>
+  <tr><td>Fuel capacity (lb)</td><td>${ac.FuelTank || ""}</td></tr>
+  <tr><td>Consumo (lb/h)</td><td>${ac.consumo || ""}</td></tr>
+  <tr><td>Braço BEW</td><td>${ac.armBEW || "-"}</td></tr>
+  <tr><td>Braço Pilotos</td><td>${ac.armPilotos || "-"}</td></tr>
+  <tr><td>Braço Combustível</td><td>${ac.armFuel || "-"}</td></tr>
+  <tr><td>Braço Médio Payload</td><td>${ac.armPayload || "-"}</td></tr>
+`;
+
+
+  editForm["edit-id"].value = ac.ID || "";
+  editForm["edit-serie"].value = ac.Serie || "";
+  editForm["edit-bew"].value = ac.BEW || "";
+  editForm["edit-mzfw"].value = ac.MZFW || "";
+  editForm["edit-mrw"].value = ac.MRW || "";
+  editForm["edit-mtow"].value = ac.MTOW || "";
+  editForm["edit-mlow"].value = ac.MLOW || "";
+  editForm["edit-fuelTank"].value = ac.FuelTank || "";
+  editForm["edit-consumo"].value = ac.consumo || "";
+  editForm["edit-armPilots"].value = ac.armPilotos || "";
+  editForm["edit-armBEW"].value = ac.armBEW || "";
+  editForm["edit-armFuel"].value = ac.armFuel || "";
+  editForm["edit-armPayload"].value = ac.armPayload || "";
+
+  const defaultId = localStorage.getItem("defaultAircraft");
+  defaultCheckbox.checked = (defaultId === key);
+}
+
+// guardar edição
+editForm.addEventListener("submit", e => {
+  e.preventDefault();
+  if (!currentAircraft) return;
+  const ac = aircraftData[currentAircraft];
+  ac.ID = editForm["edit-id"].value;
+  ac.Serie = editForm["edit-serie"].value;
+  ac.BEW = editForm["edit-bew"].value;
+  ac.MZFW = editForm["edit-mzfw"].value;
+  ac.MRW = editForm["edit-mrw"].value;
+  ac.MTOW = editForm["edit-mtow"].value;
+  ac.MLOW = editForm["edit-mlow"].value;
+  ac.FuelTank = editForm["edit-fuelTank"].value;
+  ac.consumo = editForm["edit-consumo"].value;
+  ac.armPilotos = editForm["edit-armPilots"].value;
+  ac.armBEW = editForm["edit-armBEW"].value;
+  ac.armFuel = editForm["edit-armFuel"].value;
+  ac.armPayload = editForm["edit-armPayload"].value;
+
+  localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
+  updateTable(currentAircraft);
+  notifyDefaultAircraftChanged();
+  editModal.style.display = "none";
+});
+
+// apagar avião
+deleteBtn.addEventListener("click", () => {
+  if (!currentAircraft) return;
+  if (!confirm("Tens a certeza que queres apagar este avião?")) return;
+
+  delete aircraftData[currentAircraft];
+  localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
+
+  const defaultId = localStorage.getItem("defaultAircraft");
+  if (defaultId === currentAircraft) {
+    localStorage.removeItem("defaultAircraft");
+  }
+
+  const keys = Object.keys(aircraftData);
+  if (keys.length > 0) {
+    populateSelect();
+    updateTable(select.value = keys[0]);
+  } else {
+    tableBody.innerHTML = "";
+    select.innerHTML = "";
+    currentAircraft = null;
+  }
+
+  notifyDefaultAircraftChanged();
+  editModal.style.display = "none";
+});
+
+// adicionar avião
+addForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const id = addForm["add-id"].value.trim();
+  if (!id) return;
+  
+  aircraftData[id] = {    
+        ID: addForm["add-id"].value.trim(),
+        Serie: addForm["add-serie"].value.trim(),
+        BEW: addForm["add-bew"].value.trim(),
+        MZFW: addForm["add-mzfw"].value.trim(),
+        MRW: addForm["add-mrw"].value.trim(),
+        MTOW: addForm["add-mtow"].value.trim(),
+        MLOW: addForm["add-mlow"].value.trim(),
+        FuelTank: addForm["add-fuelTank"].value.trim(),
+        consumo: addForm["add-consumo"].value.trim(),
+        armBEW: addForm["add-armBEW"].value.trim(),
+        armPilotos: addForm["add-armPilots"].value.trim(),
+        armFuel: addForm["add-armFuel"].value.trim(),
+        armPayload: addForm["add-armPayload"].value.trim()
+    };
+
+  localStorage.setItem("aircraftData", JSON.stringify(aircraftData));
+  populateSelect();
+  updateTable(id);
+  notifyDefaultAircraftChanged();
+
+  addModal.style.display = "none";
+  addForm.reset();
+});
+
+// listeners de interface
+select.addEventListener("change", () => updateTable(select.value));
+document.getElementById("open-edit").addEventListener("click", () => {
+  if (currentAircraft) editModal.style.display = "block";
+});
+document.getElementById("close-edit").addEventListener("click", () => editModal.style.display = "none");
+document.getElementById("open-add").addEventListener("click", () => addModal.style.display = "block");
+document.getElementById("close-add").addEventListener("click", () => addModal.style.display = "none");
+//quando click fora do tela editar ou adicionar aviar fecha automatimance a tela
+window.addEventListener("click", e => {
+  if (e.target === editModal) editModal.style.display = "none";
+  if (e.target === addModal) addModal.style.display = "none";
+});
+
+// SET new default Aircraft
+defaultCheckbox.addEventListener("change", e => {
+  if (e.target.checked && currentAircraft) {
+    localStorage.setItem("defaultAircraft", currentAircraft);
+  } else {
+    localStorage.removeItem("defaultAircraft");
+  }
+  notifyDefaultAircraftChanged();
+});
+
+// payload save
+function savePayload() {
+  const payloadDefaults = {
+    man: manInput.value,
+    woman: womanInput.value,
+    child: childInput.value
+  };
+  localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
+  alert("Novos dados do payload foram guardados.");
+}
+document.getElementById("save-payload").addEventListener("click", savePayload);
+
+
+
+// Botão "Repor valores":
+// - Pede confirmação ao utilizador
+// - Limpa todos os dados guardados em localStorage (aviões, payload, rotas, default)
+// - Chama ensureSettingsData() para recarregar os valores de origem a partir dos ficheiros JSON
+// - Atualiza dropdown, tabela e inputs de payload com os valores repostos
+
+
+
+
+
+
+document.getElementById("reset-defaults").addEventListener("click", async () => {
+  if (!confirm("Queres mesmo repor todos os valores por defeito?")) return;
+
+  // limpar todos os dados de settings
+  localStorage.removeItem("aircraftData");
+  localStorage.removeItem("defaultAircraft");
+  localStorage.removeItem("payloadDefaults");
+  localStorage.removeItem("estadoRotas");
+
+  // recarregar defaults dos ficheiros JSON
+  const { aircraftData: acData, defaultId, payloadDefaults } = await ensureSettingsData();
+  aircraftData = acData;
+
+  // repor também as rotas default
+  localStorage.removeItem("rotasUserV1");
+const defaults = await fetch("data/rotas.json").then(r => r.json());
+const sane = { rotas: Array.isArray(defaults?.rotas) ? defaults.rotas : [] };
+localStorage.setItem("rotasUserV1", JSON.stringify(sane));
+
+
+  // atualizar dropdown e tabela
+  populateSelect();
+  if (defaultId && aircraftData[defaultId]) {
+    updateTable(select.value = defaultId);
+  } else if (Object.keys(aircraftData).length > 0) {
+    updateTable(select.value = Object.keys(aircraftData)[0]);
+  }
+
+  // atualizar inputs de payload
+  manInput.value = payloadDefaults.man || "";
+  womanInput.value = payloadDefaults.woman || "";
+  childInput.value = payloadDefaults.child || "";
+
+    localStorage.setItem("payloadDefaults", JSON.stringify(payloadDefaults));
+
+  notifyDefaultAircraftChanged();
+
+  alert("Todos os dados foram repostos a partir dos ficheiros JSON.");
+});

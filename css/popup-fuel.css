@@ -1,0 +1,133 @@
+/* =====================================================
+   POPUP FUEL — Versão XS (sem scroll no iOS)
+   ===================================================== */
+/* Caixa principal do popup */
+.modal-popup {
+    width: 190px;
+
+    /* XS */
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #f0f0f0;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+
+    /* ALTURA REDUZIDA --> chave iOS */
+    max-height: 65vh;
+
+    /* antes 80-90vh */
+    overflow: hidden;
+
+    /* o segredo para não haver scroll externo */
+    animation: popupFade 0.15s ease-out;
+    font-family: system-ui, Arial, sans-serif;
+}
+
+/* Animação */
+@keyframes popupFade {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Área interna */
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    /* ainda mais pequeno */
+    /* scroll só aqui, mas muito pequeno */
+    max-height: 55vh;
+
+    /* controla overflow interno */
+    overflow-y: auto;
+}
+
+/* Input XS */
+.modal-input {
+    text-align: center;
+    font-size: 15px;
+    padding: 7px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    /* evita overflow */
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+}
+
+.modal-input:focus {
+    border-color: #007aff;
+}
+
+/* Erro pequeno */
+.modal-error {
+    text-align: center;
+    color: #c82323;
+    font-size: 11px;
+
+    /* XS */
+    min-height: 1em;
+}
+
+/* Botões */
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+
+    /* gap mínimo */
+    width: 100%;
+    overflow-x: hidden;
+
+    /* impede scroll horizontal */
+}
+
+.modal-btn {
+    flex: 1 1 auto;
+
+    /* encolhe se necessário */
+    min-width: 0;
+
+    /* TRUQUE: evita overflow horizontal */
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 6px;
+    background: #333;
+    color: #fff;
+    border: none;
+}
+
+.modal-btn:hover {
+    filter: brightness(1.1);
+}
+
+.modal-btn:active {
+    transform: scale(0.97);
+}
+
+/* Backdrop */
+::backdrop {
+    background: rgba(0, 0, 0, 0.40);
+}
+
+
+.modal-popup::backdrop {
+    touch-action: none;
+    position: fixed;
+    inset: 0;
+}

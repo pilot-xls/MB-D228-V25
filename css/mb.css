@@ -1,0 +1,162 @@
+.mb-table {
+    width: calc(0 + 0px);
+    table-layout: fixed;
+    border-radius: 15px;
+    outline: 2px solid #000;
+    margin: 5px 5px 40px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+/* tbody e tr são elementos HTML, não classes. */
+.mb-table tbody tr {
+    height: 45px;
+}
+
+body {
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
+}
+
+/* quando a linha excede, pinta a linha inteira */
+.limit-exceed {
+    background-color: #f69b9b !important;
+
+    /* fundo vermelho claro */
+    color: #fff;
+
+    /* texto branco por defeito */
+    font-weight: bold;
+}
+
+.limit-exceed td {
+    background-color: #f69b9b !important;
+}
+
+.limit-exceed td#Info-maxpayload {
+    color: #fff !important;
+}
+
+
+.limit-input-exceed {
+    border: 2px solid #d40000 !important;
+    background-color: #ffe8e8 !important;
+}
+
+/* quando há .info-warning dentro de .limit-exceed, também fica branco */
+.limit-exceed .info-warning {
+    color: #fff;
+}
+
+/* .info-warning mantém texto branco para legibilidade em linha vermelha */
+.info-warning {
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+div img,
+div svg {
+    width: 100vw;
+
+    /* 100% da viewport width */
+    height: auto;
+}
+
+#loadsheet-img {
+    position: relative;
+    display: inline-block;
+}
+
+.btn {
+    background: #0057b8;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#mb-table {
+    display: flex;
+    flex-direction: column;
+    padding-right: 10px;
+}
+
+#mb-table #heading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    /* margin-top: 10px */
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#mb-table #heading h2 {
+    margin-bottom: 0px;
+}
+
+#mb-table #heading #ac-selected {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+#mb-table #heading #nomeLeg {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.mb-table input {
+    text-align: center;
+    font-size: calc(0 + 0px);
+    width: 85%;
+    resize: horizontal;
+    height: 35px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-style: dotted;
+}
+
+thead {
+    border-top-left-radius: 16px;
+}
+
+thead tr {
+    outline: 1px solid #090808;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
+    border-color: #000000;
+    height: 30px;
+}
+
+thead #thead-item {
+    border-top-left-radius: 15px;
+}
+
+th {
+    background-color: #2b353f;
+    color: #ffffff;
+}
+
+thead #thead-info {
+    border-top-right-radius: 15px;
+}
+
+tbody {
+    text-align: center;
+}
+
+.mb-print-actions {
+    margin: 18px 16px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mb-print-btn {
+    width: min(420px, 100%);
+    padding: 0.9rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
