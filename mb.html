@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>D228</title>
+        <link href="css/theme.css" rel="stylesheet">
+        <link href="css/mb.css" rel="stylesheet">
+        <link href="css/menu.css" rel="stylesheet">
+        <link href="css/popup-fuel.css" rel="stylesheet">
+    </head>
+    <body>
+        <header>
+            <div id="header"></div>
+        </header>
+        <main id="spa-view">
+        <div id="pdfCaptureArea">
+            <div id="mb-table">
+                <div style="display:grid;grid-template-columns:1fr 5fr 1fr;grid-template-rows:100px;grid-template-areas:'1 2 3';">
+                    <div id="heading" style="grid-row: 1; grid-column: 2;">
+                        <h2>Weight &amp; Balance</h2>
+                        <p id="ac-selected"></p>
+                        <p id="nomeLeg"></p>
+                    </div>
+                    <div class="mb-print-actions" style="grid-row: 1; grid-column: 3; justify-self: end; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <button id="btnMbPrintThermal" type="button" aria-label="Imprimir térmica" style="width: 40px; height: 40px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid #ccc; border-radius: 10px; background: #fff;">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+</button>
+                        <span style="font-size: 10px; color: #666;">upload</span>
+                    </div>
+                </div>
+                <table class="mb-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" id="thead-item">Item</th>
+                            <th scope="col">Weight (kg)</th>
+                            <th scope="col">Moment (kg&middot;m)</th>
+                            <th scope="col" id="thead-info">INFO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 5px double #000000; border-top-width: 0px; border-left-width: 0px; border-right-width: 0px;">
+                            <td style="text-align: center; font-size: calc(0 + 0px); width: calc(0 + 0px);">Basic weight</td>
+                            <td id="basicWeight" style="text-align: center; font-size: calc(0 + 0px); width: calc(0 + 0px);">0</td>
+                            <td id="basicMoment" style="text-align: center; font-size: calc(0 + 0px); width: calc(0 + 0px);">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">
+                                <label for="pilots" style="text-align: center; line-height: 35px; font-size: calc(0 + 0px); width: calc(0px + 0px); min-width: calc(0 + 0px); max-width: calc(0 + 0px);">Pilots</label>
+                            </td>
+                            <td style="text-align: center; font-size: calc(0 + 0px);">
+                                <input id="pilots" class="popup-fuel" type="number" inputmode="numeric" step="any" value="150" style="text-align: center; font-size: calc(0 + 0px); width: 85%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            </td>
+                            <td id="momentPilots">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">
+                                <label for="manualPayload" style="text-align: center; line-height: 35px; font-size: calc(0 + 0px); width: calc(0px + 0px); min-width: calc(0 + 0px); max-width: calc(0 + 0px);">Payload</label>
+                            </td>
+                            <td style="text-align: center; font-size: calc(0 + 0px);">
+                                <input id="manualPayload" class="popup-fuel" type="number" inputmode="numeric" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 85%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                                <input type="hidden" id="momentPayloadInput">
+                            </td>
+                            <td id="momentPayload">0</td>
+                            <td style="font-size: 12px; color: #ff0000;" id="Info-maxfuel"></td>
+                        </tr>
+                        <tr class="gray-row" style="background-color: #ededed;">
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">ZFW</td>
+                            <td id="zfw" style="text-align: center; font-size: calc(0 + 0px);">0</td>
+                            <td id="momentZfw">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">
+                                <label for="fuel">Fuel loading</label>
+                            </td>
+                            <td style="text-align: center; font-size: calc(0 + 0px);">
+                                <input id="fuel" class="popup-fuel" type="number" inputmode="numeric" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 85%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            </td>
+                            <td id="momentFuel">0</td>
+                            <td style="font-size: 12px; color: #ff0000;" id="Info-maxpayload"></td>
+                        </tr>
+                        <tr id="rampRow" class="gray-row" style="background-color: #ededed;">
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">Ramp Weight</td>
+                            <td id="rampWeight" class="limit-check" style="text-align: center; font-size: calc(0 + 0px);">0</td>
+                            <td id="momentRamp">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">
+                                <label for="fuelTaxi">Fuel taxi</label>
+                            </td>
+                            <td style="text-align: center; font-size: calc(0 + 0px);">
+                                <input id="fuelTaxi" class="popup-fuel" type="number" inputmode="numeric" step="any" value="30" style="text-align: center; font-size: calc(0 + 0px); width: 85%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            </td>
+                            <td id="momentTaxi">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr id="takeoffRow" class="gray-row" style="background-color: #ededed;">
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">Take-off Weight</td>
+                            <td id="takeoffWeight" class="limit-check" style="text-align: center; font-size: calc(0 + 0px);">0</td>
+                            <td id="momentTakeoff">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">
+                                <label for="fuelDest" style="text-align: center; line-height: 20px; font-size: calc(0 + 0px); width: calc(0px + 0px); min-width: calc(0 + 0px); max-width: calc(0 + 0px);">Fuel to destination</label>
+                            </td>
+                            <td style="text-align: center; font-size: calc(0 + 0px);">
+                                <input id="fuelDest" class="popup-fuel" type="number" inputmode="numeric" step="any" value="0" style="text-align: center; font-size: calc(0 + 0px); width: 85%; resize: horizontal; height: 35px; border-radius: 10px; border-width: 1px; border-style: dotted;">
+                            </td>
+                            <td id="momentDest">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                        <tr id="landingRow" class="gray-row" style="background-color: #ededed;">
+                            <td style="text-align: center; line-height: 20px; font-size: calc(0 + 0px);">Landing Weight</td>
+                            <td id="landingWeight" class="limit-check" style="text-align: center; font-size: calc(0 + 0px);">0</td>
+                            <td id="momentLanding">0</td>
+                            <td style="font-size: 12px;"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="loadsheet-img" style="position: relative; display: inline-block;">
+                <img id="loadsheet-base" loading="eager" fetchpriority="high" alt="Envelope CG" style="width: 100%; height: auto;">
+                <svg id="cg-svg" viewBox="0 0 400 300" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></svg>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-around; align-items: flex-end; margin-top: 40px; margin-bottom: 90px; border-top-width: 1px; border-top-style: inset; padding-top: 25px;">
+            <img src="img/sevenair.png" loading="lazy" style="width: 200px;">
+        </div>
+        </main>
+        <footer>
+            <div id="footer"></div>
+        </footer>
+        <script src="js/general.js"></script>
+        <script src="js/spa-router.js"></script>
+        <script src="js/dataLoader.js"></script>
+        <script src="js/vendor/html2canvas.min.js" defer onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';"></script>
+        <script src="js/mb.js"></script>
+        <script src="js/mb-thermal-launcher.js"></script>
+    </body>
+</html>
