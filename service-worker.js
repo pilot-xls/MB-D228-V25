@@ -1,12 +1,15 @@
 // Nome da cache actual da aplicação.
 // Sempre que mudares ficheiros importantes, incrementa esta versão.
-const CACHE_NAME = 'd228-cache-v1.5.9';
+const CACHE_NAME = 'd228-cache-v1.6.0';
 
 // Página principal usada como fallback quando uma navegação falha.
 const APP_SHELL_FALLBACK = './index.html';
 
 // Tempo máximo para esperar pela rede antes de desistir.
 const NETWORK_TIMEOUT_MS = 800;
+
+// Intervalo mínimo entre duas actualizações em segundo plano do mesmo ficheiro.
+const REVALIDATE_INTERVAL_MS = 10 * 60 * 1000;
 
 // Lista de ficheiros críticos para funcionamento offline.
 // Evita meter aqui ficheiros que possam não existir.
@@ -168,6 +171,37 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Chave de cache = URL sem query string nem hash. Assim cada ficheiro tem uma
+// única entrada (ex.: "manifest.json?v=7" e "manifest.json" são a mesma) e a
+// procura é exacta e rápida — com { ignoreSearch: true } o browser tinha de
+// percorrer a cache inteira a cada pedido.
+function cacheKeyFor(request) {
+  const url = new URL(request.url);
+  url.search = '';
+  url.hash = '';
+  return url.href;
+}
+
+// Última actualização em segundo plano de cada ficheiro (enquanto este SW está vivo).
+const lastRevalidation = new Map();
+
+// Decide se vale a pena actualizar o ficheiro em segundo plano.
+function shouldRevalidate(request, cacheKey) {
+  // Imagens só mudam quando se sobe CACHE_NAME (o install volta a descarregar
+  // tudo). Revalidá-las a cada visita era descarregar e regravar dezenas de MB.
+  if (request.destination === 'image') {
+    return false;
+  }
+
+  // No máximo uma vez a cada REVALIDATE_INTERVAL_MS por ficheiro.
+  const now = Date.now();
+  if (now - (lastRevalidation.get(cacheKey) || 0) < REVALIDATE_INTERVAL_MS) {
+    return false;
+  }
+  lastRevalidation.set(cacheKey, now);
+  return true;
+}
+
 // Faz fetch com limite de tempo.
 async function fetchWithTimeout(request, timeoutMs = NETWORK_TIMEOUT_MS) {
   // Cria um controlador para poder cancelar o pedido.
@@ -189,7 +223,7 @@ async function fetchWithTimeout(request, timeoutMs = NETWORK_TIMEOUT_MS) {
 }
 
 // Actualiza a cache em segundo plano.
-async function updateCacheInBackground(request) {
+async function updateCacheInBackground(request, cacheKey) {
   try {
     // Tenta obter uma versão nova pela rede.
     const response = await fetchWithTimeout(request);
@@ -200,7 +234,7 @@ async function updateCacheInBackground(request) {
       const cache = await caches.open(CACHE_NAME);
 
       // Guarda uma cópia da resposta.
-      await cache.put(request, response.clone());
+      await cache.put(cacheKey, response.clone());
     }
 
     // Devolve a resposta da rede.
@@ -227,14 +261,26 @@ self.addEventListener('fetch', (event) => {
   // Verifica se o pedido é da mesma origem da app.
   const isSameOrigin = requestUrl.origin === self.location.origin;
 
+  // Sonda de ligação (general.js / index.js): vai sempre directa à rede.
+  // Se passasse pela cache, respondia "online" mesmo sem rede e criava uma
+  // entrada nova na cache a cada 5 segundos (o URL leva ?_t=<timestamp>).
+  if (isSameOrigin && requestUrl.searchParams.has('_t')) {
+    return;
+  }
+
+  // Chave única deste ficheiro na cache (URL sem query string).
+  const cacheKey = cacheKeyFor(request);
+
   // Trata navegações de páginas HTML.
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request, { ignoreSearch: true }).then(async (cachedResponse) => {
+      caches.match(cacheKey, { ignoreVary: true }).then(async (cachedResponse) => {
         // Se houver página em cache, devolve imediatamente.
         if (cachedResponse) {
           // Tenta actualizar a página em segundo plano sem bloquear a app.
-          event.waitUntil(updateCacheInBackground(request));
+          if (shouldRevalidate(request, cacheKey)) {
+            event.waitUntil(updateCacheInBackground(request, cacheKey));
+          }
 
           // Devolve a versão em cache.
           return cachedResponse;
@@ -247,7 +293,7 @@ self.addEventListener('fetch', (event) => {
           // Guarda resposta válida em cache.
           if (networkResponse && networkResponse.ok) {
             const cache = await caches.open(CACHE_NAME);
-            await cache.put(request, networkResponse.clone());
+            await cache.put(cacheKey, networkResponse.clone());
           }
 
           // Devolve a resposta da rede.
@@ -278,11 +324,13 @@ self.addEventListener('fetch', (event) => {
   // Trata recursos da própria app: JS, CSS, JSON, imagens, etc.
   if (isSameOrigin) {
     event.respondWith(
-      caches.match(request, { ignoreSearch: true }).then(async (cachedResponse) => {
+      caches.match(cacheKey, { ignoreVary: true }).then(async (cachedResponse) => {
         // Se existir em cache, devolve já.
         if (cachedResponse) {
           // Actualiza em segundo plano.
-          event.waitUntil(updateCacheInBackground(request));
+          if (shouldRevalidate(request, cacheKey)) {
+            event.waitUntil(updateCacheInBackground(request, cacheKey));
+          }
 
           // Devolve a versão em cache.
           return cachedResponse;
@@ -295,7 +343,7 @@ self.addEventListener('fetch', (event) => {
           // Guarda resposta válida em cache.
           if (networkResponse && networkResponse.ok && networkResponse.type === 'basic') {
             const cache = await caches.open(CACHE_NAME);
-            await cache.put(request, networkResponse.clone());
+            await cache.put(cacheKey, networkResponse.clone());
           }
 
           // Devolve a resposta da rede.

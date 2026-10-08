@@ -148,6 +148,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const checkRealConnection = async () => {
+    // App em segundo plano: não gastar rede/bateria com a sonda.
+    if (document.hidden) return;
+
     if (!navigator.onLine) {
       stablePasses = 0;
       paintConnectionDot(false);
@@ -199,6 +202,9 @@ document.addEventListener("DOMContentLoaded", () => {
     paintConnectionDot(false);
   });
   window.setInterval(checkRealConnection, CONNECTION_PROBE_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) checkRealConnection();
+  });
 });
 
 

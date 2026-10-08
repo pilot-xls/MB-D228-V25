@@ -18,12 +18,11 @@ function initMbThermalLauncher() {
             }
             localStorage.setItem("mbPrintRequestedAt", String(Date.now()));
 
-            const printUrl = new URL("mb-print-thermal.html", window.location.href).toString();
-            const newWindow = window.open(printUrl, "_blank", "noopener,noreferrer");
-
-            if (!newWindow) {
-                window.location.href = printUrl;
-            }
+            // Abre na MESMA janela. O window.open(..., "noopener") que aqui
+            // estava devolve sempre null, por isso o fallback corria sempre e a
+            // página de impressão abria duas vezes (janela nova + esta): o PDF
+            // era gerado a dobrar e a janela extra ficava esquecida em memória.
+            window.location.href = new URL("mb-print-thermal.html", window.location.href).toString();
         } catch (error) {
             console.error("Erro ao abrir a impressão térmica:", error);
             alert("Não foi possível abrir a impressão térmica.");
