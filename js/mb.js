@@ -46,10 +46,7 @@ async function initMb() {
         if (dadosGuardados.trafficLoad && typeof dadosGuardados.trafficLoad.total === "number")
             document.getElementById("manualPayload").value = dadosGuardados.trafficLoad.total || 0;
 
-        console.log("verificar momento guardado...");
-
         const momentoGuardado = Number(dadosGuardados?.trafficLoad?.moment) || 0;
-        console.log("dados guardados (momento) =", momentoGuardado);
 
         if (momentoGuardado > 0) {
             const inputMom = document.getElementById("momentPayloadInput");
@@ -158,14 +155,8 @@ async function exec_calculo() {
     const momentPilots = pilots * armPilots;
     let momentPayload = 0;
 
-    console.log("usar momento importado? " + usarMomentoImportado);
-
     const inputMom = document.getElementById("momentPayloadInput");
     const momImportado = Number(inputMom?.value) || 0;
-
-    console.log("usarMomentoImportado =", usarMomentoImportado);
-    console.log("payload =", payload);
-    console.log("momImportado =", momImportado);
 
     if (usarMomentoImportado && momImportado > 0) {
         // usa o momento vindo de fora

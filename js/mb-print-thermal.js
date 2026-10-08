@@ -24,6 +24,7 @@ const FONT_NAME = "courier"; // fonte base do PDF (sempre disponível, sem preci
 
 let lastReciboPdfBlob = null;
 let lastReciboPdfUrl = null;
+let envelopeCache = { src: null, dataUrl: null }; // envelope já reduzido, reaproveitado entre PDFs
 
 if (window.pdfjsLib) {
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = "js/vendor/pdf.worker.min.js";
@@ -56,11 +57,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnClosePrint = document.getElementById("btnClosePrint");
     if (btnClosePrint) {
         btnClosePrint.addEventListener("click", () => {
-            if (window.opener) {
-                window.close();
+            // Volta ao W&B. Sem histórico (página aberta directamente) não há
+            // para onde recuar, por isso navega para mb.html.
+            if (window.history.length > 1) {
+                window.history.back();
                 return;
             }
-            window.history.back();
+            window.location.href = "mb.html";
         });
     }
 });
@@ -222,9 +225,11 @@ async function partilharReciboPDF() {
 // inconsistente dentro de um <iframe>).
 async function desenharPreviaPDF(blob, canvas) {
     if (!window.pdfjsLib) return;
+    let loadingTask = null;
     try {
         const bytes = await blob.arrayBuffer();
-        const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+        loadingTask = window.pdfjsLib.getDocument({ data: bytes });
+        const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
         const dpr = window.devicePixelRatio || 1;
         const escala = (2 * dpr); // resolução extra para ficar nítido em ecrãs retina
@@ -238,11 +243,39 @@ async function desenharPreviaPDF(blob, canvas) {
         canvas.dataset.rendered = "true";
     } catch (error) {
         console.error("Erro ao desenhar a pré-visualização do PDF:", error);
+    } finally {
+        // Liberta o documento e o worker do pdf.js — sem isto cada nova
+        // pré-visualização (ex.: cada toque em "upload") ficava em memória.
+        if (loadingTask) loadingTask.destroy();
     }
 }
 
-// As imagens do envelope CG (img/serieXXX.png) vêm gigantes (algumas com
-// mais de 15000px de largura). Embutir isso directamente no PDF criaria
+// Liberta já a memória de um canvas temporário. No iOS/Safari a memória dos
+// canvas só volta quando o GC passa, e há um limite total por página.
+function libertarCanvas(c) {
+    if (!c) return;
+    c.width = 0;
+    c.height = 0;
+}
+
+// Imagem do envelope reduzida para ENVELOPE_EMBED_WIDTH_PX, em PNG (data URL).
+// Fica em cache por src: um novo PDF (ex.: toque em "upload") não volta a
+// descodificar e reduzir a imagem.
+function obterEnvelopeDataUrl(envelopeImg) {
+    const src = envelopeImg.currentSrc || envelopeImg.src;
+    if (envelopeCache.src === src && envelopeCache.dataUrl) {
+        return envelopeCache.dataUrl;
+    }
+    const alturaAlvoPx = Math.round(ENVELOPE_EMBED_WIDTH_PX * (envelopeImg.naturalHeight / envelopeImg.naturalWidth));
+    const canvasReduzido = criarCanvasReduzidoEmEtapas(envelopeImg, ENVELOPE_EMBED_WIDTH_PX, alturaAlvoPx);
+    const dataUrl = canvasReduzido.toDataURL("image/png");
+    libertarCanvas(canvasReduzido);
+    envelopeCache = { src, dataUrl };
+    return dataUrl;
+}
+
+// As imagens do envelope CG (img/serieXXX.png) são grandes (até 4096px no
+// lado maior). Embutir isso directamente no PDF criaria
 // um ficheiro enorme e lento a partilhar; reduzimos primeiro para uma
 // resolução generosa mas razoável (ENVELOPE_EMBED_WIDTH_PX). Fazemo-lo
 // sempre a metade de cada vez (em vez de um salto grande de uma só vez)
@@ -278,6 +311,7 @@ function criarCanvasReduzidoEmEtapas(img, larguraAlvo, alturaAlvo) {
         cctx.imageSmoothingEnabled = true;
         cctx.imageSmoothingQuality = "high";
         cctx.drawImage(origem, 0, 0, novaLargura, novaAltura);
+        if (origem !== img) libertarCanvas(origem);
         origem = c;
         largura = novaLargura;
         altura = novaAltura;
@@ -290,6 +324,7 @@ function criarCanvasReduzidoEmEtapas(img, larguraAlvo, alturaAlvo) {
     fctx.imageSmoothingEnabled = true;
     fctx.imageSmoothingQuality = "high";
     fctx.drawImage(origem, 0, 0, larguraAlvo, alturaAlvo);
+    if (origem !== img) libertarCanvas(origem);
     return final;
 }
 
@@ -312,7 +347,9 @@ function elementoParaDataUrl(imgEl) {
     c.width = imgEl.naturalWidth;
     c.height = imgEl.naturalHeight;
     c.getContext("2d").drawImage(imgEl, 0, 0);
-    return c.toDataURL("image/png");
+    const dataUrl = c.toDataURL("image/png");
+    libertarCanvas(c);
+    return dataUrl;
 }
 
 // Constrói a lista de elementos a desenhar (texto/linhas/imagem/pontos),
@@ -391,9 +428,7 @@ function construirReciboPDF(timestamp) {
     if (envelopeImg && envelopeImg.naturalWidth) {
         const imgWmm = CONTENT_WIDTH_MM;
         const imgHmm = imgWmm * (envelopeImg.naturalHeight / envelopeImg.naturalWidth);
-        const alturaAlvoPx = Math.round(ENVELOPE_EMBED_WIDTH_PX * (envelopeImg.naturalHeight / envelopeImg.naturalWidth));
-        const canvasReduzido = criarCanvasReduzidoEmEtapas(envelopeImg, ENVELOPE_EMBED_WIDTH_PX, alturaAlvoPx);
-        desenhos.push({ tipo: "imagem-canvas", canvas: canvasReduzido, x: MARGIN_MM, y, w: imgWmm, h: imgHmm });
+        desenhos.push({ tipo: "imagem-dataurl", dataUrl: obterEnvelopeDataUrl(envelopeImg), x: MARGIN_MM, y, w: imgWmm, h: imgHmm });
 
         // Pontos ZFW/TOW/LDG lidos directamente do SVG já desenhado pelo
         // mb.js (desenharPontos()), para não duplicar essa lógica aqui.
@@ -461,8 +496,10 @@ function construirReciboPDF(timestamp) {
         } else if (d.tipo === "imagem-el") {
             const dataUrl = elementoParaDataUrl(d.el);
             if (dataUrl) doc.addImage(dataUrl, "PNG", d.x, d.y, d.w, d.h);
-        } else if (d.tipo === "imagem-canvas") {
-            doc.addImage(d.canvas.toDataURL("image/png"), "PNG", d.x, d.y, d.w, d.h);
+        } else if (d.tipo === "imagem-dataurl") {
+            // "FAST": compressão sem perdas mais leve — ~3x mais rápido que a
+            // omissão do jsPDF, com os mesmos píxeis (PDF só ~15% maior).
+            doc.addImage(d.dataUrl, "PNG", d.x, d.y, d.w, d.h, undefined, "FAST");
         }
     });
 
