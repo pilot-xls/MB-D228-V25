@@ -109,22 +109,21 @@ footer {
     z-index: 1000;
     border-top: 1px solid #444;
     box-sizing: border-box;
+    /* Camada própria: evita que o iOS dessincronize o footer durante o scroll */
+    transform: translateZ(0);
 }
 
+/* Só o <footer> é fixed; o nav fica dentro dele (evita fixed aninhado no iOS) */
 .footer-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
+    position: static;
     width: 100%;
-    height: 75px;
+    height: 100%;
     box-sizing: border-box;
     background: #333;
     display: flex;
     align-items: center;
     justify-content: space-around;
     padding: 0 16px;
-    z-index: 1000;
-    border-top: 1px solid #444;
 }
 
 .footer-nav__item {
