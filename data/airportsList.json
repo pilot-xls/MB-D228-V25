@@ -240,5 +240,167 @@
                 "obstacle_dist": 0
             }
         ]
+    },
+    {
+        "icao": "LPBG",
+        "rwy": "19",
+        "heading": 190,
+        "elevation": 2277,
+        "tora": 1700,
+        "toda": 1700,
+        "asda": 1700,
+        "lda": 1700,
+        "slope": -1.2,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "WDI",
+                "obstacle_ft": 26,
+                "obstacle_dist": 715
+            }
+        ]
+    },
+    {
+        "icao": "LPVR",
+        "rwy": "",
+        "heading": 0,
+        "elevation": 0,
+        "tora": 0,
+        "toda": 0,
+        "asda": 0,
+        "lda": 0,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": []
+    },
+    {
+        "icao": "LPVZ",
+        "rwy": "18",
+        "heading": 180,
+        "elevation": 2044,
+        "tora": 1160,
+        "toda": 1160,
+        "asda": 1160,
+        "lda": 1100,
+        "slope": 0.5,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Mastro",
+                "obstacle_ft": 131,
+                "obstacle_dist": 750
+            }
+        ]
+    },
+    {
+        "icao": "LPVZ",
+        "rwy": "36",
+        "heading": 360,
+        "elevation": 2061,
+        "tora": 1160,
+        "toda": 1160,
+        "asda": 1160,
+        "lda": 1100,
+        "slope": -0.5,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Torre",
+                "obstacle_ft": 256,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LPCS",
+        "rwy": "35",
+        "heading": 350,
+        "elevation": 287,
+        "tora": 1480,
+        "toda": 1540,
+        "asda": 1540,
+        "lda": 1400,
+        "slope": 1.1,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Antenna",
+                "obstacle_ft": 0,
+                "obstacle_dist": 1900
+            },
+            {
+                "name": "Antenna (visibility meter)",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "Antenna",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            },
+            {
+                "name": "Antenna (WDI)",
+                "obstacle_ft": 0,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LPCS",
+        "rwy": "17",
+        "heading": 170,
+        "elevation": 326,
+        "tora": 1540,
+        "toda": 1645,
+        "asda": 1540,
+        "lda": 1210,
+        "slope": -1.1,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Tree",
+                "obstacle_ft": 56,
+                "obstacle_dist": 0
+            }
+        ]
+    },
+    {
+        "icao": "LPPM",
+        "rwy": "29",
+        "heading": 290,
+        "elevation": 5,
+        "tora": 860,
+        "toda": 860,
+        "asda": 860,
+        "lda": 770,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            {
+                "name": "Elevação natural",
+                "obstacle_ft": 164,
+                "obstacle_dist": 700
+            },
+            {
+                "name": "Edifícios",
+                "obstacle_ft": 102,
+                "obstacle_dist": 390
+            },
+            {
+                "name": "Reservatório de água",
+                "obstacle_ft": 0,
+                "obstacle_dist": 1310
+            },
+            {
+                "name": "Talude",
+                "obstacle_ft": 11,
+                "obstacle_dist": 100
+            },
+            {
+                "name": "Vedação",
+                "obstacle_ft": 7,
+                "obstacle_dist": 27
+            }
+        ]
     }
 ]
