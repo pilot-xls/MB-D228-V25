@@ -243,6 +243,19 @@
     },
     {
         "icao": "LPBG",
+        "rwy": "01",
+        "heading": 10,
+        "elevation": 2215,
+        "tora": 1700,
+        "toda": 1700,
+        "asda": 1700,
+        "lda": 1700,
+        "slope": 1.2,
+        "threshold_displaced": 0,
+        "obstacles": []
+    },
+    {
+        "icao": "LPBG",
         "rwy": "19",
         "heading": 190,
         "elevation": 2277,
@@ -262,14 +275,27 @@
     },
     {
         "icao": "LPVR",
-        "rwy": "",
-        "heading": 0,
-        "elevation": 0,
-        "tora": 0,
-        "toda": 0,
-        "asda": 0,
-        "lda": 0,
-        "slope": 0,
+        "rwy": "02",
+        "heading": 20,
+        "elevation": 1801,
+        "tora": 946,
+        "toda": 946,
+        "asda": 946,
+        "lda": 946,
+        "slope": 1.0,
+        "threshold_displaced": 0,
+        "obstacles": []
+    },
+    {
+        "icao": "LPVR",
+        "rwy": "20",
+        "heading": 200,
+        "elevation": 1832,
+        "tora": 946,
+        "toda": 946,
+        "asda": 946,
+        "lda": 946,
+        "slope": -1.0,
         "threshold_displaced": 0,
         "obstacles": []
     },
@@ -363,6 +389,19 @@
                 "obstacle_dist": 0
             }
         ]
+    },
+    {
+        "icao": "LPPM",
+        "rwy": "11",
+        "heading": 110,
+        "elevation": 5,
+        "tora": 770,
+        "toda": 770,
+        "asda": 860,
+        "lda": 860,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": []
     },
     {
         "icao": "LPPM",
