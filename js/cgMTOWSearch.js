@@ -13,302 +13,265 @@ import Gradient_4segFlapsUp from "./cg4segFlapsUp_CSATH.js";
 import Gradient_Required2Seg from "./cgRequired2Seg_CSATH.js";
 import Gradient_Required34Seg from "./cgRequired34Seg_CSATH.js";
 
-// Lista de pesos a testar
-const WEIGHTS = Array.from(
-  { length: 6500 - 4500 + 1 },
-  (_, i) => 4500 + i
-);
+// Gama de pesos usada na procura do MTOW
+export const MIN_WEIGHT = 4500;
+export const MAX_WEIGHT = 6500;
+
+// Texto mostrado quando o gráfico do AFM não cobre as condições
+export const OUT_OF_CHART_TEXT = "fora do gráfico do AFM";
+
+// Segmentos avaliados, pela ordem em que são reportados
+export const SEGMENT_KEYS = ["SEG2", "SEG3", "SEG4"];
 
 /**
- * Calcula o TODR para um peso específico.
+ * Um segmento conta como cumprido se passou ("ok") ou se não há nada a comparar ("na").
+ * "bad" = falhou a comparação; "ooc" = fora do gráfico do AFM (não verificável, não passa).
  */
-function getTodrForWeight({ flaps, pa, oat, tow, wind, slope }) {
-  // Se os flaps estiverem UP usa a função correspondente
-  if (flaps === "up") {
-    // Calcula o TODR para flaps UP
-    const res = TODR_FLAPSUP({
-      PA: pa,
-      OAT: oat,
-      Weight: tow,
-      Wind: wind,
-      slope: slope
-    });
-
-    // Se falhar devolve null
-    if (!res || res.status === "failed") return null;
-
-    // Devolve o valor numérico do resultado
-    return Number(res.result);
-  }
-
-  // Se os flaps estiverem em 1 usa a função correspondente
-  if (flaps === "1") {
-    // Calcula o TODR para flaps 1
-    const res = TODR_FLAPS1({
-      PA: pa,
-      OAT: oat,
-      Weight: tow,
-      Wind: wind,
-      slope: slope
-    });
-
-    // Se falhar devolve null
-    if (!res || res.status === "failed") return null;
-
-    // Devolve o valor numérico do resultado
-    return Number(res.result);
-  }
-
-  // Se a configuração de flaps for inválida devolve null
-  return null;
+export function segmentPasses(state) {
+  return state === "ok" || state === "na";
 }
 
 /**
- * Procura o maior peso que passa uma verificação.
- * Devolve null quando nenhum peso de WEIGHTS passa: o chamador deve tratar isso
- * como limitante (MTOW failed), e não como "sem limite".
+ * Calcula o TODR (m) para um peso específico, arredondado ao metro (o mesmo valor que a UI mostra).
+ * Devolve null se o cálculo falhar.
  */
-function findMaxTow(checkFn) {
-  // Guarda o último peso que passou
-  let best = null;
+export function getTodrForWeight({ flaps, pa, oat, tow, wind, slope }) {
+  const fn = flaps === "up" ? TODR_FLAPSUP : flaps === "1" ? TODR_FLAPS1 : null;
 
-  // Percorre os pesos por ordem crescente
-  for (const tow of WEIGHTS) {
-    // Se este peso passar, fica como melhor até agora
-    if (checkFn(tow)) {
-      best = tow;
+  // Configuração de flaps inválida
+  if (!fn) return null;
+
+  const res = fn({ PA: pa, OAT: oat, Weight: tow, Wind: wind, slope: slope });
+
+  // Se falhar devolve null
+  if (!res || res.status === "failed" || !Number.isFinite(Number(res.result))) return null;
+
+  return Number(Number(res.result).toFixed(0));
+}
+
+/**
+ * Traduz o resultado do 3º segmento para a UI.
+ * state: "ok" (passed), "bad" (failed), "ooc" (fora do gráfico com obstáculo: não verificável),
+ *        "na" (fora do gráfico sem obstáculo: não há comparação a fazer, não conta como falha).
+ */
+export function describeThirdSegment(result, obstacleDistance, hasObstacle) {
+  if (result && result.status === "OUT_OF_CHART") {
+    if (!hasObstacle) {
+      return { state: "na", text: obstacleDistance + "m / " + OUT_OF_CHART_TEXT };
     }
+    return { state: "ooc", text: obstacleDistance + "m / " + OUT_OF_CHART_TEXT };
   }
 
-  // Devolve o maior peso que passou
-  return best;
+  const text = obstacleDistance + "m / " + result.distance + "m";
+
+  if (result.status === "PASSED") {
+    return { state: "ok", text };
+  }
+
+  return { state: "bad", text };
 }
 
 /**
- * Calcula o MTOW do 2º segmento.
+ * 2º segmento para um peso: gradient required (obstáculo mais exigente) vs gradient performed.
  */
-export function getMaxTow2Seg({
-  flaps,
-  pa,
-  oat,
-  inlet,
-  wind,
-  slope,
-  obstacles
-}) {
-  // Procura o maior peso que passa o 2º segmento
-  return findMaxTow((tow) => {
-    // Calcula o TODR para este peso
-    const todr = getTodrForWeight({
-      flaps,
-      pa,
-      oat,
-      tow,
-      wind,
-      slope
-    });
+function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr }) {
+  // Guarda o maior gradient required encontrado para este peso
+  let required = 0;
 
-    // Se falhar, este peso falha
-    if (todr == null) return false;
+  if (obstacles.length > 0) {
+    // Sem TOD não se sabe onde ficam os obstáculos em relação ao Reference Zero
+    if (todr == null) {
+      return { state: "ooc", required: null, gradient: null, text: "TOD: " + OUT_OF_CHART_TEXT };
+    }
 
-    // Guarda o maior gradient required encontrado para este peso
-    let maxRequired = 0;
-
-    // Percorre os obstáculos do 2º segmento
     for (const obs of obstacles) {
-      // Calcula a distância do obstáculo relativamente ao REF ZERO
-      const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
-
-      // Calcula o gradient required deste obstáculo
+      // Distância do obstáculo relativamente ao Reference Zero
       const requiredRes = Gradient_Required2Seg({
-        obstacleDistance: obstacleDistanceFromREFZERO,
+        obstacleDistance: obs.obstacle_dist - todr,
         wind: wind,
         obstacle_height_ft: obs.obstacle_ft
       });
 
-      // Se houver valor válido, compara com o máximo atual
+      // Required a null (ex.: obstáculo antes do Reference Zero) não entra na comparação
       if (requiredRes && requiredRes.result_CG_required != null) {
-        maxRequired = Math.max(maxRequired, requiredRes.result_CG_required);
+        required = Math.max(required, requiredRes.result_CG_required);
       }
     }
+  }
 
-    // Calcula o performed do 2º segmento para este mesmo peso
-    const performedRes =
-      flaps === "up"
-        ? Gradient_2segFlapsUp({
-            pressureAltitude: pa,
-            oat: oat,
-            tow: tow,
-            inlet: inlet,
-            gradientRequired: maxRequired
-          })
-        : Gradient_2segFlaps1({
-            pressureAltitude: pa,
-            oat: oat,
-            tow: tow,
-            inlet: inlet,
-            gradientRequired: maxRequired
-          });
+  // Calcula o performed do 2º segmento para este mesmo peso
+  const params = { pressureAltitude: pa, oat: oat, tow: tow, inlet: inlet, gradientRequired: required };
+  const performed = flaps === "up" ? Gradient_2segFlapsUp(params) : Gradient_2segFlaps1(params);
+  const gradient = performed ? performed.gradient : null;
 
-    // O peso só passa se a função disser PASSED
-    return performedRes && performedRes.status === "PASSED";
-  });
+  return {
+    state: performed && performed.status === "PASSED" ? "ok" : "bad",
+    required,
+    gradient,
+    text: required + "% / " + gradient + "%"
+  };
 }
 
 /**
- * Calcula os dados críticos do 3º/4º segmento para um peso específico.
+ * 3º e 4º segmentos para um peso: obstáculo crítico (maior gradient required),
+ * distância horizontal do 3º segmento e gradiente do 4º segmento.
  */
-function getCritical34Data({ pa, oat, tow, wind, slope, obstacles }) {
-  // O teu código atual usa o TODR de flaps 1 para a lógica 3º/4º segmento
-  const todr = getTodrForWeight({
-    flaps: "1",
-    pa,
-    oat,
-    tow,
-    wind,
-    slope
-  });
+function evaluate34Seg({ pa, oat, tow, inlet, wind, slope, obstacles, todr }) {
+  // Sem TOD não se sabe onde ficam os obstáculos em relação ao Reference Zero
+  if (obstacles.length > 0 && todr == null) {
+    const text = "TOD: " + OUT_OF_CHART_TEXT;
+    return { seg3: { state: "ooc", text }, seg4: { state: "ooc", text } };
+  }
 
-  // Se falhar, devolve null
-  if (todr == null) return null;
+  // Inicializa o obstáculo crítico
+  let critical = null;
 
-  // Guarda a análise dos obstáculos
-  const obstacleAnalysis = [];
-
-  // Percorre os obstáculos do 3º/4º segmento
   for (const obs of obstacles) {
-    // Calcula a distância do obstáculo relativamente ao REF ZERO
-    const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
+    // Distância do obstáculo relativamente ao Reference Zero
+    const obstacleDistance = obs.obstacle_dist - todr;
 
-    // Calcula o gradient required para este obstáculo
     const requiredRes = Gradient_Required34Seg({
-      obstacleDistance: obstacleDistanceFromREFZERO,
+      obstacleDistance: obstacleDistance,
       runway_slope: slope,
       wind: wind,
       obstacle_height: obs.obstacle_ft
     });
 
-    // Required a null (fora do gráfico do AFM, CG > 7%, etc.): este peso não pode ser
-    // verificado. Não ignora o obstáculo (seria tratá-lo como requisito 0) → peso falha.
+    // Required a null (distância/slope/vento/altura fora do gráfico, CG > 7%):
+    // não pode entrar na comparação como 0 → 3º/4º segmento não verificáveis.
     if (!requiredRes || requiredRes.result_CG_required == null) {
-      return null;
+      const text = "Req: " + OUT_OF_CHART_TEXT;
+      return { seg3: { state: "ooc", text }, seg4: { state: "ooc", text } };
     }
 
-    // Guarda os dados
-    obstacleAnalysis.push({
-      requiredGradient: requiredRes.result_CG_required,
-      obstacleDistance: obstacleDistanceFromREFZERO
-    });
-  }
-
-  // Se não houver obstáculos válidos, devolve neutro
-  if (obstacleAnalysis.length === 0) {
-    return {
-      criticalObstacleDistance3Seg: 0,
-      requiredGradient4Seg: 0
-    };
-  }
-
-  // Procura o obstáculo mais crítico
-  let critical = obstacleAnalysis[0];
-
-  // Percorre os restantes obstáculos e fica com o pior
-  for (const item of obstacleAnalysis) {
-    if (item.requiredGradient > critical.requiredGradient) {
-      critical = item;
+    // Fica com o obstáculo de maior gradient required
+    if (!critical || requiredRes.result_CG_required > critical.requiredGradient) {
+      critical = { requiredGradient: requiredRes.result_CG_required, obstacleDistance };
     }
   }
 
-  // Devolve os dados críticos
-  return {
-    criticalObstacleDistance3Seg: critical.obstacleDistance,
-    requiredGradient4Seg: critical.requiredGradient
+  // Sem obstáculo o requisito é 0 (0 m / 0 %)
+  const requiredGradient4Seg = critical ? critical.requiredGradient : 0;
+  const obstacleDistance3Seg = critical ? critical.obstacleDistance : 0;
+
+  // 3º segmento: distância percorrida vs distância ao obstáculo crítico
+  const thirdSegment = Gradient_3segFlaps1({
+    pressureAltitude: pa,
+    oat: oat,
+    tow: tow,
+    inlet: inlet,
+    obstacleDistance: obstacleDistance3Seg
+  });
+  const seg3 = describeThirdSegment(thirdSegment, obstacleDistance3Seg, critical != null);
+
+  // 4º segmento: gradiente disponível vs gradient required do obstáculo crítico
+  const fourthSegment = Gradient_4segFlapsUp({
+    pressureAltitude: pa,
+    oat: oat,
+    tow: tow,
+    inlet: inlet,
+    gradientRequired: requiredGradient4Seg
+  });
+  const gradient4 = fourthSegment ? fourthSegment.gradient : null;
+  const seg4 = {
+    state: fourthSegment && fourthSegment.status === "PASSED" ? "ok" : "bad",
+    required: requiredGradient4Seg,
+    gradient: gradient4,
+    text: requiredGradient4Seg + "% / " + gradient4 + "%"
   };
+
+  return { seg3, seg4 };
 }
 
 /**
- * Calcula o MTOW do 3º segmento.
+ * Avalia o 2º, 3º e 4º segmentos para um peso.
+ *
+ * É a ÚNICA verificação dos segmentos: a UI usa-a para o TOW introduzido e a procura
+ * do MTOW usa-a para cada peso candidato. Assim o MTOW calculado dá sempre "Passed".
+ *
+ * params: { flaps, pa, oat, tow, inlet, wind, slope, obstacles2Seg, obstacles34Seg }
+ * O Reference Zero é o fim do TOD da configuração de flaps selecionada (para todos os segmentos).
  */
-export function getMaxTow3Seg({
-  pa,
-  oat,
-  inlet,
-  wind,
-  slope,
-  obstacles
-}) {
-  // Sem obstáculos do 3º/4º segmento o requisito é 0 m: o 3º segmento não limita o peso
-  // (mesmo que PA/OAT estejam fora do gráfico, não há comparação a fazer).
-  if (!obstacles || obstacles.length === 0) {
-    return WEIGHTS[WEIGHTS.length - 1];
+export function evaluateSegments({ flaps, pa, oat, tow, inlet, wind, slope, obstacles2Seg = [], obstacles34Seg = [] }) {
+  // O TOD só é necessário para posicionar obstáculos
+  const needsTod = obstacles2Seg.length > 0 || obstacles34Seg.length > 0;
+  const todr = needsTod ? getTodrForWeight({ flaps, pa, oat, tow, wind, slope }) : null;
+
+  const seg2 = evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles: obstacles2Seg, todr });
+  const { seg3, seg4 } = evaluate34Seg({ pa, oat, tow, inlet, wind, slope, obstacles: obstacles34Seg, todr });
+
+  const segments = { SEG2: seg2, SEG3: seg3, SEG4: seg4 };
+  const failing = SEGMENT_KEYS.filter(k => !segmentPasses(segments[k].state));
+
+  return { todr, ...segments, failing, passed: failing.length === 0 };
+}
+
+/**
+ * Procura o maior peso <= maxWeight que cumpre o 2º, 3º e 4º segmentos EM SIMULTÂNEO.
+ *
+ * A procura desce a partir de maxWeight (normalmente o menor de WAT/ASDA/TORA/TODA/peso do avião).
+ * Não basta o maior peso que passa cada segmento isoladamente: o 2º segmento não é monótono
+ * com o peso (o required depende de o TOD ficar antes/depois do obstáculo), pelo que um peso
+ * mais alto pode passar e um mais baixo falhar.
+ *
+ * Devolve:
+ *  - mtow: peso encontrado, ou null se nenhum peso cumpre
+ *  - limitedBy: segmentos que falham em mtow + 1 (vazio se mtow = maxWeight)
+ *  - atTop: avaliação no peso de partida (para explicar porque nenhum peso cumpre)
+ */
+export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
+  const top = Math.min(MAX_WEIGHT, Math.floor(maxWeight));
+  const bottom = Math.min(MIN_WEIGHT, top);
+
+  let atTop = null;
+  let above = null;
+
+  for (let tow = top; tow >= bottom; tow--) {
+    const ev = evaluateSegments({ ...params, tow });
+    if (tow === top) atTop = ev;
+
+    if (ev.passed) {
+      return { mtow: tow, limitedBy: above ? above.failing : [], atTop };
+    }
+
+    above = ev;
   }
 
-  // Procura o maior peso que passa o 3º segmento
-  return findMaxTow((tow) => {
-    // Calcula os dados críticos para este peso
-    const critical = getCritical34Data({
-      pa,
-      oat,
-      tow,
-      wind,
-      slope,
-      obstacles
-    });
-
-    // Se falhar, este peso falha
-    if (!critical) return false;
-
-    // Calcula a performance do 3º segmento
-    const performedRes = Gradient_3segFlaps1({
-      pressureAltitude: pa,
-      oat: oat,
-      tow: tow,
-      inlet: inlet,
-      obstacleDistance: critical.criticalObstacleDistance3Seg
-    });
-
-    // O peso só passa se a função disser PASSED
-    // (OUT_OF_CHART com obstáculo não é verificável → não passa)
-    return performedRes && performedRes.status === "PASSED";
-  });
+  return { mtow: null, limitedBy: atTop ? atTop.failing : [], atTop };
 }
 
 /**
- * Calcula o MTOW do 4º segmento.
+ * Procura o maior peso (MIN_WEIGHT..maxWeight) que passa um segmento, isoladamente.
+ * Devolve null quando nenhum peso passa.
  */
-export function getMaxTow4Seg({
-  pa,
-  oat,
-  inlet,
-  wind,
-  slope,
-  obstacles
-}) {
-  // Procura o maior peso que passa o 4º segmento
-  return findMaxTow((tow) => {
-    // Calcula os dados críticos para este peso
-    const critical = getCritical34Data({
-      pa,
-      oat,
-      tow,
-      wind,
-      slope,
-      obstacles
-    });
+function findMaxTowSegment(key, params, maxWeight = MAX_WEIGHT) {
+  const top = Math.min(MAX_WEIGHT, Math.floor(maxWeight));
 
-    // Se falhar, este peso falha
-    if (!critical) return false;
+  for (let tow = top; tow >= MIN_WEIGHT; tow--) {
+    if (segmentPasses(evaluateSegments({ ...params, tow })[key].state)) return tow;
+  }
 
-    // Calcula a performance do 4º segmento
-    const performedRes = Gradient_4segFlapsUp({
-      pressureAltitude: pa,
-      oat: oat,
-      tow: tow,
-      inlet: inlet,
-      gradientRequired: critical.requiredGradient4Seg
-    });
+  return null;
+}
 
-    // O peso só passa se a função disser PASSED
-    return performedRes && performedRes.status === "PASSED";
-  });
+/**
+ * MTOW do 2º segmento isolado (sem os outros limites).
+ */
+export function getMaxTow2Seg({ flaps, pa, oat, inlet, wind, slope, obstacles, maxWeight }) {
+  return findMaxTowSegment("SEG2", { flaps, pa, oat, inlet, wind, slope, obstacles2Seg: obstacles }, maxWeight);
+}
+
+/**
+ * MTOW do 3º segmento isolado (sem os outros limites).
+ * Sem obstáculos o 3º segmento não limita o peso, mesmo fora do gráfico.
+ */
+export function getMaxTow3Seg({ flaps = "1", pa, oat, inlet, wind, slope, obstacles, maxWeight }) {
+  return findMaxTowSegment("SEG3", { flaps, pa, oat, inlet, wind, slope, obstacles34Seg: obstacles || [] }, maxWeight);
+}
+
+/**
+ * MTOW do 4º segmento isolado (sem os outros limites).
+ */
+export function getMaxTow4Seg({ flaps = "1", pa, oat, inlet, wind, slope, obstacles, maxWeight }) {
+  return findMaxTowSegment("SEG4", { flaps, pa, oat, inlet, wind, slope, obstacles34Seg: obstacles || [] }, maxWeight);
 }

@@ -108,9 +108,10 @@
                     <section class="card" id="perfCard">
                         <h3> <span>Take-off Performance <span class="hint">(computed)</span></span> <span></span> </h3>
                         <div class="output">
-                            <div class="pill" aria-label="Takeoff WAT Limits">
+                            <div class="pill" aria-label="MTOW e fator limitante">
                                 <div class="k">MTOW</div>
-                                <div class="v mono" id="outMTOW">—</div>
+                                <!-- MTOW e fator limitante (ex.: "6016 kg (WAT · cód. 10)"), preenchidos via JS -->
+                                <div class="v mono"><span id="outMTOW">—</span> <span class="limit" id="outMTOWLimit"></span></div>
                             </div>
                             <div class="pill" aria-label="Torque for Takeoff">
                                 <div class="k">Torque For Takeoff</div>
@@ -149,9 +150,9 @@
                                 <!-- preenchido via JS -->
                                 <div class="v mono" id="outAccelerate-Stop-Distance ">—</div>
                             </div>
-                            <div class="pill status" aria-label="Climb gradient status">
+                            <div class="pill status" aria-label="Take-off status">
                                 <div style="display:flex; align-items:center; gap:10px;">
-                                    <div class="k">Climb gradient</div>
+                                    <div class="k">Status</div>
                                     <!-- "i" com tooltip para Required vs Computed --><span class="info" aria-label="Detalhe do climb gradient" tabindex="0">
                                         i <span class="tooltip" id="cgTooltip"> <div class="t-title">Climb gradient:</div> <div class="kv">
                                                 <div class="muted">2ºSeg Req/Calc</div>
@@ -163,6 +164,8 @@
                                             </div> </span> </span>
                                 </div>
                                 <!-- badge preparado para JS alternar classes ok/bad e texto --><span class="badge bad" id="cgBadge"> <span class="dot" aria-hidden="true"></span> <span id="cgText">—</span> </span>
+                                <!-- motivo quando o selo não passa (ex.: "TOW acima do MTOW (limite: WAT)") -->
+                                <div class="reason" id="cgReason" aria-live="polite"></div>
                             </div>
                         </div>
                     </section>

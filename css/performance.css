@@ -322,6 +322,7 @@ input:disabled {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     padding: 10px 11px;
     border-radius: 12px;
     background: var(--bg-panel-alt);
@@ -336,6 +337,35 @@ input:disabled {
 
 .pill .v {
     font-weight: 900;
+}
+
+/* Fator limitante junto ao MTOW (ex.: "(WAT · cód. 10)"); passa para baixo se não couber */
+.pill .v .limit {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pill .v:has(.limit) {
+    text-align: right;
+}
+
+/* Selo global: o motivo de falha ocupa uma linha própria */
+.pill.status {
+    flex-wrap: wrap;
+    row-gap: 6px;
+}
+
+.pill.status .reason {
+    flex-basis: 100%;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bad);
+}
+
+.pill.status .reason:empty {
+    display: none;
 }
 
 .speeds {

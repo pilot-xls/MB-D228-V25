@@ -154,36 +154,55 @@ const WAT_TABLE = {
 };
 
 // =====================================
+//  FORA DO GRÁFICO
+// =====================================
+//
+// O WAT desce com a OAT e com a PA. Por isso:
+//  - OAT ABAIXO da menor OAT de uma linha de PA: a curva já saiu pelo topo do gráfico
+//    (WAT acima do peso máximo do gráfico). Usa-se o valor da borda, que é conservador,
+//    e o resultado fica marcado com aboveChart = true.
+//  - OAT ACIMA da maior OAT de uma linha de PA, ou PA acima da maior PA da tabela:
+//    fora do gráfico do AFM. Usar a borda seria NÃO conservador, por isso não se
+//    devolve número (status "OUT_OF_CHART").
+//  - PA abaixo da menor PA (0 ft): usa-se a linha de 0 ft (conservador).
+
+export const WAT_OK = "OK";
+export const WAT_OUT_OF_CHART = "OUT_OF_CHART";
+
+// =====================================
 //  INTERPOLAÇÃO 1D (OAT)
 // =====================================
 
 function interpolate1D(rows, oat) {
   const tOAT = Number(oat);
   const sorted = [...rows].sort((a, b) => a.oat - b.oat);
+  const minOAT = sorted[0].oat;
+  const maxOAT = sorted[sorted.length - 1].oat;
+
+  // Acima da maior OAT desta linha de PA: fora do gráfico
+  if (tOAT > maxOAT) {
+    return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C acima do gráfico (máx. ${maxOAT} °C a ${sorted[0].pressure_altitude} ft)` };
+  }
+
+  // Abaixo da menor OAT: curva acima do topo do gráfico → borda (conservador)
+  if (tOAT < minOAT) {
+    return { wat: sorted[0].wat, aboveChart: true };
+  }
 
   const exact = sorted.find(r => r.oat === tOAT);
   if (exact) return { wat: exact.wat };
 
-  let lower = null;
-  let upper = null;
-
   for (let i = 0; i < sorted.length - 1; i++) {
-    if (tOAT > sorted[i].oat && tOAT < sorted[i + 1].oat) {
-      lower = sorted[i];
-      upper = sorted[i + 1];
-      break;
+    const lower = sorted[i];
+    const upper = sorted[i + 1];
+    if (tOAT > lower.oat && tOAT < upper.oat) {
+      const ratio = (tOAT - lower.oat) / (upper.oat - lower.oat);
+      return { wat: Math.round(lower.wat + (upper.wat - lower.wat) * ratio) };
     }
   }
 
-  if (!lower) {
-    const edge = tOAT < sorted[0].oat ? sorted[0] : sorted[sorted.length - 1];
-    return { wat: edge.wat };
-  }
-
-  const ratio = (tOAT - lower.oat) / (upper.oat - lower.oat);
-  const wat = lower.wat + (upper.wat - lower.wat) * ratio;
-
-  return { wat: Math.round(wat) };
+  // Não deve acontecer (OAT dentro de [minOAT, maxOAT])
+  return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C sem dados na tabela WAT` };
 }
 
 // =====================================
@@ -192,88 +211,63 @@ function interpolate1D(rows, oat) {
 
 function interpolate2D(table, pa, oat) {
   const tPA = Number(pa);
+  const rowsAt = p => table.filter(r => r.pressure_altitude === p);
+  const paValues = [...new Set(table.map(r => r.pressure_altitude))].sort((a, b) => a - b);
+  const minPA = paValues[0];
+  const maxPA = paValues[paValues.length - 1];
 
-  const samePA = table.filter(r => r.pressure_altitude === tPA);
-  if (samePA.length > 0) {
-    return interpolate1D(samePA, oat);
+  // Acima da maior PA da tabela: fora do gráfico
+  if (tPA > maxPA) {
+    return { wat: null, outOfChart: true, reason: `PA ${tPA} ft acima do gráfico (máx. ${maxPA} ft)` };
   }
 
-  const sorted = [...table].sort((a, b) => a.pressure_altitude - b.pressure_altitude);
-
-  let lowerPA = null;
-  let upperPA = null;
-
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const paLow = sorted[i].pressure_altitude;
-    const paHigh = sorted[i + 1].pressure_altitude;
-    if (tPA > paLow && tPA < paHigh) {
-      lowerPA = paLow;
-      upperPA = paHigh;
-      break;
-    }
+  // Abaixo da menor PA: usa a linha da menor PA (conservador)
+  if (tPA <= minPA) {
+    return interpolate1D(rowsAt(minPA), oat);
   }
 
-  if (lowerPA === null) {
-    const minPA = sorted[0].pressure_altitude;
-    const maxPA = sorted[sorted.length - 1].pressure_altitude;
-    const closestPA = tPA < minPA ? minPA : maxPA;
-    return interpolate1D(sorted.filter(r => r.pressure_altitude === closestPA), oat);
+  if (paValues.includes(tPA)) {
+    return interpolate1D(rowsAt(tPA), oat);
   }
 
-  const watLower = interpolate1D(
-    sorted.filter(r => r.pressure_altitude === lowerPA),
-    oat
-  ).wat;
+  const upperPA = paValues.find(p => p > tPA);
+  const lowerPA = paValues[paValues.indexOf(upperPA) - 1];
 
-  const watUpper = interpolate1D(
-    sorted.filter(r => r.pressure_altitude === upperPA),
-    oat
-  ).wat;
+  const atLower = interpolate1D(rowsAt(lowerPA), oat);
+  const atUpper = interpolate1D(rowsAt(upperPA), oat);
+
+  // Basta uma das linhas estar fora do gráfico para o ponto não ser verificável
+  if (atLower.outOfChart || atUpper.outOfChart) {
+    return { wat: null, outOfChart: true, reason: atLower.reason || atUpper.reason };
+  }
 
   const ratio = (tPA - lowerPA) / (upperPA - lowerPA);
-  const wat = watLower + (watUpper - watLower) * ratio;
+  const wat = atLower.wat + (atUpper.wat - atLower.wat) * ratio;
 
-  return { wat: Math.round(wat) };
+  return { wat: Math.round(wat), aboveChart: !!(atLower.aboveChart || atUpper.aboveChart) };
 }
 
 // =====================================
 //  FUNÇÃO PRINCIPAL
 // =====================================
 
+/**
+ * Limite WAT (kg) para flaps "up" ou "1".
+ * Devolve:
+ *  - { status: "OK", wat, aboveChart }           → aboveChart: OAT abaixo do gráfico, valor da borda (conservador)
+ *  - { status: "OUT_OF_CHART", wat: null, reason } → OAT/PA fora do gráfico do AFM, sem valor
+ */
 export function getWAT(flaps, pressureAltitude, oat) {
-
-  // 👉 1. LOG DOS INPUTS (logo no início)
-  console.log("INPUT getWAT", { flaps, pressureAltitude, oat });
-
   if (flaps !== "up" && flaps !== "1") {
     throw new Error('Configuração de flaps inválida ["up" ou "1"]');
   }
 
-  if (flaps === "up") {
-    flaps = "flaps_up";
+  const table = WAT_TABLE[flaps === "up" ? "flaps_up" : "flaps_1"];
+  const r = interpolate2D(table, pressureAltitude, oat);
+
+  if (r.outOfChart) {
+    return { status: WAT_OUT_OF_CHART, wat: null, aboveChart: false, reason: r.reason };
   }
 
-  if (flaps === "1") {
-    flaps = "flaps_1";
-  }
-
-  // 👉 2. VER QUE TABELA ESTÁ A SER USADA
-  console.log("TABLE NAME", flaps);
-
-  const table = WAT_TABLE[flaps];
-
-  // 👉 3. VER AS LINHAS COM A MESMA PRESSURE ALTITUDE
-  const samePA = table.filter(r => r.pressure_altitude === Number(pressureAltitude));
-  console.log("samePA", samePA);
-
-  // 👉 4. VER SE EXISTE MATCH EXATO DE OAT
-  const exactRow = samePA.find(r => r.oat === Number(oat));
-  console.log("exactRow", exactRow);
-
-  const { wat } = interpolate2D(table, pressureAltitude, oat);
-
-  // 👉 5. RESULTADO FINAL
-  console.log("WAT inside", wat);
-
-  return wat;
+  return { status: WAT_OK, wat: r.wat, aboveChart: !!r.aboveChart, reason: null };
 }

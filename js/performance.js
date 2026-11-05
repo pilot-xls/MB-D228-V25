@@ -23,18 +23,7 @@ import ASDR_FLAPS1 from "./asdrFlaps1_CSATH.js";
 import { getTakeoffData } from "./ToSpeeds.js";
 
 // Importa a função que calcula o limite WAT
-import { getWAT } from "./ToWAT.js";
-
-import Gradient_2segFlapsUp from "./cg2segFlapsUp_CSATH.js";
-import Gradient_2segFlaps1 from "./cg2segFlaps1_CSATH.js";
-import Gradient_3segFlaps1 from "./cg3segFlaps1_CSATH.js";
-import Gradient_4segFlapsUp from "./cg4segFlapsUp_CSATH.js";
-
-// Importa a função que calcula o gradiente requerido do 2º segmento
-import Gradient_Required2Seg from "./cgRequired2Seg_CSATH.js";
-
-// Importa a função que calcula o gradiente requerido do 3º/4º segmento
-import Gradient_Required34Seg from "./cgRequired34Seg_CSATH.js";
+import { getWAT, WAT_OK } from "./ToWAT.js";
 
 // Importa a função de MTOW limitada por ASDA para flaps UP
 import MTOW_ASDA_FlapsUp from "./mtowASDA_FlapsUp.js";
@@ -54,7 +43,27 @@ import MTOW_TODA_FlapsUp from "./mtowTODA_FlapsUp.js";
 // Importa a função de MTOW limitada por TODA para flaps 1
 import MTOW_TODA_Flaps1 from "./mtowTODA_Flaps1.js";
 
-import { getMaxTow2Seg, getMaxTow3Seg, getMaxTow4Seg } from "./cgMTOWSearch.js";
+// Verificação do 2º/3º/4º segmento e procura do MTOW: o mesmo código para o TOW introduzido e para o MTOW
+import { evaluateSegments, findMaxTowAllSegments, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
+
+// Continuam disponíveis a partir de performance.js (usados nos testes)
+export { describeThirdSegment, OUT_OF_CHART_TEXT } from "./cgMTOWSearch.js";
+
+/**
+ * Logs de debug da página Performance (desligados por defeito).
+ * Para ligar, na consola do browser: localStorage.setItem("perfDebug", "1")
+ */
+const PERF_DEBUG = (() => {
+    try {
+        return globalThis.localStorage?.getItem("perfDebug") === "1";
+    } catch (e) {
+        return false;
+    }
+})();
+
+function debugLog(...args) {
+    if (PERF_DEBUG) console.log(...args);
+}
 
 // Guarda em memória os dados dos aeroportos para reutilização na página
 let airportData = [];
@@ -198,29 +207,139 @@ export function getPressureAltitude(qnh, runwayEntry) {
     return Math.max(0, Math.round(pressureAltitude));
 }
 
-// Texto mostrado quando o gráfico do AFM não cobre as condições
-export const OUT_OF_CHART_TEXT = "fora do gráfico do AFM";
+// Fatores que podem limitar o MTOW e o código correspondente na folha de performance
+// (10 = WAT, 3 = comprimento de pista, 2 = 2º segmento, 4 = obstáculos 3º/4º seg, 7 = peso máximo do avião)
+export const MTOW_LIMITS = {
+    WAT: { label: "WAT", code: 10 },
+    ASDA: { label: "ASDA", code: 3 },
+    TORA: { label: "TORA", code: 3 },
+    TODA: { label: "TODA", code: 3 },
+    SEG2: { label: "2.º seg", code: 2 },
+    SEG3: { label: "3.º seg", code: 4 },
+    SEG4: { label: "4.º seg", code: 4 },
+    STRUCT: { label: "peso máx. avião", code: 7 },
+    // Só acontece se o peso máximo do avião ultrapassar a gama dos gráficos (6500 kg)
+    CHART: { label: "gama dos gráficos", code: null }
+};
+
+// Limites que não dependem da verificação dos segmentos (a ordem serve de desempate)
+export const DIRECT_LIMIT_KEYS = ["WAT", "ASDA", "TORA", "TODA", "STRUCT"];
+
+function limitLabels(keys) {
+    return keys.map(k => (MTOW_LIMITS[k] ? MTOW_LIMITS[k].label : k)).join(", ");
+}
 
 /**
- * Traduz o resultado do 3º segmento para a UI.
- * state: "ok" (passed), "bad" (failed), "ooc" (fora do gráfico com obstáculo: não verificável),
- *        "na" (fora do gráfico sem obstáculo: não há comparação a fazer, não conta como falha).
+ * MTOW final e fator que o limita (fluxograma do AFM: o menor de todos os limites).
+ *
+ * limits: { WAT, ASDA, TORA, TODA, STRUCT } em kg (null/0/NaN = não calculável)
+ * problems: { KEY: { outOfChart, reason } } com o motivo de cada limite não calculável
+ * searchSegments(cap): maior peso <= cap que cumpre o 2º/3º/4º segmento (findMaxTowAllSegments)
+ *
+ * Devolve { mtow, limitKey, limit, failedKeys, outOfChart, reason }. mtow null = MTOW não determinado.
  */
-export function describeThirdSegment(result, obstacleDistance, hasObstacle) {
-    if (result && result.status === "OUT_OF_CHART") {
-        if (!hasObstacle) {
-            return { state: "na", text: obstacleDistance + "m / " + OUT_OF_CHART_TEXT };
+export function computeMtow({ limits, problems = {}, searchSegments }) {
+    // Algum limite direto não calculável: não há MTOW
+    const invalid = DIRECT_LIMIT_KEYS.filter(k => !(Number(limits[k]) > 0));
+    if (invalid.length > 0) {
+        // Agrupa os limites com o mesmo motivo (ex.: "ASDA, TORA, TODA: sem resultado do gráfico")
+        const byReason = new Map();
+        for (const k of invalid) {
+            const reason = problems[k] ? problems[k].reason : "não calculado";
+            byReason.set(reason, [...(byReason.get(reason) || []), k]);
         }
-        return { state: "ooc", text: obstacleDistance + "m / " + OUT_OF_CHART_TEXT };
+        return {
+            mtow: null,
+            limitKey: null,
+            limit: null,
+            failedKeys: invalid,
+            outOfChart: invalid.every(k => problems[k] && problems[k].outOfChart),
+            reason: [...byReason].map(([reason, keys]) => limitLabels(keys) + ": " + reason).join("; ")
+        };
     }
 
-    const text = obstacleDistance + "m / " + result.distance + "m";
+    // Menor dos limites diretos
+    let capKey = DIRECT_LIMIT_KEYS[0];
+    for (const k of DIRECT_LIMIT_KEYS) {
+        if (Number(limits[k]) < Number(limits[capKey])) capKey = k;
+    }
+    const cap = Math.floor(Number(limits[capKey]));
 
-    if (result.status === "PASSED") {
-        return { state: "ok", text };
+    // Desce a partir desse peso até um que cumpra os segmentos
+    const search = searchSegments(cap);
+
+    if (search.mtow == null) {
+        const keys = search.limitedBy;
+        return {
+            mtow: null,
+            limitKey: null,
+            limit: null,
+            failedKeys: keys,
+            outOfChart: keys.length > 0 && keys.every(k => search.atTop && search.atTop[k].state === "ooc"),
+            reason: "nenhum peso até " + cap + " kg cumpre " + limitLabels(keys)
+        };
     }
 
-    return { state: "bad", text };
+    // Um segmento obrigou a descer abaixo do menor limite direto
+    if (search.mtow < cap) {
+        const limitKey = search.limitedBy[0] || "CHART";
+        return { mtow: search.mtow, limitKey, limit: MTOW_LIMITS[limitKey], failedKeys: [], outOfChart: false, reason: "" };
+    }
+
+    return { mtow: cap, limitKey: capKey, limit: MTOW_LIMITS[capKey], failedKeys: [], outOfChart: false, reason: "" };
+}
+
+/**
+ * Texto do MTOW (ex.: "6016 kg", "failed" ou "fora do gráfico do AFM").
+ */
+export function formatMtow(mtowResult) {
+    if (mtowResult.mtow != null) return mtowResult.mtow + " kg";
+    return mtowResult.outOfChart ? OUT_OF_CHART_TEXT : "failed";
+}
+
+/**
+ * Fator limitante mostrado junto ao MTOW (ex.: "(WAT · cód. 10)").
+ * watAboveChart: OAT abaixo do gráfico WAT, foi usado o valor da borda (conservador).
+ */
+export function formatMtowLimit(mtowResult, watAboveChart = false) {
+    if (mtowResult.mtow == null) {
+        return mtowResult.failedKeys && mtowResult.failedKeys.length > 0 ? "(" + limitLabels(mtowResult.failedKeys) + ")" : "";
+    }
+
+    const { label, code } = mtowResult.limit;
+    const note = mtowResult.limitKey === "WAT" && watAboveChart ? ", borda do gráfico" : "";
+    return "(" + label + note + (code != null ? " · cód. " + code : "") + ")";
+}
+
+/**
+ * Selo global da descolagem.
+ * Falha se não houver MTOW, se TOW > MTOW, ou se algum segmento falhar no TOW introduzido.
+ * Devolve { state: "ok" | "bad" | "ooc", text, reason }.
+ */
+export function evaluateTakeoffStatus({ tow, mtowResult, segments }) {
+    if (mtowResult.mtow == null) {
+        return {
+            state: mtowResult.outOfChart ? "ooc" : "bad",
+            text: mtowResult.outOfChart ? "Fora do gráfico do AFM" : "Failed",
+            reason: "MTOW não determinado — " + mtowResult.reason
+        };
+    }
+
+    if (tow > mtowResult.mtow) {
+        return { state: "bad", text: "Failed", reason: "TOW acima do MTOW (limite: " + mtowResult.limit.label + ")" };
+    }
+
+    const failed = SEGMENT_KEYS.filter(k => segments[k].state === "bad");
+    if (failed.length > 0) {
+        return { state: "bad", text: "Failed", reason: "Climb gradient não cumprido: " + limitLabels(failed) };
+    }
+
+    const outOfChart = SEGMENT_KEYS.filter(k => segments[k].state === "ooc");
+    if (outOfChart.length > 0) {
+        return { state: "ooc", text: "Fora do gráfico do AFM", reason: limitLabels(outOfChart) + ": " + OUT_OF_CHART_TEXT };
+    }
+
+    return { state: "ok", text: "Passed", reason: "" };
 }
 
 /**
@@ -277,6 +396,12 @@ function clearPerformanceOutputs() {
         if (!el) return;
         el.textContent = "—";
         el.classList.remove("ok", "bad");
+    });
+
+    // Fator limitante do MTOW e motivo do selo ficam vazios
+    ["outMTOWLimit", "cgReason"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "";
     });
 
     // O badge volta ao estado inicial do HTML
@@ -526,8 +651,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Vai buscar o MTOW estrutural da aeronave selecionada nas settings
-    // Vai ser usado se MTOW calculado for menor que o introduzido
-    const aircraftMTOW = aircraft.MTOW;
+    // (é um dos limites do MTOW; se faltar, o MTOW fica "failed" com o motivo)
+    const aircraftMTOW = Number(aircraft.MTOW);
 
     /**
      * Formata o vento no formato 000/00 e valida o mínimo de dígitos.
@@ -776,138 +901,48 @@ document.addEventListener("DOMContentLoaded", async () => {
         const pa = getPressureAltitude(qnh, runwayEntry);
 
         /**
-         * MTOW
+         * MTOW: limites diretos (WAT, ASDA, TORA, TODA e peso máximo do avião).
+         * O MTOW final é decidido no fim, depois de verificados os segmentos.
          */
-        let mtow = 0;
+        const isFlapsUp = flaps === "up";
 
-        // Se os flaps estiverem em UP, usa as tabelas/funções correspondentes
-        if (flaps === "up") {
-            // Calcula o limite WAT
-            let mtowWAT = getWAT("up", pa, oat);
-            // Se os inlet ON -250kg
-            if (inlet === "on") { mtowWAT = mtowWAT - 250 };
-            console.log("mtowWAT ", mtowWAT);
-            // Calcula o limite por ASDA
-            const mtowASDA = MTOW_ASDA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
-            console.log("mtowASDA ", mtowASDA);
-            // Calcula o limite por TORA
-            const mtowTORA = MTOW_TORA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
-            console.log("mtowTORA ", mtowTORA);
-            // Calcula o limite por TODA
-            const mtowTODA = MTOW_TODA_FlapsUp({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
-            console.log("mtowTODA ", mtowTODA);
-            // Junta todos os limites numa lista
-            const limits = [mtowWAT, mtowASDA.result, mtowTORA.result, mtowTODA.result];
+        // WAT (inlets ON: -250 kg). Fora do gráfico do AFM não há valor.
+        const wat = getWAT(flaps, pa, oat);
+        const mtowWAT = wat.status === WAT_OK ? wat.wat - (inlet === "on" ? 250 : 0) : null;
 
-            // Verifica se existe algum valor inválido
-            const invalid = limits.some(v => !v || !Number.isFinite(v));
+        // Limite por ASDA
+        const mtowASDA = (isFlapsUp ? MTOW_ASDA_FlapsUp : MTOW_ASDA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
 
-            // Se existir um valor inválido, mostra failed
-            if (invalid) {
-                // Define MTOW como zero por segurança
-                mtow = 0;
+        // Limite por TORA
+        const mtowTORA = (isFlapsUp ? MTOW_TORA_FlapsUp : MTOW_TORA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
 
-                // Mostra failed no output
-                document.getElementById("outMTOW").textContent = " failed ";
+        // Limite por TODA (o módulo recebe a TODA no parâmetro "TORA")
+        const mtowTODA = (isFlapsUp ? MTOW_TODA_FlapsUp : MTOW_TODA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
 
-                // Junta os debugs das tabelas/funções
-                const debugs = [
-                    { nome: "TORA", debug: mtowTORA.debug },
-                    { nome: "TODA", debug: mtowTODA.debug },
-                    { nome: "ASDA", debug: mtowASDA.debug }
-                ];
+        const directLimits = {
+            WAT: mtowWAT,
+            ASDA: mtowASDA.result,
+            TORA: mtowTORA.result,
+            TODA: mtowTODA.result,
+            STRUCT: aircraftMTOW
+        };
 
-                // Mostra os debugs na consola
-                for (const d of debugs) {
-                    console.log(d.nome);
-                    console.log(d.debug);
-                }
-            } else {
-                // Escolhe o limite mais restritivo
-                mtow = Math.min(...limits);
-
-                // Mostra o MTOW calculado
-                document.getElementById("outMTOW").textContent = mtow;
+        // Motivo de cada limite que não foi possível calcular
+        const limitProblems = {};
+        if (wat.status !== WAT_OK) {
+            limitProblems.WAT = { outOfChart: true, reason: wat.reason };
+        }
+        for (const [key, res] of [["ASDA", mtowASDA], ["TORA", mtowTORA], ["TODA", mtowTODA]]) {
+            if (!(res.result > 0)) {
+                limitProblems[key] = { outOfChart: false, reason: "sem resultado do gráfico" };
+                console.warn("MTOW " + key + " sem resultado:", (res.debug && (res.debug.error || res.debug.reason)) || res.status, res.debug);
             }
         }
-
-        // Se os flaps estiverem em 1, usa as tabelas/funções correspondentes
-        if (flaps === "1") {
-            // Calcula o limite WAT
-            let mtowWAT = getWAT("1", pa, oat);
-console.log("mtowWAT ====== ",mtowWAT);
-            // Se os inlet ON -250kg
-            if (inlet === "on") { mtowWAT = mtowWAT - 250 };
-            console.log("mtowWAT ", mtowWAT);
-            // Calcula o limite por ASDA
-            const mtowASDA = MTOW_ASDA_Flaps1({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
-            console.log("mtowASDA ", mtowASDA);
-            // Calcula o limite por TORA
-            const mtowTORA = MTOW_TORA_Flaps1({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
-            console.log("mtowTORA ", mtowTORA);
-            // Calcula o limite por TODA
-            const mtowTODA = MTOW_TODA_Flaps1({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
-            console.log("mtowTODA ", mtowTODA);
-            // Junta todos os limites numa lista
-            const limits = [mtowWAT, mtowASDA.result, mtowTORA.result, mtowTODA.result];
-
-
-console.log("DEBUG MTOW");
-console.log("WAT:", mtowWAT);
-console.log("ASDA:", mtowASDA);
-console.log("TORA:", mtowTORA);
-console.log("TODA:", mtowTODA);
-
-            
-            // Verifica se existe algum valor inválido
-            const invalid = limits.some(v => !v || !Number.isFinite(v));
-
-            // Se existir um valor inválido, mostra failed
-            if (invalid) {
-                // Define MTOW como zero por segurança
-                mtow = 0;
-
-                // Mostra failed no output
-                document.getElementById("outMTOW").textContent = " failed ";
-
-                // Junta os debugs das tabelas/funções
-                const debugs = [
-                    { nome: "TORA", debug: mtowTORA.debug },
-                    { nome: "TODA", debug: mtowTODA.debug },
-                    { nome: "ASDA", debug: mtowASDA.debug }
-                ];
-
-                // Mostra os debugs na consola
-                for (const d of debugs) {
-                    console.log(d.nome);
-                    console.log(d.debug);
-                }
-            } else {
-                // Escolhe o limite mais restritivo
-                mtow = Math.min(...limits);
-
-                // Mostra o MTOW calculado
-                document.getElementById("outMTOW").textContent = mtow;
-            }
+        if (!(aircraftMTOW > 0)) {
+            limitProblems.STRUCT = { outOfChart: false, reason: "MTOW do avião em falta nas settings" };
         }
 
-        // Escolhe o limite mais restritivo entre performance e estrutura
-        const mtowLimited = Math.min(mtow, aircraftMTOW);
-
-        // Mostra o MTOW final no output (assim evita que mostre um valor mais alto do que do próprio avião)
-        document.getElementById("outMTOW").textContent = mtowLimited;
-
-        // Vai buscar o campo TOW do formulário
-        const towInput = document.getElementById("tow");
-
-        // Se o TOW introduzido for maior que o limite permitido
-        if (tow > mtowLimited) {
-            // Marca o campo como erro (fica vermelho)
-            towInput.classList.add("input-error");
-        } else {
-            // Remove o erro se estiver dentro do limite
-            towInput.classList.remove("input-error");
-        }
+        debugLog("MTOW limites diretos", directLimits, { wat, mtowASDA, mtowTORA, mtowTODA });
 
         /**
          * Torque for Takeoff
@@ -949,7 +984,7 @@ console.log("TODA:", mtowTODA);
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-            console.log("torrflpsupCalculated ", torrflpsupCalculated);
+            debugLog("torrflpsupCalculated ", torrflpsupCalculated);
             // Se falhar, mostra failed
             if (torrflpsupCalculated.status === "failed") {
                 document.getElementById("outTor").textContent = " failed ";
@@ -966,11 +1001,10 @@ console.log("TODA:", mtowTODA);
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-            console.log("torrflps1Calculated ", torrflps1Calculated);
+            debugLog("torrflps1Calculated ", torrflps1Calculated);
             // Se falhar, mostra failed
             if (torrflps1Calculated.status === "failed") {
                 document.getElementById("outTor").textContent = " failed ";
-                console.log("torrflps1Calculated ", torrflps1Calculated);
             } else {
                 // Se resultar, mostra a distância calculada
                 document.getElementById("outTor").textContent = torrflps1Calculated.result.toFixed(0) + " m ";
@@ -980,9 +1014,6 @@ console.log("TODA:", mtowTODA);
         /**
          * Takeoff Distance
          */
-        // Define um valor alto por defeito para referência no cálculo do climb gradient
-        let todr = 2500;
-
         // Se os flaps estiverem em UP, calcula o TODR correspondente
         if (flaps === "up") {
             // Calcula o TODR para flaps UP
@@ -993,16 +1024,13 @@ console.log("TODA:", mtowTODA);
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-            console.log("todrflpsupCalculated ", todrflpsupCalculated);
+            debugLog("todrflpsupCalculated ", todrflpsupCalculated);
             // Se falhar, mostra failed
             if (todrflpsupCalculated.status === "failed") {
                 document.getElementById("outTakeoffDistance").textContent = " failed ";
             } else {
                 // Se resultar, mostra a distância calculada
                 document.getElementById("outTakeoffDistance").textContent = todrflpsupCalculated.result.toFixed(0) + " m ";
-
-                // Guarda o valor calculado para usar nos obstáculos
-                todr = Number(todrflpsupCalculated.result.toFixed(0));
             }
         } else if (flaps === "1") {
             // Calcula o TODR para flaps 1
@@ -1013,16 +1041,13 @@ console.log("TODA:", mtowTODA);
                 Wind: wind,
                 slope: runwayEntry.slope
             });
-            console.log("todrflps1Calculated ", todrflps1Calculated);
+            debugLog("todrflps1Calculated ", todrflps1Calculated);
             // Se falhar, mostra failed
             if (todrflps1Calculated.status === "failed") {
                 document.getElementById("outTakeoffDistance").textContent = " failed ";
             } else {
                 // Se resultar, mostra a distância calculada
                 document.getElementById("outTakeoffDistance").textContent = todrflps1Calculated.result.toFixed(0) + " m ";
-
-                // Guarda o valor calculado para usar nos obstáculos
-                todr = Number(todrflps1Calculated.result.toFixed(0));
             }
         }
 
@@ -1067,414 +1092,55 @@ console.log("TODA:", mtowTODA);
         }
 
         /**
-         * Net Climb Gradient Required to Clear Obstacles - 2º segmento
+         * Climb gradient: 2º segmento, 3º segmento (distância horizontal) e 4º segmento,
+         * para o TOW introduzido. É a mesma função usada na procura do MTOW.
          */
+        // Obstáculos do 2º segmento
+        const obstacles2Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft < 400 && o.obstacle_dist < 5000);
 
-        // Guarda se o 2º segmento falhou
-        let cgFailed2Seg = false;
+        // Obstáculos do 3º/4º segmento (acima de 400 ft e dentro de 2500 m)
+        const obstacles34Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft > 400 && o.obstacle_dist < 2500);
 
-        // Guarda se o 3º segmento falhou
-        let cgFailed3Seg = false;
+        const segmentParams = { flaps, pa, oat, inlet, wind, slope: runwayEntry.slope, obstacles2Seg, obstacles34Seg };
 
-        // Guarda se o 4º segmento falhou
-        let cgFailed4Seg = false;
+        const segments = evaluateSegments({ ...segmentParams, tow });
+        debugLog("Segmentos no TOW", segments);
 
-        // Filtra os obstáculos que pertencem ao 2º segmento
-        const filtered_2Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft < 400 && o.obstacle_dist < 5000);
-
-        // Cria uma lista para guardar os gradientes requeridos
-        const gradients_2Seg = [];
-
-        // Calcula o gradiente requerido para cada obstáculo do 2º segmento
-        for (const obs of filtered_2Seg) {
-
-            // Calcula a distância do obstáculo relativamente ao Reference Zero
-            const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
-            console.log("obstacle_dist ", obs.obstacle_dist, " - ", todr);
-            console.log("obsc dist =", obstacleDistanceFromREFZERO);
-            // Calcula o gradiente requerido do obstáculo atual
-            const gradientRequired2Seg = Gradient_Required2Seg({
-                obstacleDistance: obstacleDistanceFromREFZERO,
-                wind: wind,
-                obstacle_height_ft: obs.obstacle_ft
-            });
-            console.log("gradientRequired2Seg ", gradientRequired2Seg);
-            // Guarda apenas o valor numérico do gradiente requerido
-            gradients_2Seg.push(gradientRequired2Seg.result_CG_required);
+        // Required / calculado de cada segmento no tooltip
+        for (const [key, id] of [["SEG2", "ttCg2"], ["SEG3", "ttCg3"], ["SEG4", "ttCg4"]]) {
+            const el = document.getElementById(id);
+            el.textContent = segments[key].text;
+            el.classList.remove("ok", "bad");
+            if (segments[key].state === "ok") el.classList.add("ok");
+            if (segments[key].state === "bad" || segments[key].state === "ooc") el.classList.add("bad");
         }
 
-        // Escolhe o maior gradiente requerido, ou 0 se não houver obstáculos
-        const maxGradient_2seg = gradients_2Seg.length > 0 ? Math.max(...gradients_2Seg) : 0;
-
         /**
-         * Net Climb Gradient - Single Engine - Second Segment
+         * MTOW final: o menor dos limites diretos, descendo até um peso que cumpra os segmentos
          */
+        const mtowResult = computeMtow({
+            limits: directLimits,
+            problems: limitProblems,
+            searchSegments: cap => findMaxTowAllSegments(segmentParams, cap)
+        });
+        debugLog("MTOW", mtowResult);
+
+        document.getElementById("outMTOW").textContent = formatMtow(mtowResult);
+        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, wat.aboveChart);
+
+        // TOW a vermelho se estiver acima do MTOW (ou se não houver MTOW)
+        const towWithinMtow = mtowResult.mtow != null && tow <= mtowResult.mtow;
+        document.getElementById("tow").classList.toggle("input-error", !towWithinMtow);
+
         /**
- * Net Climb Gradient - Single Engine - Second Segment
- */
-let mtowCG2 = mtowLimited;
-
-// Se os flaps estiverem em UP, calcula o gradiente do 2º segmento para flaps UP
-if (flaps === "up") {
-    // Calcula o gradiente disponível do 2º segmento
-    const gradient2Seg = Gradient_2segFlapsUp({
-        pressureAltitude: pa,
-        oat: oat,
-        tow: tow,
-        inlet: inlet,
-        gradientRequired: maxGradient_2seg
-    });
-    console.log(gradient2Seg);
-
-    // Se falhar, marca a flag do 2º segmento como falhada
-    if (gradient2Seg.status === "FAILED") {
-        // Marca o 2º segmento como failed
-        cgFailed2Seg = true;
-
-        // Mostra o detalhe do 2º segmento
-        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
-
-        // Remove a classe de sucesso
-        document.getElementById("ttCg2").classList.remove("ok");
-
-        // Adiciona a classe de falha
-        document.getElementById("ttCg2").classList.add("bad");
-    } else {
-        // Marca o 2º segmento como passed
-        cgFailed2Seg = false;
-
-        // Mostra o detalhe do 2º segmento
-        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
-
-        // Remove a classe de falha
-        document.getElementById("ttCg2").classList.remove("bad");
-
-        // Adiciona a classe de sucesso
-        document.getElementById("ttCg2").classList.add("ok");
-    }
-
-} else if (flaps === "1") {
-    // Calcula o gradiente disponível do 2º segmento para flaps 1
-    const gradient2Seg = Gradient_2segFlaps1({
-        pressureAltitude: pa,
-        oat: oat,
-        tow: tow,
-        inlet: inlet,
-        gradientRequired: maxGradient_2seg
-    });
-    console.log(gradient2Seg);
-
-    // Se falhar, marca a flag do 2º segmento como falhada
-    if (gradient2Seg.status === "FAILED") {
-        // Marca o 2º segmento como failed
-        cgFailed2Seg = true;
-
-        // Mostra o detalhe do 2º segmento
-        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
-
-        // Remove a classe de sucesso
-        document.getElementById("ttCg2").classList.remove("ok");
-
-        // Adiciona a classe de falha
-        document.getElementById("ttCg2").classList.add("bad");
-    } else {
-        // Marca o 2º segmento como passed
-        cgFailed2Seg = false;
-
-        // Mostra o detalhe do 2º segmento
-        document.getElementById("ttCg2").textContent = maxGradient_2seg + "% / " + gradient2Seg.gradient + "%";
-
-        // Remove a classe de falha
-        document.getElementById("ttCg2").classList.remove("bad");
-
-        // Adiciona a classe de sucesso
-        document.getElementById("ttCg2").classList.add("ok");
-    }
-}
-
-// Calcula o MTOW real do 2º segmento, recalculando required e performed para cada peso
-// null = nenhum peso cumpre o 2º segmento (é tratado como limitante no fim)
-mtowCG2 = getMaxTow2Seg({
-    flaps: flaps,
-    pa: pa,
-    oat: oat,
-    inlet: inlet,
-    wind: wind,
-    slope: runwayEntry.slope,
-    obstacles: filtered_2Seg
-});
-        
-        /**
-         * Flight Path to Clear Distant Obstacles - 3º/4º segmento
+         * Selo global: MTOW determinado, TOW <= MTOW e climb gradient cumprido no TOW
          */
-        // Filtra os obstáculos acima de 400 ft e dentro de 2500 m
-        const filtered_34Seg = runwayEntry.obstacles.filter(
-            o => o.obstacle_ft > 400 && o.obstacle_dist < 2500
-        );
-
-        // Cria uma lista para guardar a análise dos obstáculos do 3º/4º segmento
-        const obstacleAnalysis34 = [];
-
-        // Obstáculos cujo gradiente requerido não foi possível ler no gráfico do AFM
-        const requiredOutOfChart34 = [];
-
-        // Percorre todos os obstáculos filtrados
-        for (const obs of filtered_34Seg) {
-            // Calcula a distância do obstáculo relativamente ao Reference Zero
-            const obstacleDistanceFromREFZERO = obs.obstacle_dist - todr;
-
-            // Calcula o gradiente requerido para esse obstáculo
-            const gradientRequired34Seg = Gradient_Required34Seg({
-                obstacleDistance: obstacleDistanceFromREFZERO,
-                runway_slope: runwayEntry.slope,
-                wind: wind,
-                obstacle_height: obs.obstacle_ft
-            });
-            console.log(gradientRequired34Seg);
-
-            // Required a null (distância/slope/vento/altura fora do gráfico, CG > 7%):
-            // não pode entrar na comparação como 0. Fica registado e o 3º/4º segmento não passa.
-            if (!gradientRequired34Seg || gradientRequired34Seg.result_CG_required == null) {
-                requiredOutOfChart34.push({ obstacle: obs, debug: gradientRequired34Seg?.debug });
-                console.warn("3º/4º segmento: required fora do gráfico do AFM para o obstáculo", obs, gradientRequired34Seg?.debug);
-                continue;
-            }
-
-            // Guarda os dados do obstáculo analisado
-            obstacleAnalysis34.push({
-                // Guarda o gradiente requerido para o 4º segmento
-                requiredGradient: gradientRequired34Seg.result_CG_required,
-
-                // Guarda a distância do obstáculo para o 3º segmento
-                obstacleDistance: obstacleDistanceFromREFZERO,
-
-                // Guarda o obstáculo completo para debug futuro
-                obstacle: obs
-            });
-        }
-
-        // Inicializa a variável do obstáculo crítico para o 4º segmento
-        let criticalObstacle34 = null;
-
-        // Procura o obstáculo com maior gradiente requerido
-        for (const item of obstacleAnalysis34) {
-            // Se ainda não existir crítico, ou se este tiver gradiente maior, substitui
-            if (!criticalObstacle34 || item.requiredGradient > criticalObstacle34.requiredGradient) {
-                criticalObstacle34 = item;
-            }
-        }
-
-        // Guarda o gradiente requerido do obstáculo crítico, ou 0 se não existir
-        const requiredGradient4Seg = criticalObstacle34 ? criticalObstacle34.requiredGradient : 0;
-
-        // Guarda a distância do obstáculo crítico, ou 0 se não existir
-        const criticalObstacleDistance3Seg = criticalObstacle34 ? criticalObstacle34.obstacleDistance : 0;
-
-        /**
-         * Horizontal Distance - Single Engine - Third Segment
-         */
-
-/**
- * Horizontal Distance - Single Engine - Third Segment
- */
-let mtowCG3 = mtowLimited;
-
-// Guarda se o 3º/4º segmento não pôde ser verificado por estar fora do gráfico do AFM
-let cgOutOfChart3Seg = false;
-let cgOutOfChart4Seg = false;
-
-// Existe obstáculo do 3º/4º segmento? (sem obstáculo o requisito é 0 m)
-const hasObstacle34 = criticalObstacle34 != null || requiredOutOfChart34.length > 0;
-
-const ttCg3 = document.getElementById("ttCg3");
-
-if (requiredOutOfChart34.length > 0) {
-    // Required fora do gráfico: não é possível verificar o 3º segmento
-    cgOutOfChart3Seg = true;
-    ttCg3.textContent = "Req: " + OUT_OF_CHART_TEXT;
-    ttCg3.classList.remove("ok");
-    ttCg3.classList.add("bad");
-} else {
-    // Calcula a distância percorrida pelo avião no 3º segmento
-    const thirdSegment = Gradient_3segFlaps1({
-        pressureAltitude: pa,
-        oat: oat,
-        tow: tow,
-        inlet: inlet,
-        obstacleDistance: criticalObstacleDistance3Seg
-    });
-    console.log(thirdSegment);
-
-    // Traduz o resultado: ok / bad / ooc (fora do gráfico com obstáculo) / na (fora do gráfico sem obstáculo)
-    const view3 = describeThirdSegment(thirdSegment, criticalObstacleDistance3Seg, hasObstacle34);
-
-    // Só uma falha real de comparação marca o 3º segmento como failed
-    cgFailed3Seg = view3.state === "bad";
-
-    // Fora do gráfico com obstáculo: não verificável (não passa)
-    cgOutOfChart3Seg = view3.state === "ooc";
-
-    // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
-    ttCg3.textContent = view3.text;
-    ttCg3.classList.remove("ok", "bad");
-    if (view3.state === "ok") ttCg3.classList.add("ok");
-    if (view3.state === "bad" || view3.state === "ooc") ttCg3.classList.add("bad");
-}
-
-// Calcula o MTOW real do 3º segmento, recalculando a distância crítica para cada peso
-// null = nenhum peso cumpre o 3º segmento (é tratado como limitante no fim)
-mtowCG3 = getMaxTow3Seg({
-    pa: pa,
-    oat: oat,
-    inlet: inlet,
-    wind: wind,
-    slope: runwayEntry.slope,
-    obstacles: filtered_34Seg
-});
-        
-        /**
-         * Net Climb Gradient - Single Engine - 4º Final Segment
-         */
-
-        /**
- * Net Climb Gradient - Single Engine - 4º Final Segment
- */
-let mtowCG4 = mtowLimited;
-
-if (requiredOutOfChart34.length > 0) {
-    // Required fora do gráfico: não é possível verificar o 4º segmento
-    cgOutOfChart4Seg = true;
-    document.getElementById("ttCg4").textContent = "Req: " + OUT_OF_CHART_TEXT;
-    document.getElementById("ttCg4").classList.remove("ok");
-    document.getElementById("ttCg4").classList.add("bad");
-} else {
-
-// Calcula a performance do 4º segmento
-const gradient4Seg = Gradient_4segFlapsUp({
-    pressureAltitude: pa,
-    oat: oat,
-    tow: tow,
-    inlet: inlet,
-    gradientRequired: requiredGradient4Seg
-});
-console.log(gradient4Seg);
-
-// Se o 4º segmento falhar
-if (gradient4Seg.status === "FAILED") {
-    // Marca a flag do 4º segmento como failed
-    cgFailed4Seg = true;
-
-    // Mostra o gradiente requerido e o gradiente calculado
-    document.getElementById("ttCg4").textContent =
-        requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
-
-    // Remove a classe de sucesso
-    document.getElementById("ttCg4").classList.remove("ok");
-
-    // Adiciona a classe de falha
-    document.getElementById("ttCg4").classList.add("bad");
-
-} else {
-    // Marca a flag do 4º segmento como passed
-    cgFailed4Seg = false;
-
-    // Mostra o gradiente requerido e o gradiente calculado
-    document.getElementById("ttCg4").textContent =
-        requiredGradient4Seg + "% / " + gradient4Seg.gradient + "%";
-
-    // Remove a classe de falha
-    document.getElementById("ttCg4").classList.remove("bad");
-
-    // Adiciona a classe de sucesso
-    document.getElementById("ttCg4").classList.add("ok");
-}
-
-} // fim do else (required do 3º/4º segmento dentro do gráfico)
-
-// Calcula o MTOW real do 4º segmento, recalculando o required crítico para cada peso
-// null = nenhum peso cumpre o 4º segmento (é tratado como limitante no fim)
-mtowCG4 = getMaxTow4Seg({
-    pa: pa,
-    oat: oat,
-    inlet: inlet,
-    wind: wind,
-    slope: runwayEntry.slope,
-    obstacles: filtered_34Seg
-});
-
-
-        
-        /**
-         * Resultado geral do climb gradient
-         */
-        // Guarda se o resultado geral do climb gradient falhou
-        const cgOverallFailed = cgFailed2Seg || cgFailed3Seg || cgFailed4Seg;
-
-        // Guarda se algum segmento com obstáculo ficou fora do gráfico do AFM (não verificável)
-        const cgOverallOutOfChart = cgOutOfChart3Seg || cgOutOfChart4Seg;
-
-        // Se qualquer segmento falhou, o resultado geral é Failed
-        if (cgOverallFailed) {
-            // Remove a classe de sucesso do badge geral
-            document.getElementById("cgBadge").classList.remove("ok");
-
-            // Adiciona a classe de falha ao badge geral
-            document.getElementById("cgBadge").classList.add("bad");
-
-            // Mostra Failed no texto geral
-            document.getElementById("cgText").textContent = "Failed";
-
-        } else if (cgOverallOutOfChart) {
-            // Não verificável: não passa, mas mostra o motivo em vez de Failed
-            document.getElementById("cgBadge").classList.remove("ok");
-            document.getElementById("cgBadge").classList.add("bad");
-            document.getElementById("cgText").textContent = "Fora do gráfico do AFM";
-
-        } else {
-            // Remove a classe de falha do badge geral
-            document.getElementById("cgBadge").classList.remove("bad");
-
-            // Adiciona a classe de sucesso ao badge geral
-            document.getElementById("cgBadge").classList.add("ok");
-
-            // Mostra Passed no texto geral
-            document.getElementById("cgText").textContent = "Passed";
-        }
-
-        console.log("mtowCG2", mtowCG2);
-        console.log("mtowCG3", mtowCG3);
-        console.log("mtowCG4", mtowCG4);
-        // MTOW by CGR
-
-        // Segmentos em que nenhum peso cumpre (null): limitam o MTOW em vez de serem ignorados
-        const mtowBySegment = { "2ºSeg": mtowCG2, "3ºSeg": mtowCG3, "4ºSeg": mtowCG4 };
-        const segmentsWithoutMtow = Object.keys(mtowBySegment).filter(k => mtowBySegment[k] == null);
-
-        // MTOW por WAT/ASDA/TORA/TODA inválido (0) ou nenhum peso cumpre um segmento: failed
-        if (!(mtowLimited > 0) || segmentsWithoutMtow.length > 0) {
-            const reason = segmentsWithoutMtow.length > 0 ? "(" + segmentsWithoutMtow.join(", ") + ") " : "";
-            document.getElementById("outMTOW").textContent = " failed " + reason;
-            console.warn("MTOW failed. mtowLimited:", mtowLimited, "segmentos sem peso válido:", segmentsWithoutMtow);
-            return;
-        }
-
-        // Calcula o menor valor entre os três MTOW
-       const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
-
-// O resultado final nunca pode ser maior que o MTOW já limitado
-const mtowFinal = Math.min(mtowByCG, mtowLimited);
-
-// Arredonda sempre para baixo
-const mtowRounded = Math.floor(mtowFinal);
-
-// Mostra o resultado no elemento HTML
-document.getElementById("outMTOW").textContent = mtowRounded;
-
-
-        console.log("mtowLimited ", mtowLimited);
-        console.log("mtowByCG ", mtowByCG);
-        console.log("MTOW ", mtowByCG);
-
+        const status = evaluateTakeoffStatus({ tow, mtowResult, segments });
+        const badge = document.getElementById("cgBadge");
+        badge.classList.toggle("ok", status.state === "ok");
+        badge.classList.toggle("bad", status.state !== "ok");
+        document.getElementById("cgText").textContent = status.text;
+        document.getElementById("cgReason").textContent = status.reason;
     }
 
     /**
