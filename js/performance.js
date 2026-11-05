@@ -1150,34 +1150,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     /**
-     * Ajusta a direção de abertura dos tooltips quando o rato entra no ícone "i".
+     * Tooltips do ícone "i": abrem/fecham com toque ou clique (classe "open").
+     * Com rato também abrem por hover (CSS). Tocar/clicar fora fecha.
      */
-    document.querySelectorAll(".info").forEach(info => {
-        // Adiciona um listener ao evento mouseenter
-        info.addEventListener("mouseenter", () => {
-            // Vai buscar a posição do elemento no ecrã
-            const rect = info.getBoundingClientRect();
+    const infoIcons = document.querySelectorAll(".info");
 
-            // Se estiver muito perto da esquerda, força abertura para a direita
-            if (rect.left < 150) {
-                info.classList.add("tooltip-right");
-            } else {
-                // Caso contrário remove essa classe
-                info.classList.remove("tooltip-right");
+    // Abre para a direita se não houver espaço à esquerda do ícone
+    function placeTooltip(info) {
+        const tooltip = info.querySelector(".tooltip");
+        const width = tooltip ? tooltip.offsetWidth : 260;
+        const rect = info.getBoundingClientRect();
+        info.classList.toggle("tooltip-right", rect.right - width < 8);
+    }
+
+    function closeAllTooltips(except) {
+        infoIcons.forEach(info => {
+            if (info !== except) info.classList.remove("open");
+        });
+    }
+
+    infoIcons.forEach(info => {
+        info.addEventListener("mouseenter", () => placeTooltip(info));
+
+        info.addEventListener("click", (event) => {
+            // Toques dentro do próprio tooltip não o fecham
+            if (event.target.closest(".tooltip")) return;
+            closeAllTooltips(info);
+            placeTooltip(info);
+            info.classList.toggle("open");
+        });
+
+        info.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                closeAllTooltips(info);
+                placeTooltip(info);
+                info.classList.toggle("open");
+            } else if (event.key === "Escape") {
+                info.classList.remove("open");
             }
         });
     });
 
-    /**
-     * No telemóvel o ícone "i" abre o tooltip ao ganhar foco (tabindex), mas tocar
-     * fora não lhe tira o foco por si só (só elementos focáveis o fazem). Por isso
-     * fechamos manualmente qualquer tooltip aberto quando se toca fora do ícone.
-     */
-    document.addEventListener("touchstart", (event) => {
-        document.querySelectorAll(".info").forEach(info => {
-            if (document.activeElement === info && !info.contains(event.target)) {
-                info.blur();
-            }
-        });
-    }, { passive: true });
+    document.addEventListener("pointerdown", (event) => {
+        if (!event.target.closest(".info")) closeAllTooltips(null);
+    });
+
+    // iOS Safari ignora user-scalable=no: bloqueia o pinch-zoom
+    document.addEventListener("gesturestart", (event) => event.preventDefault());
 });
