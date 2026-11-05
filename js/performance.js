@@ -23,7 +23,7 @@ import ASDR_FLAPS1 from "./asdrFlaps1_CSATH.js";
 import { getTakeoffData } from "./ToSpeeds.js";
 
 // Importa a função que calcula o limite WAT
-import { getWAT, WAT_OK } from "./ToWAT.js";
+import { getWAT, WAT_OK, WAT_COLD_CAP, WAT_OUT_OF_CHART } from "./ToWAT.js";
 
 // Importa a função de MTOW limitada por ASDA para flaps UP
 import MTOW_ASDA_FlapsUp from "./mtowASDA_FlapsUp.js";
@@ -299,16 +299,20 @@ export function formatMtow(mtowResult) {
 
 /**
  * Fator limitante mostrado junto ao MTOW (ex.: "(WAT · code 10)").
- * watAboveChart: OAT abaixo do gráfico WAT, foi usado o valor da borda (conservador).
+ * watColdCap: OAT abaixo do gráfico WAT, o limite é o peso máximo do avião (code 7),
+ * não o valor do gráfico (code 10).
  */
-export function formatMtowLimit(mtowResult, watAboveChart = false) {
+export function formatMtowLimit(mtowResult, watColdCap = false) {
     if (mtowResult.mtow == null) {
         return mtowResult.failedKeys && mtowResult.failedKeys.length > 0 ? "(" + limitLabels(mtowResult.failedKeys) + ")" : "";
     }
 
+    if (mtowResult.limitKey === "WAT" && watColdCap) {
+        return "(WAT, cold cap · code " + MTOW_LIMITS.STRUCT.code + ")";
+    }
+
     const { label, code } = mtowResult.limit;
-    const note = mtowResult.limitKey === "WAT" && watAboveChart ? ", chart edge" : "";
-    return "(" + label + note + (code != null ? " · code " + code : "") + ")";
+    return "(" + label + (code != null ? " · code " + code : "") + ")";
 }
 
 /**
@@ -907,8 +911,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const isFlapsUp = flaps === "up";
 
         // WAT (inlets ON: -250 kg). Fora do gráfico do AFM não há valor.
-        const wat = getWAT(flaps, pa, oat);
-        const mtowWAT = wat.status === WAT_OK ? wat.wat - (inlet === "on" ? 250 : 0) : null;
+        // Lado frio: se o ponto mais frio do gráfico já estiver encostado ao peso máximo
+        // do avião, o limite passa a ser esse peso máximo (status "cold_cap"), não a borda.
+        const wat = getWAT(flaps, pa, oat, aircraftMTOW);
+        const mtowWAT = wat.status !== WAT_OUT_OF_CHART ? wat.wat - (inlet === "on" ? 250 : 0) : null;
 
         // Limite por ASDA
         const mtowASDA = (isFlapsUp ? MTOW_ASDA_FlapsUp : MTOW_ASDA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, runway_conditions: surface, ASDA: runwayEntry.asda });
@@ -929,7 +935,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Motivo de cada limite que não foi possível calcular
         const limitProblems = {};
-        if (wat.status !== WAT_OK) {
+        if (wat.status === WAT_OUT_OF_CHART) {
             limitProblems.WAT = { outOfChart: true, reason: wat.reason };
         }
         for (const [key, res] of [["ASDA", mtowASDA], ["TORA", mtowTORA], ["TODA", mtowTODA]]) {
@@ -1126,7 +1132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         debugLog("MTOW", mtowResult);
 
         document.getElementById("outMTOW").textContent = formatMtow(mtowResult);
-        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, wat.aboveChart);
+        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, wat.status === WAT_COLD_CAP);
 
         // TOW a vermelho se estiver acima do MTOW (ou se não houver MTOW)
         const towWithinMtow = mtowResult.mtow != null && tow <= mtowResult.mtow;
