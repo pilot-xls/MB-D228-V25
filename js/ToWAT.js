@@ -181,7 +181,7 @@ function interpolate1D(rows, oat) {
 
   // Acima da maior OAT desta linha de PA: fora do gráfico
   if (tOAT > maxOAT) {
-    return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C acima do gráfico (máx. ${maxOAT} °C a ${sorted[0].pressure_altitude} ft)` };
+    return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C above chart (max ${maxOAT} °C at ${sorted[0].pressure_altitude} ft)` };
   }
 
   // Abaixo da menor OAT: curva acima do topo do gráfico → borda (conservador)
@@ -202,7 +202,7 @@ function interpolate1D(rows, oat) {
   }
 
   // Não deve acontecer (OAT dentro de [minOAT, maxOAT])
-  return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C sem dados na tabela WAT` };
+  return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C not in WAT table` };
 }
 
 // =====================================
@@ -218,7 +218,7 @@ function interpolate2D(table, pa, oat) {
 
   // Acima da maior PA da tabela: fora do gráfico
   if (tPA > maxPA) {
-    return { wat: null, outOfChart: true, reason: `PA ${tPA} ft acima do gráfico (máx. ${maxPA} ft)` };
+    return { wat: null, outOfChart: true, reason: `PA ${tPA} ft above chart (max ${maxPA} ft)` };
   }
 
   // Abaixo da menor PA: usa a linha da menor PA (conservador)
@@ -259,7 +259,7 @@ function interpolate2D(table, pa, oat) {
  */
 export function getWAT(flaps, pressureAltitude, oat) {
   if (flaps !== "up" && flaps !== "1") {
-    throw new Error('Configuração de flaps inválida ["up" ou "1"]');
+    throw new Error('Invalid flaps setting ["up" or "1"]');
   }
 
   const table = WAT_TABLE[flaps === "up" ? "flaps_up" : "flaps_1"];

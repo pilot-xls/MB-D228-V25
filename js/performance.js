@@ -182,7 +182,7 @@ export function parseQnh(raw) {
 export function getPressureAltitude(qnh, runwayEntry) {
     // Sem dados da pista não é possível calcular
     if (!runwayEntry) {
-        throw new Error("Pista sem dados em airportsList.json.");
+        throw new Error("Runway has no data in airportsList.json.");
     }
 
     // Elevação da pista em pés (aceita número ou string numérica; vazio/null é inválido)
@@ -192,12 +192,12 @@ export function getPressureAltitude(qnh, runwayEntry) {
         : Number(rawElevation);
 
     if (!Number.isFinite(elevation)) {
-        throw new Error(`Elevação inválida para ${runwayEntry.icao} ${runwayEntry.rwy} em airportsList.json.`);
+        throw new Error(`Invalid elevation for ${runwayEntry.icao} ${runwayEntry.rwy} in airportsList.json.`);
     }
 
     // O QNH tem de ser um número válido (ver parseQnh)
     if (!Number.isFinite(qnh)) {
-        throw new Error("QNH inválido.");
+        throw new Error("Invalid QNH.");
     }
 
     // Calcula a Pressure Altitude
@@ -214,12 +214,12 @@ export const MTOW_LIMITS = {
     ASDA: { label: "ASDA", code: 3 },
     TORA: { label: "TORA", code: 3 },
     TODA: { label: "TODA", code: 3 },
-    SEG2: { label: "2.º seg", code: 2 },
-    SEG3: { label: "3.º seg", code: 4 },
-    SEG4: { label: "4.º seg", code: 4 },
-    STRUCT: { label: "peso máx. avião", code: 7 },
+    SEG2: { label: "2nd seg", code: 2 },
+    SEG3: { label: "3rd seg", code: 4 },
+    SEG4: { label: "4th seg", code: 4 },
+    STRUCT: { label: "aircraft max weight", code: 7 },
     // Só acontece se o peso máximo do avião ultrapassar a gama dos gráficos (6500 kg)
-    CHART: { label: "gama dos gráficos", code: null }
+    CHART: { label: "chart weight range", code: null }
 };
 
 // Limites que não dependem da verificação dos segmentos (a ordem serve de desempate)
@@ -242,10 +242,10 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
     // Algum limite direto não calculável: não há MTOW
     const invalid = DIRECT_LIMIT_KEYS.filter(k => !(Number(limits[k]) > 0));
     if (invalid.length > 0) {
-        // Agrupa os limites com o mesmo motivo (ex.: "ASDA, TORA, TODA: sem resultado do gráfico")
+        // Agrupa os limites com o mesmo motivo (ex.: "ASDA, TORA, TODA: no chart result")
         const byReason = new Map();
         for (const k of invalid) {
-            const reason = problems[k] ? problems[k].reason : "não calculado";
+            const reason = problems[k] ? problems[k].reason : "not computed";
             byReason.set(reason, [...(byReason.get(reason) || []), k]);
         }
         return {
@@ -276,7 +276,7 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
             limit: null,
             failedKeys: keys,
             outOfChart: keys.length > 0 && keys.every(k => search.atTop && search.atTop[k].state === "ooc"),
-            reason: "nenhum peso até " + cap + " kg cumpre " + limitLabels(keys)
+            reason: "no weight up to " + cap + " kg meets " + limitLabels(keys)
         };
     }
 
@@ -290,7 +290,7 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
 }
 
 /**
- * Texto do MTOW (ex.: "6016 kg", "failed" ou "fora do gráfico do AFM").
+ * Texto do MTOW (ex.: "6016 kg", "failed" ou "out of AFM chart").
  */
 export function formatMtow(mtowResult) {
     if (mtowResult.mtow != null) return mtowResult.mtow + " kg";
@@ -298,7 +298,7 @@ export function formatMtow(mtowResult) {
 }
 
 /**
- * Fator limitante mostrado junto ao MTOW (ex.: "(WAT · cód. 10)").
+ * Fator limitante mostrado junto ao MTOW (ex.: "(WAT · code 10)").
  * watAboveChart: OAT abaixo do gráfico WAT, foi usado o valor da borda (conservador).
  */
 export function formatMtowLimit(mtowResult, watAboveChart = false) {
@@ -307,8 +307,8 @@ export function formatMtowLimit(mtowResult, watAboveChart = false) {
     }
 
     const { label, code } = mtowResult.limit;
-    const note = mtowResult.limitKey === "WAT" && watAboveChart ? ", borda do gráfico" : "";
-    return "(" + label + note + (code != null ? " · cód. " + code : "") + ")";
+    const note = mtowResult.limitKey === "WAT" && watAboveChart ? ", chart edge" : "";
+    return "(" + label + note + (code != null ? " · code " + code : "") + ")";
 }
 
 /**
@@ -320,23 +320,23 @@ export function evaluateTakeoffStatus({ tow, mtowResult, segments }) {
     if (mtowResult.mtow == null) {
         return {
             state: mtowResult.outOfChart ? "ooc" : "bad",
-            text: mtowResult.outOfChart ? "Fora do gráfico do AFM" : "Failed",
-            reason: "MTOW não determinado — " + mtowResult.reason
+            text: mtowResult.outOfChart ? "Out of AFM chart" : "Failed",
+            reason: "MTOW not determined — " + mtowResult.reason
         };
     }
 
     if (tow > mtowResult.mtow) {
-        return { state: "bad", text: "Failed", reason: "TOW acima do MTOW (limite: " + mtowResult.limit.label + ")" };
+        return { state: "bad", text: "Failed", reason: "TOW above MTOW (limit: " + mtowResult.limit.label + ")" };
     }
 
     const failed = SEGMENT_KEYS.filter(k => segments[k].state === "bad");
     if (failed.length > 0) {
-        return { state: "bad", text: "Failed", reason: "Climb gradient não cumprido: " + limitLabels(failed) };
+        return { state: "bad", text: "Failed", reason: "Climb gradient not met: " + limitLabels(failed) };
     }
 
     const outOfChart = SEGMENT_KEYS.filter(k => segments[k].state === "ooc");
     if (outOfChart.length > 0) {
-        return { state: "ooc", text: "Fora do gráfico do AFM", reason: limitLabels(outOfChart) + ": " + OUT_OF_CHART_TEXT };
+        return { state: "ooc", text: "Out of AFM chart", reason: limitLabels(outOfChart) + ": " + OUT_OF_CHART_TEXT };
     }
 
     return { state: "ok", text: "Passed", reason: "" };
@@ -467,7 +467,7 @@ function populateRunwaySelect(selectedICAO) {
     if (!runwaySelect) return;
 
     // Repõe a opção inicial
-    runwaySelect.innerHTML = '<option value="" disabled selected>— seleccionar —</option>';
+    runwaySelect.innerHTML = '<option value="" disabled selected>— select —</option>';
 
     // Se não houver aeroporto selecionado, desativa o select e termina
     if (!selectedICAO) {
@@ -824,7 +824,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Não deixa resultados parciais no ecrã
             clearPerformanceOutputs();
             console.error(error);
-            alert("ERROR! \n" + (error && error.message ? error.message : "Não foi possível calcular a performance."));
+            alert("ERROR! \n" + (error && error.message ? error.message : "Unable to compute performance."));
         }
     });
 
@@ -835,7 +835,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Verifica se todos os campos obrigatórios estão preenchidos
         if (!canCalculate()) {
             // Mostra mensagem de erro se faltarem campos
-            alert("ERROR! \nTodos os campos são de preenchimento obrigatório.");
+            alert("ERROR! \nAll fields are required.");
             return;
         }
 
@@ -850,12 +850,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Sem dados da pista não há cálculo possível
         if (!runwayEntry) {
-            throw new Error(`Sem dados para ${airport} pista ${rwy} em airportsList.json.`);
+            throw new Error(`No data for ${airport} runway ${rwy} in airportsList.json.`);
         }
 
         // A lista de obstáculos tem de existir (vazia se não houver obstáculos)
         if (!Array.isArray(runwayEntry.obstacles)) {
-            throw new Error(`${airport} pista ${rwy}: lista de obstáculos em falta em airportsList.json.`);
+            throw new Error(`${airport} runway ${rwy}: obstacle list missing in airportsList.json.`);
         }
 
         // Calcula a componente do vento para a pista
@@ -864,7 +864,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Vento inválido (ex.: sem velocidade) não pode entrar nos gráficos
         if (!Number.isFinite(wind)) {
             document.getElementById("wind").classList.add("input-error");
-            throw new Error("Vento inválido. Formato esperado: 270/15.");
+            throw new Error("Invalid wind. Expected format: 270/15.");
         }
 
         // Lê a condição da pista e converte para maiúsculas
@@ -876,7 +876,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // OAT inválida (ex.: só "-") não pode entrar nos gráficos
         if (!Number.isFinite(oat)) {
             document.getElementById("oat").classList.add("input-error");
-            throw new Error("OAT inválida.");
+            throw new Error("Invalid OAT.");
         }
 
         // Lê o QNH (aceita decimais com "." ou ",")
@@ -885,7 +885,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // QNH inválido: mostra erro em vez de calcular com uma PA errada
         if (qnh === null) {
             document.getElementById("qnh").classList.add("input-error");
-            throw new Error(`QNH inválido. Introduza um valor entre ${QNH_MIN} e ${QNH_MAX} hPa (ex.: 1013 ou 1003.25).`);
+            throw new Error(`Invalid QNH. Enter a value between ${QNH_MIN} and ${QNH_MAX} hPa (e.g. 1013 or 1003.25).`);
         }
 
         // Lê o TOW e converte para número
@@ -934,12 +934,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         for (const [key, res] of [["ASDA", mtowASDA], ["TORA", mtowTORA], ["TODA", mtowTODA]]) {
             if (!(res.result > 0)) {
-                limitProblems[key] = { outOfChart: false, reason: "sem resultado do gráfico" };
+                limitProblems[key] = { outOfChart: false, reason: "no chart result" };
                 console.warn("MTOW " + key + " sem resultado:", (res.debug && (res.debug.error || res.debug.reason)) || res.status, res.debug);
             }
         }
         if (!(aircraftMTOW > 0)) {
-            limitProblems.STRUCT = { outOfChart: false, reason: "MTOW do avião em falta nas settings" };
+            limitProblems.STRUCT = { outOfChart: false, reason: "aircraft MTOW missing in settings" };
         }
 
         debugLog("MTOW limites diretos", directLimits, { wat, mtowASDA, mtowTORA, mtowTODA });
