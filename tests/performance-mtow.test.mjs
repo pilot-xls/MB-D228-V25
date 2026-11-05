@@ -217,10 +217,20 @@ test("computeMtow: nenhum peso cumpre os segmentos → sem MTOW, com o segmento"
 });
 
 test("UI: MTOW limitado pelo peso do avião mostra cód. 7", async () => {
+    // OAT -10: ponto mais frio do gráfico WAT já encostado ao peso máximo do avião →
+    // WAT e STRUCT empatam a 6400 kg; o empate fica para o WAT (cold cap), mostrado com code 7
     const r = await page.calc({ airport: "LPBG", runway: "01", wind: "010/10", oat: "-10", qnh: "1023", flaps: "up", inlets: "off", tow: "6400" });
     assert.equal(r.mtow, "6400 kg");
-    assert.equal(r.limit, "(aircraft max weight · code 7)");
+    assert.equal(r.limit, "(WAT, cold cap · code 7)");
     assert.equal(r.badgeText, "Passed");
+});
+
+test("formatMtowLimit: STRUCT continua a mostrar cód. 7 quando o WAT não está no cold cap", () => {
+    // WAT acima do peso máximo do avião (status "ok", não "cold_cap"): quem limita é o
+    // peso máximo do avião (STRUCT), mostrado sem a nota "cold cap"
+    const r = computeMtow({ limits: { WAT: 6525, ASDA: 6500, TORA: 6500, TODA: 6450, STRUCT: 6400 }, searchSegments: noSegments });
+    assert.equal(r.limitKey, "STRUCT");
+    assert.equal(formatMtowLimit(r, /* watColdCap */ false), "(aircraft max weight · code 7)");
 });
 
 test("UI: sem MTOW do avião nas settings → failed com motivo (nunca NaN)", async () => {
@@ -269,23 +279,42 @@ test("evaluateTakeoffStatus: sem MTOW nunca passa", () => {
 test("getWAT dentro do gráfico mantém os valores", () => {
     const cases = [["1", 2485, 35, 6016], ["1", 2000, 30, 6375], ["1", 2000, 35, 6125], ["up", 2000, 35, 6300], ["up", 4500, 42, 5400], ["1", 0, 55, 5425]];
     for (const [flaps, pa, oat, wat] of cases) {
-        assert.deepEqual(getWAT(flaps, pa, oat), { status: "OK", wat, aboveChart: false, reason: null }, `${flaps} ${pa} ${oat}`);
+        assert.deepEqual(getWAT(flaps, pa, oat), { status: "ok", wat, reason: null }, `${flaps} ${pa} ${oat}`);
     }
 });
 
-test("getWAT: OAT abaixo do gráfico usa a borda (conservador) e fica marcado", () => {
-    const r = getWAT("1", 2485, 15);
-    assert.equal(r.status, "OK");
-    assert.equal(r.wat, 6363);
-    assert.equal(r.aboveChart, true);
-    // Nunca acima do valor na menor OAT do gráfico
-    assert.ok(getWAT("1", 2000, -10).wat <= getWAT("1", 2000, 30).wat);
+// Ponto mais frio da linha, exatamente na tabela: devolve o valor real do gráfico
+test("getWAT: OAT igual ao ponto mais frio da tabela devolve o valor real (não o cap)", () => {
+    assert.deepEqual(getWAT("1", 2000, 30), { status: "ok", wat: 6375, reason: null });
 });
 
-test("getWAT: OAT acima do gráfico ou PA acima de 8000 ft → OUT_OF_CHART sem número", () => {
-    for (const [flaps, pa, oat] of [["1", 2277, 56], ["up", 2000, 60], ["1", 8500, 0], ["up", 9000, -10], ["1", 6500, 35], ["1", 7000, 31]]) {
+// Lado frio: ponto mais frio da linha já encostado ao peso máximo do avião (6400 kg) →
+// para OAT mais frias o limite é esse peso máximo, não o valor da borda do gráfico
+test("getWAT: OAT mais fria do que o gráfico, com o cap de peso máximo encostado → cold_cap no peso máximo", () => {
+    const r = getWAT("1", 2277, -10);
+    assert.deepEqual(r, { status: "cold_cap", wat: 6400, reason: null });
+
+    // Mesmo com um aircraftMTOW explícito diferente do default
+    const r2 = getWAT("1", 2277, -10, 6400);
+    assert.deepEqual(r2, { status: "cold_cap", wat: 6400, reason: null });
+
+    // O cap nunca é excedido: nunca acima do peso máximo do avião
+    assert.ok(getWAT("1", 2000, -40).wat <= 6400);
+});
+
+// Lado frio: ponto mais frio da linha ainda longe do peso máximo (aircraftMTOW maior do
+// que o habitual) → a curva continua a subir fora do gráfico, sem valor seguro a devolver
+test("getWAT: ponto mais frio ainda longe do peso máximo do avião → out_of_chart, sem valor da borda", () => {
+    const r = getWAT("1", 2000, -10, 7000); // cap a 7000 kg: 6375 kg fica bem abaixo de 6950
+    assert.equal(r.status, "out_of_chart");
+    assert.equal(r.wat, null);
+    assert.match(r.reason, /below chart/);
+});
+
+test("getWAT: OAT acima do gráfico ou PA acima de 8000 ft → out_of_chart sem número", () => {
+    for (const [flaps, pa, oat] of [["1", 2277, 56], ["up", 2000, 60], ["1", 8500, 0], ["up", 9000, -10], ["1", 6500, 35], ["1", 7000, 31], ["1", 9000, -10]]) {
         const r = getWAT(flaps, pa, oat);
-        assert.equal(r.status, "OUT_OF_CHART", `${flaps} ${pa} ${oat}`);
+        assert.equal(r.status, "out_of_chart", `${flaps} ${pa} ${oat}`);
         assert.equal(r.wat, null, `${flaps} ${pa} ${oat}`);
         assert.match(r.reason, /above chart/, `${flaps} ${pa} ${oat}`);
     }
@@ -312,9 +341,11 @@ test("UI: OAT 56 °C mostra o WAT fora do gráfico no motivo", async () => {
     assert.match(r.limit, /WAT/);
 });
 
-test("UI: OAT abaixo do gráfico WAT indica 'chart edge' quando o WAT limita", async () => {
+test("UI: OAT abaixo do gráfico WAT indica 'cold cap' (peso máximo, code 7) quando o WAT limita", async () => {
     const r = await page.calc({ ...EXAMPLE, oat: "15", tow: "5000" });
-    assert.equal(r.limit, "(WAT, chart edge · code 10)");
+    assert.equal(r.limit, "(WAT, cold cap · code 7)");
+    // Lado frio já encostado ao peso máximo do avião, não ao valor da borda do gráfico
+    assert.equal(mtowOf(r), 6400);
 });
 
 // ------------------------------------------------------------------

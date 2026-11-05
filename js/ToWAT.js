@@ -158,22 +158,35 @@ const WAT_TABLE = {
 // =====================================
 //
 // O WAT desce com a OAT e com a PA. Por isso:
-//  - OAT ABAIXO da menor OAT de uma linha de PA: a curva já saiu pelo topo do gráfico
-//    (WAT acima do peso máximo do gráfico). Usa-se o valor da borda, que é conservador,
-//    e o resultado fica marcado com aboveChart = true.
+//  - OAT ABAIXO da menor OAT de uma linha de PA: a curva já saiu pelo topo do gráfico.
+//    Se o ponto mais frio dessa linha já está perto do peso máximo do avião (dentro de
+//    50 kg), o AFM considera que para temperaturas mais frias o limite passa a ser o
+//    peso máximo do avião (não o valor da borda, que fica 25-40 kg abaixo do correto):
+//    devolve-se o peso máximo (status "cold_cap"). Se o ponto mais frio ainda está longe
+//    desse peso máximo, a curva continua a subir fora do gráfico e não há valor seguro
+//    a devolver: status "out_of_chart".
 //  - OAT ACIMA da maior OAT de uma linha de PA, ou PA acima da maior PA da tabela:
 //    fora do gráfico do AFM. Usar a borda seria NÃO conservador, por isso não se
-//    devolve número (status "OUT_OF_CHART").
+//    devolve número (status "out_of_chart").
 //  - PA abaixo da menor PA (0 ft): usa-se a linha de 0 ft (conservador).
 
-export const WAT_OK = "OK";
-export const WAT_OUT_OF_CHART = "OUT_OF_CHART";
+export const WAT_OK = "ok";
+export const WAT_COLD_CAP = "cold_cap";
+export const WAT_OUT_OF_CHART = "out_of_chart";
+
+// Peso máximo do avião usado pelo cap do lado frio quando getWAT não recebe um
+// aircraftMTOW explícito (em produção, performance.js passa sempre o MTOW das settings).
+const DEFAULT_AIRCRAFT_MAX_WEIGHT = 6400;
+
+// Margem (kg): o ponto mais frio da linha tem de estar a esta distância do peso
+// máximo do avião, ou menos, para se considerar que a curva já encostou ao cap.
+const COLD_CAP_MARGIN = 50;
 
 // =====================================
 //  INTERPOLAÇÃO 1D (OAT)
 // =====================================
 
-function interpolate1D(rows, oat) {
+function interpolate1D(rows, oat, aircraftMTOW) {
   const tOAT = Number(oat);
   const sorted = [...rows].sort((a, b) => a.oat - b.oat);
   const minOAT = sorted[0].oat;
@@ -184,9 +197,19 @@ function interpolate1D(rows, oat) {
     return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C above chart (max ${maxOAT} °C at ${sorted[0].pressure_altitude} ft)` };
   }
 
-  // Abaixo da menor OAT: curva acima do topo do gráfico → borda (conservador)
+  // Abaixo da menor OAT: a curva do AFM já saiu do gráfico
   if (tOAT < minOAT) {
-    return { wat: sorted[0].wat, aboveChart: true };
+    const coldest = sorted[0];
+
+    // O ponto mais frio da linha já está encostado ao peso máximo do avião:
+    // para temperaturas mais frias o limite é esse peso máximo (code 7), não a borda.
+    if (coldest.wat >= aircraftMTOW - COLD_CAP_MARGIN) {
+      return { wat: aircraftMTOW, coldCap: true };
+    }
+
+    // O ponto mais frio ainda está longe do peso máximo: a curva continua a subir
+    // fora do gráfico e não há valor seguro a devolver.
+    return { wat: null, outOfChart: true, reason: `OAT ${tOAT} °C below chart (min ${minOAT} °C = ${coldest.wat} kg at ${coldest.pressure_altitude} ft, below aircraft MTOW cap)` };
   }
 
   const exact = sorted.find(r => r.oat === tOAT);
@@ -209,7 +232,7 @@ function interpolate1D(rows, oat) {
 //  INTERPOLAÇÃO 2D (PA + OAT)
 // =====================================
 
-function interpolate2D(table, pa, oat) {
+function interpolate2D(table, pa, oat, aircraftMTOW) {
   const tPA = Number(pa);
   const rowsAt = p => table.filter(r => r.pressure_altitude === p);
   const paValues = [...new Set(table.map(r => r.pressure_altitude))].sort((a, b) => a - b);
@@ -223,18 +246,18 @@ function interpolate2D(table, pa, oat) {
 
   // Abaixo da menor PA: usa a linha da menor PA (conservador)
   if (tPA <= minPA) {
-    return interpolate1D(rowsAt(minPA), oat);
+    return interpolate1D(rowsAt(minPA), oat, aircraftMTOW);
   }
 
   if (paValues.includes(tPA)) {
-    return interpolate1D(rowsAt(tPA), oat);
+    return interpolate1D(rowsAt(tPA), oat, aircraftMTOW);
   }
 
   const upperPA = paValues.find(p => p > tPA);
   const lowerPA = paValues[paValues.indexOf(upperPA) - 1];
 
-  const atLower = interpolate1D(rowsAt(lowerPA), oat);
-  const atUpper = interpolate1D(rowsAt(upperPA), oat);
+  const atLower = interpolate1D(rowsAt(lowerPA), oat, aircraftMTOW);
+  const atUpper = interpolate1D(rowsAt(upperPA), oat, aircraftMTOW);
 
   // Basta uma das linhas estar fora do gráfico para o ponto não ser verificável
   if (atLower.outOfChart || atUpper.outOfChart) {
@@ -244,7 +267,7 @@ function interpolate2D(table, pa, oat) {
   const ratio = (tPA - lowerPA) / (upperPA - lowerPA);
   const wat = atLower.wat + (atUpper.wat - atLower.wat) * ratio;
 
-  return { wat: Math.round(wat), aboveChart: !!(atLower.aboveChart || atUpper.aboveChart) };
+  return { wat: Math.round(wat), coldCap: !!(atLower.coldCap || atUpper.coldCap) };
 }
 
 // =====================================
@@ -253,21 +276,28 @@ function interpolate2D(table, pa, oat) {
 
 /**
  * Limite WAT (kg) para flaps "up" ou "1".
+ * aircraftMTOW: peso máximo estrutural do avião (settings); usado pelo cap do lado frio.
  * Devolve:
- *  - { status: "OK", wat, aboveChart }           → aboveChart: OAT abaixo do gráfico, valor da borda (conservador)
- *  - { status: "OUT_OF_CHART", wat: null, reason } → OAT/PA fora do gráfico do AFM, sem valor
+ *  - { status: "ok", wat, reason: null }        → valor normal do gráfico
+ *  - { status: "cold_cap", wat, reason: null }  → OAT abaixo do gráfico, mas o ponto mais
+ *    frio da linha já está encostado ao peso máximo do avião: devolve-se esse peso máximo.
+ *  - { status: "out_of_chart", wat: null, reason } → fora do gráfico do AFM, sem valor
  */
-export function getWAT(flaps, pressureAltitude, oat) {
+export function getWAT(flaps, pressureAltitude, oat, aircraftMTOW = DEFAULT_AIRCRAFT_MAX_WEIGHT) {
   if (flaps !== "up" && flaps !== "1") {
     throw new Error('Invalid flaps setting ["up" or "1"]');
   }
 
   const table = WAT_TABLE[flaps === "up" ? "flaps_up" : "flaps_1"];
-  const r = interpolate2D(table, pressureAltitude, oat);
+  const r = interpolate2D(table, pressureAltitude, oat, Number(aircraftMTOW));
 
   if (r.outOfChart) {
-    return { status: WAT_OUT_OF_CHART, wat: null, aboveChart: false, reason: r.reason };
+    return { status: WAT_OUT_OF_CHART, wat: null, reason: r.reason };
   }
 
-  return { status: WAT_OK, wat: r.wat, aboveChart: !!r.aboveChart, reason: null };
+  if (r.coldCap) {
+    return { status: WAT_COLD_CAP, wat: r.wat, reason: null };
+  }
+
+  return { status: WAT_OK, wat: r.wat, reason: null };
 }
