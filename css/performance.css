@@ -49,8 +49,15 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    overflow-x: hidden;
+    overflow-x: clip;
+}
+
 body {
     margin: 0;
+    touch-action: pan-x pan-y;
     font-family: var(--font);
     color: var(--text-main);
     background: radial-gradient(1000px 600px at 10% 0%, #dde6f7 0%, transparent 55%),
@@ -242,8 +249,8 @@ input:disabled {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    min-width: 260px;
-    max-width: 360px;
+    min-width: min(260px, calc(100vw - 24px));
+    max-width: min(360px, calc(100vw - 24px));
     padding: 10px 12px;
     background: var(--bg-tooltip);
     border: 1px solid var(--line);
@@ -252,9 +259,10 @@ input:disabled {
     font-size: 12px;
     line-height: 1.4;
     opacity: 0;
+    visibility: hidden;
     transform: translateY(-6px);
     pointer-events: none;
-    transition: opacity .15s ease, transform .15s ease;
+    transition: opacity .15s ease, transform .15s ease, visibility .15s;
     z-index: 100;
 }
 
@@ -283,10 +291,20 @@ input:disabled {
     right: auto;
 }
 
-.info:hover .tooltip,
-.info:focus-within .tooltip {
+/* Aberto por toque/clique (JS) ou, só com rato, por hover.
+   Em ecrãs táteis o :hover "cola" depois do toque e impedia o fecho. */
+.info.open .tooltip {
     opacity: 1;
+    visibility: visible;
     transform: translateY(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .info:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
 }
 
 .tooltip .t-title {
