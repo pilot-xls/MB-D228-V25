@@ -1167,4 +1167,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
     });
+
+    /**
+     * No telemóvel o ícone "i" abre o tooltip ao ganhar foco (tabindex), mas tocar
+     * fora não lhe tira o foco por si só (só elementos focáveis o fazem). Por isso
+     * fechamos manualmente qualquer tooltip aberto quando se toca fora do ícone.
+     */
+    document.addEventListener("touchstart", (event) => {
+        document.querySelectorAll(".info").forEach(info => {
+            if (document.activeElement === info && !info.contains(event.target)) {
+                info.blur();
+            }
+        });
+    }, { passive: true });
 });
