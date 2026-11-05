@@ -44,10 +44,10 @@ const EXAMPLE = { airport: "LPBG", runway: "01", wind: "190/10", oat: "35", qnh:
 test("exemplo: TOW 6100 → MTOW 6016 (WAT, cód. 10), selo Failed com a razão", async () => {
     const r = await page.calc({ ...EXAMPLE, tow: "6100" });
     assert.equal(r.mtow, "6016 kg");
-    assert.equal(r.limit, "(WAT · cód. 10)");
+    assert.equal(r.limit, "(WAT · code 10)");
     assert.equal(r.badgeText, "Failed");
     assert.equal(r.badgeOk, false);
-    assert.equal(r.reason, "TOW acima do MTOW (limite: WAT)");
+    assert.equal(r.reason, "TOW above MTOW (limit: WAT)");
     // A 6100 kg o TOD (1731 m) excede a TODA (1700 m)
     assert.equal(r.tod.trim(), "1731 m");
     assert.equal(page.el("tow").classList.contains("input-error"), true);
@@ -62,7 +62,7 @@ test("exemplo: TOW 6016 (= MTOW) → Passed; 6017 → Failed", async () => {
 
     const over = await page.calc({ ...EXAMPLE, tow: "6017" });
     assert.equal(over.badgeText, "Failed");
-    assert.equal(over.reason, "TOW acima do MTOW (limite: WAT)");
+    assert.equal(over.reason, "TOW above MTOW (limit: WAT)");
 });
 
 // ------------------------------------------------------------------
@@ -89,7 +89,7 @@ test("amostra LPBG 19/01 × QNH × OAT × vento × flaps × inlets: MTOW → Pas
                                 // Sem MTOW nenhum peso pode passar
                                 withoutMtow++;
                                 assert.notEqual(first.badgeText, "Passed", label);
-                                assert.match(first.reason, /^MTOW não determinado/, label);
+                                assert.match(first.reason, /^MTOW not determined/, label);
                                 const light = await page.calc({ ...cond, tow: "4600" });
                                 assert.notEqual(light.badgeText, "Passed", label);
                                 continue;
@@ -101,7 +101,7 @@ test("amostra LPBG 19/01 × QNH × OAT × vento × flaps × inlets: MTOW → Pas
 
                             const above = await page.calc({ ...cond, tow: String(mtow + 1) });
                             assert.equal(above.badgeText, "Failed", `${label}: MTOW+1 ${mtow + 1}`);
-                            assert.match(above.reason, /^TOW acima do MTOW \(limite: /, label);
+                            assert.match(above.reason, /^TOW above MTOW \(limit: /, label);
                             checked++;
                         }
                     }
@@ -134,9 +134,9 @@ test("LPBG 19, vento 190/20, OAT -10..0: o MTOW mostrado dá sempre Passed", asy
 test("LPBG 19, QNH 1003, OAT -10, 190/20: 6252 kg (antes MTOW e Failed) já não é MTOW", async () => {
     const r = await page.calc({ airport: "LPBG", runway: "19", wind: "190/20", oat: "-10", qnh: "1003", flaps: "1", inlets: "off", tow: "6252" });
     assert.ok(mtowOf(r) < 6252);
-    assert.equal(r.limit, "(2.º seg · cód. 2)");
+    assert.equal(r.limit, "(2nd seg · code 2)");
     assert.equal(r.badgeText, "Failed");
-    assert.equal(r.reason, "TOW acima do MTOW (limite: 2.º seg)");
+    assert.equal(r.reason, "TOW above MTOW (limit: 2nd seg)");
 });
 
 test("procura do MTOW: o peso encontrado cumpre os segmentos e o peso acima não (mesma função da UI)", () => {
@@ -195,10 +195,10 @@ test("computeMtow: o limitante é o menor dos limites", () => {
 
 test("computeMtow: um segmento que obriga a descer passa a ser o limitante", () => {
     const r2 = computeMtow({ limits: LIMITS, searchSegments: () => ({ mtow: 6100, limitedBy: ["SEG2"] }) });
-    assert.deepEqual([r2.mtow, r2.limitKey, formatMtowLimit(r2)], [6100, "SEG2", "(2.º seg · cód. 2)"]);
+    assert.deepEqual([r2.mtow, r2.limitKey, formatMtowLimit(r2)], [6100, "SEG2", "(2nd seg · code 2)"]);
 
     const r4 = computeMtow({ limits: LIMITS, searchSegments: () => ({ mtow: 6050, limitedBy: ["SEG4"] }) });
-    assert.deepEqual([r4.mtow, r4.limitKey, formatMtowLimit(r4)], [6050, "SEG4", "(4.º seg · cód. 4)"]);
+    assert.deepEqual([r4.mtow, r4.limitKey, formatMtowLimit(r4)], [6050, "SEG4", "(4th seg · code 4)"]);
 
     // A procura parte do menor dos limites diretos
     let capSeen = null;
@@ -212,14 +212,14 @@ test("computeMtow: nenhum peso cumpre os segmentos → sem MTOW, com o segmento"
     assert.equal(r.mtow, null);
     assert.equal(r.outOfChart, false);
     assert.equal(formatMtow(r), "failed");
-    assert.equal(formatMtowLimit(r), "(2.º seg)");
-    assert.match(r.reason, /2\.º seg/);
+    assert.equal(formatMtowLimit(r), "(2nd seg)");
+    assert.match(r.reason, /2nd seg/);
 });
 
 test("UI: MTOW limitado pelo peso do avião mostra cód. 7", async () => {
     const r = await page.calc({ airport: "LPBG", runway: "01", wind: "010/10", oat: "-10", qnh: "1023", flaps: "up", inlets: "off", tow: "6400" });
     assert.equal(r.mtow, "6400 kg");
-    assert.equal(r.limit, "(peso máx. avião · cód. 7)");
+    assert.equal(r.limit, "(aircraft max weight · code 7)");
     assert.equal(r.badgeText, "Passed");
 });
 
@@ -228,7 +228,7 @@ test("UI: sem MTOW do avião nas settings → failed com motivo (nunca NaN)", as
     const r = await noStruct.calc({ ...EXAMPLE, oat: "15", tow: "5500" });
     assert.equal(r.mtow, "failed");
     assert.equal(r.badgeText, "Failed");
-    assert.match(r.reason, /MTOW do avião em falta nas settings/);
+    assert.match(r.reason, /aircraft MTOW missing in settings/);
     assert.doesNotMatch(JSON.stringify(r), /NaN/);
 });
 
@@ -241,22 +241,22 @@ const MTOW_6016 = { mtow: 6016, limitKey: "WAT", limit: MTOW_LIMITS.WAT };
 
 test("evaluateTakeoffStatus: TOW > MTOW falha mesmo com os segmentos a passar", () => {
     assert.deepEqual(evaluateTakeoffStatus({ tow: 6100, mtowResult: MTOW_6016, segments: SEG_OK }),
-        { state: "bad", text: "Failed", reason: "TOW acima do MTOW (limite: WAT)" });
+        { state: "bad", text: "Failed", reason: "TOW above MTOW (limit: WAT)" });
     assert.equal(evaluateTakeoffStatus({ tow: 6016, mtowResult: MTOW_6016, segments: SEG_OK }).state, "ok");
 });
 
 test("evaluateTakeoffStatus: segmento falhado ou fora do gráfico no TOW", () => {
     const bad = evaluateTakeoffStatus({ tow: 5000, mtowResult: MTOW_6016, segments: { ...SEG_OK, SEG2: { state: "bad" } } });
-    assert.deepEqual([bad.state, bad.text, bad.reason], ["bad", "Failed", "Climb gradient não cumprido: 2.º seg"]);
+    assert.deepEqual([bad.state, bad.text, bad.reason], ["bad", "Failed", "Climb gradient not met: 2nd seg"]);
 
     const ooc = evaluateTakeoffStatus({ tow: 5000, mtowResult: MTOW_6016, segments: { ...SEG_OK, SEG3: { state: "ooc" } } });
-    assert.deepEqual([ooc.state, ooc.text], ["ooc", "Fora do gráfico do AFM"]);
+    assert.deepEqual([ooc.state, ooc.text], ["ooc", "Out of AFM chart"]);
 });
 
 test("evaluateTakeoffStatus: sem MTOW nunca passa", () => {
-    const failed = evaluateTakeoffStatus({ tow: 4600, mtowResult: { mtow: null, outOfChart: false, reason: "TODA: sem resultado do gráfico" }, segments: SEG_OK });
+    const failed = evaluateTakeoffStatus({ tow: 4600, mtowResult: { mtow: null, outOfChart: false, reason: "TODA: no chart result" }, segments: SEG_OK });
     assert.equal(failed.text, "Failed");
-    assert.equal(failed.reason, "MTOW não determinado — TODA: sem resultado do gráfico");
+    assert.equal(failed.reason, "MTOW not determined — TODA: no chart result");
 
     const ooc = evaluateTakeoffStatus({ tow: 4600, mtowResult: { mtow: null, outOfChart: true, reason: "WAT: x" }, segments: SEG_OK });
     assert.equal(ooc.state, "ooc");
@@ -287,11 +287,11 @@ test("getWAT: OAT acima do gráfico ou PA acima de 8000 ft → OUT_OF_CHART sem 
         const r = getWAT(flaps, pa, oat);
         assert.equal(r.status, "OUT_OF_CHART", `${flaps} ${pa} ${oat}`);
         assert.equal(r.wat, null, `${flaps} ${pa} ${oat}`);
-        assert.match(r.reason, /acima do gráfico/, `${flaps} ${pa} ${oat}`);
+        assert.match(r.reason, /above chart/, `${flaps} ${pa} ${oat}`);
     }
 });
 
-test("WAT fora do gráfico: MTOW 'fora do gráfico do AFM' e selo com o motivo", () => {
+test("WAT fora do gráfico: MTOW 'out of AFM chart' e selo com o motivo", () => {
     const wat = getWAT("1", 2215, 56);
     const r = computeMtow({
         limits: { ...LIMITS, WAT: null },
@@ -299,22 +299,22 @@ test("WAT fora do gráfico: MTOW 'fora do gráfico do AFM' e selo com o motivo",
         searchSegments: noSegments
     });
     assert.equal(r.outOfChart, true);
-    assert.equal(formatMtow(r), "fora do gráfico do AFM");
+    assert.equal(formatMtow(r), "out of AFM chart");
     const s = evaluateTakeoffStatus({ tow: 5000, mtowResult: r, segments: SEG_OK });
-    assert.equal(s.text, "Fora do gráfico do AFM");
-    assert.match(s.reason, /WAT: OAT 56 °C acima do gráfico/);
+    assert.equal(s.text, "Out of AFM chart");
+    assert.match(s.reason, /WAT: OAT 56 °C above chart/);
 });
 
 test("UI: OAT 56 °C mostra o WAT fora do gráfico no motivo", async () => {
     const r = await page.calc({ ...EXAMPLE, oat: "56", tow: "5000" });
     assert.equal(r.badgeOk, false);
-    assert.match(r.reason, /WAT: OAT 56 °C acima do gráfico/);
+    assert.match(r.reason, /WAT: OAT 56 °C above chart/);
     assert.match(r.limit, /WAT/);
 });
 
-test("UI: OAT abaixo do gráfico WAT indica 'borda do gráfico' quando o WAT limita", async () => {
+test("UI: OAT abaixo do gráfico WAT indica 'chart edge' quando o WAT limita", async () => {
     const r = await page.calc({ ...EXAMPLE, oat: "15", tow: "5000" });
-    assert.equal(r.limit, "(WAT, borda do gráfico · cód. 10)");
+    assert.equal(r.limit, "(WAT, chart edge · code 10)");
 });
 
 // ------------------------------------------------------------------

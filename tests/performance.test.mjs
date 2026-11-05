@@ -81,10 +81,10 @@ test("PA usa a elevação da pista selecionada (fórmula 1013, 27 ft/hPa)", () =
 
 test("PA com elevação em string não concatena; dados em falta lançam erro", () => {
     assert.equal(getPressureAltitude(1013, { ...LPBG_19, elevation: "2277" }), 2277);
-    assert.throws(() => getPressureAltitude(1013, undefined), /sem dados/);
-    assert.throws(() => getPressureAltitude(1013, { ...LPBG_19, elevation: undefined }), /Elevação inválida/);
-    assert.throws(() => getPressureAltitude(1013, { ...LPBG_19, elevation: "" }), /Elevação inválida/);
-    assert.throws(() => getPressureAltitude(NaN, LPBG_19), /QNH inválido/);
+    assert.throws(() => getPressureAltitude(1013, undefined), /Runway has no data/);
+    assert.throws(() => getPressureAltitude(1013, { ...LPBG_19, elevation: undefined }), /Invalid elevation/);
+    assert.throws(() => getPressureAltitude(1013, { ...LPBG_19, elevation: "" }), /Invalid elevation/);
+    assert.throws(() => getPressureAltitude(NaN, LPBG_19), /Invalid QNH/);
 });
 
 // ------------------------------------------------------------------
@@ -158,11 +158,11 @@ test("UI: fora do gráfico sem obstáculo não conta como falha; com obstáculo 
     const ooc = seg3(2277, 35);
     const noObs = describeThirdSegment(ooc, 0, false);
     assert.equal(noObs.state, "na");
-    assert.equal(noObs.text, "0m / fora do gráfico do AFM");
+    assert.equal(noObs.text, "0m / out of AFM chart");
 
     const withObs = describeThirdSegment(seg3(2277, 35, { obstacleDistance: 1500 }), 1500, true);
     assert.equal(withObs.state, "ooc");
-    assert.match(withObs.text, /fora do gráfico do AFM/);
+    assert.match(withObs.text, /out of AFM chart/);
 
     assert.equal(describeThirdSegment(seg3(2277, 30), 0, false).state, "ok");
     assert.equal(describeThirdSegment(seg3(2277, 30, { obstacleDistance: 900 }), 900, true).state, "bad");

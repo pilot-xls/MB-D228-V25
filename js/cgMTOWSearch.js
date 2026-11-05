@@ -18,7 +18,7 @@ export const MIN_WEIGHT = 4500;
 export const MAX_WEIGHT = 6500;
 
 // Texto mostrado quando o gráfico do AFM não cobre as condições
-export const OUT_OF_CHART_TEXT = "fora do gráfico do AFM";
+export const OUT_OF_CHART_TEXT = "out of AFM chart";
 
 // Segmentos avaliados, pela ordem em que são reportados
 export const SEGMENT_KEYS = ["SEG2", "SEG3", "SEG4"];

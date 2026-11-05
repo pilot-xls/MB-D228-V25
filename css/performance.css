@@ -339,7 +339,7 @@ input:disabled {
     font-weight: 900;
 }
 
-/* Fator limitante junto ao MTOW (ex.: "(WAT · cód. 10)"); passa para baixo se não couber */
+/* Fator limitante junto ao MTOW (ex.: "(WAT · code 10)"); passa para baixo se não couber */
 .pill .v .limit {
     display: inline-block;
     font-size: 12px;
