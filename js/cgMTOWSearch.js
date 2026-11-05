@@ -65,6 +65,8 @@ function getTodrForWeight({ flaps, pa, oat, tow, wind, slope }) {
 
 /**
  * Procura o maior peso que passa uma verificação.
+ * Devolve null quando nenhum peso de WEIGHTS passa: o chamador deve tratar isso
+ * como limitante (MTOW failed), e não como "sem limite".
  */
 function findMaxTow(checkFn) {
   // Guarda o último peso que passou
@@ -186,13 +188,17 @@ function getCritical34Data({ pa, oat, tow, wind, slope, obstacles }) {
       obstacle_height: obs.obstacle_ft
     });
 
-    // Se houver valor válido, guarda os dados
-    if (requiredRes && requiredRes.result_CG_required != null) {
-      obstacleAnalysis.push({
-        requiredGradient: requiredRes.result_CG_required,
-        obstacleDistance: obstacleDistanceFromREFZERO
-      });
+    // Required a null (fora do gráfico do AFM, CG > 7%, etc.): este peso não pode ser
+    // verificado. Não ignora o obstáculo (seria tratá-lo como requisito 0) → peso falha.
+    if (!requiredRes || requiredRes.result_CG_required == null) {
+      return null;
     }
+
+    // Guarda os dados
+    obstacleAnalysis.push({
+      requiredGradient: requiredRes.result_CG_required,
+      obstacleDistance: obstacleDistanceFromREFZERO
+    });
   }
 
   // Se não houver obstáculos válidos, devolve neutro
@@ -231,6 +237,12 @@ export function getMaxTow3Seg({
   slope,
   obstacles
 }) {
+  // Sem obstáculos do 3º/4º segmento o requisito é 0 m: o 3º segmento não limita o peso
+  // (mesmo que PA/OAT estejam fora do gráfico, não há comparação a fazer).
+  if (!obstacles || obstacles.length === 0) {
+    return WEIGHTS[WEIGHTS.length - 1];
+  }
+
   // Procura o maior peso que passa o 3º segmento
   return findMaxTow((tow) => {
     // Calcula os dados críticos para este peso
@@ -256,6 +268,7 @@ export function getMaxTow3Seg({
     });
 
     // O peso só passa se a função disser PASSED
+    // (OUT_OF_CHART com obstáculo não é verificável → não passa)
     return performedRes && performedRes.status === "PASSED";
   });
 }

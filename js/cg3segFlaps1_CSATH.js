@@ -4,6 +4,10 @@
 // ----------------------
 
 // PA / OAT → y_ref  (DISTANCE | FLAPS 1)
+// TODO(AFM): a linha de PA 4000 ft termina em OAT 30 ºC e a de 2000 ft vai até 40 ºC.
+// Para PA > 2000 ft com OAT > 30 ºC não há bounding e o resultado é "OUT_OF_CHART".
+// Confirmar no gráfico do AFM se a linha de 4000 ft continua acima de 30 ºC
+// (ou se há um limite de envelope). Não extrapolar nem inventar valores.
 const PA_OAT_TABLE = [
   {
     pressure_altitude: 12000,
@@ -639,25 +643,31 @@ function getClimbGradientFromY(y) {
 // FUNÇÃO PRINCIPAL — DISTÂNCIA PERCORRIDA NO 3º SEGMENTO
 // ---------------------------------------------------------
 
+// Estados devolvidos:
+//  - "PASSED"       → o 3º segmento termina antes do obstáculo (ou não há obstáculo)
+//  - "FAILED"       → o 3º segmento termina depois do obstáculo
+//  - "OUT_OF_CHART" → PA/OAT ou peso fora das tabelas do AFM; distance = null.
+//                     Não é uma falha de comparação: o chamador decide (sem obstáculo não conta como falha).
 export function ThirdSegmentDistanceFlaps1({ pressureAltitude, oat, tow, inlet, obstacleDistance }) {
   // Limpa o relatório de debug antes de começar um novo cálculo
   DEBUG_REPORT = [];
-	
-	
+
+
   // STEP 1 — calcula o y_ref com base em Pressure Altitude e OAT
   const yRef = getYRefFromPAOAT(pressureAltitude, oat);
 
-  // Se falhar o cálculo do y_ref devolve FAILED
+  // Se PA/OAT estiverem fora da tabela devolve OUT_OF_CHART (sem extrapolar)
+  // TODO(AFM): ver nota na PA_OAT_TABLE (linha de 4000 ft só até 30 ºC).
   if (yRef == null) {
-    return { distance: 0, status: "FAILED", report: DEBUG_REPORT };
+    return { distance: null, status: "OUT_OF_CHART", report: DEBUG_REPORT };
   }
 
   // STEP 2/3 — ajusta o y_ref com base no peso
   const yAfterWeight = mapYThroughWeight(yRef, tow);
 
-  // Se falhar o ajuste por peso devolve FAILED
+  // Se o peso estiver fora da tabela devolve OUT_OF_CHART
   if (yAfterWeight == null) {
-    return { distance: 0, status: "FAILED", report: DEBUG_REPORT };
+    return { distance: null, status: "OUT_OF_CHART", report: DEBUG_REPORT };
   }
 
   // STEP 4 — ajusta o resultado conforme o estado dos inlets
@@ -706,118 +716,3 @@ export function ThirdSegmentDistanceFlaps1({ pressureAltitude, oat, tow, inlet, 
 
 // Export default da função principal
 export default ThirdSegmentDistanceFlaps1;
-
-
-
-
-
-
-
-
-
-// ---------------------------------------------------------
-// FUNÇÃO — MTOW COMPATÍVEL COM A DISTÂNCIA DO 3º SEGMENTO
-// ---------------------------------------------------------
-
-export function ThirdSegmentDistanceFlaps1_MTOW({
-  pressureAltitude,
-  oat,
-  inlet,
-  obstacleDistance
-}) {
-  // limpa o relatório de debug antes de começar um novo cálculo
-  DEBUG_REPORT = [];
-
-  // calcula o y_ref base a partir da pressure altitude e da temperatura
-  const yRef = getYRefFromPAOAT(pressureAltitude, oat);
-
-  // se não for possível calcular o y_ref base, devolve falha
-  if (yRef == null) {
-    return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
-  }
-
-  // cria uma cópia da tabela de pesos ordenada por ordem crescente
-  const weights = [...WEIGHT_TABLE].sort((a, b) => a.weight - b.weight);
-
-  // guarda o último peso que ainda cumpre o critério do obstáculo
-  let lastPassing = null;
-
-  // guarda o primeiro peso seguinte que já não cumpre o critério
-  let firstFailing = null;
-
-  // percorre todos os pesos disponíveis na tabela
-  for (const row of weights) {
-    // lê o peso actual da linha
-    const tow = row.weight;
-
-    // aplica a transformação do y_ref pela tabela de peso
-    const yAfterWeight = mapYThroughWeight(yRef, tow);
-
-    // se falhar a transformação pelo peso, ignora este peso
-    if (yAfterWeight == null) continue;
-
-    // aplica a transformação do inlet ao y já corrigido pelo peso
-    const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
-
-    // se falhar a transformação do inlet, ignora este peso
-    if (yAfterInlet == null) continue;
-
-    // converte o y final em distância percorrida no 3º segmento
-    const distanceTravelled = getClimbGradientFromY(yAfterInlet);
-
-    // se falhar a conversão final, ignora este peso
-    if (distanceTravelled == null) continue;
-
-    // este chart passa quando a distância do 3º segmento é menor ou igual
-    // à distância até ao obstáculo
-    if (distanceTravelled <= obstacleDistance) {
-      // guarda este peso como o último peso que ainda passa
-      lastPassing = {
-        tow,
-        distance: distanceTravelled
-      };
-    } else if (lastPassing != null) {
-      // assim que encontrar o primeiro peso a falhar depois de um que passa,
-      // guarda-o e termina a procura
-      firstFailing = {
-        tow,
-        distance: distanceTravelled
-      };
-      break;
-    }
-  }
-
-  // se nenhum peso cumprir o critério, devolve falha
-  if (!lastPassing) {
-    reportFail(`Nenhum peso cumpre obstacleDistance=${obstacleDistance}m.`);
-    return { maxTow: null, status: "FAILED", report: DEBUG_REPORT };
-  }
-
-  // se todos os pesos da tabela passarem, devolve o maior peso disponível
-  if (!firstFailing) {
-    return {
-      maxTow: lastPassing.tow,
-      distance: Math.round(lastPassing.distance * 10) / 10,
-      status: "PASSED",
-      report: DEBUG_REPORT
-    };
-  }
-
-  // interpola o peso exacto correspondente ao obstacleDistance
-  const towExact = lerp(
-    obstacleDistance,
-    lastPassing.distance, lastPassing.tow,
-    firstFailing.distance, firstFailing.tow
-  );
-
-  // arredonda o peso exacto para o múltiplo de 50 lb mais próximo
-  const maxTow = Math.round(towExact / 50) * 50;
-
-  // devolve o resultado final
-  return {
-    towExact,
-    distance: obstacleDistance,
-    status: "PASSED",
-    report: DEBUG_REPORT
-  };
-}
