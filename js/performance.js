@@ -140,34 +140,87 @@ function canCalculate() {
     return required.every(v => v !== "" && v !== null && v !== undefined);
 }
 
+// Limites aceites para o QNH (hPa)
+export const QNH_MIN = 900;
+export const QNH_MAX = 1100;
+
 /**
- * Calcula a Pressure Altitude a partir do QNH e do aeroporto.
+ * Converte o texto do campo QNH para número.
+ * Aceita um único separador decimal ("." ou ","), ex.: "1003.25" ou "1003,25".
+ * Devolve null se o texto for inválido ou estiver fora de [QNH_MIN, QNH_MAX].
  */
-async function getPressureAltitude(qnh, airportICAO) {
-    // Faz o fetch ao ficheiro JSON dos aeroportos
-    const response = await fetch("data/airportsList.json");
+export function parseQnh(raw) {
+    // Normaliza o texto recebido
+    const text = String(raw ?? "").trim();
 
-    // Converte a resposta para JSON
-    const airports = await response.json();
+    // Só dígitos, com no máximo um separador decimal
+    if (!/^\d+([.,]\d*)?$/.test(text)) return null;
 
-    // Procura o aeroporto correspondente ao ICAO recebido
-    const airport = airports.find(a => a.icao === airportICAO.toUpperCase());
+    // Converte usando "." como separador decimal
+    const value = parseFloat(text.replace(",", "."));
 
-    // Se não encontrar o aeroporto, lança um erro
-    if (!airport) {
-        throw new Error("Airport not found in airportsList.json");
+    // Valida o intervalo
+    if (!Number.isFinite(value) || value < QNH_MIN || value > QNH_MAX) return null;
+
+    return value;
+}
+
+/**
+ * Calcula a Pressure Altitude a partir do QNH e da pista selecionada.
+ * Usa a elevação da pista selecionada (dados já carregados em airportData),
+ * em vez da primeira entrada do aeroporto no JSON.
+ */
+export function getPressureAltitude(qnh, runwayEntry) {
+    // Sem dados da pista não é possível calcular
+    if (!runwayEntry) {
+        throw new Error("Pista sem dados em airportsList.json.");
     }
 
-    // Vai buscar a elevação do aeroporto em pés
-    const elevation = airport.elevation;
+    // Elevação da pista em pés (aceita número ou string numérica; vazio/null é inválido)
+    const rawElevation = runwayEntry.elevation;
+    const elevation = (rawElevation === null || rawElevation === undefined || String(rawElevation).trim() === "")
+        ? NaN
+        : Number(rawElevation);
+
+    if (!Number.isFinite(elevation)) {
+        throw new Error(`Elevação inválida para ${runwayEntry.icao} ${runwayEntry.rwy} em airportsList.json.`);
+    }
+
+    // O QNH tem de ser um número válido (ver parseQnh)
+    if (!Number.isFinite(qnh)) {
+        throw new Error("QNH inválido.");
+    }
 
     // Calcula a Pressure Altitude
     const pressureAltitude = elevation + (1013 - qnh) * 27;
 
-
-
     // Devolve o valor arredondado (nunca menor do zero)
     return Math.max(0, Math.round(pressureAltitude));
+}
+
+// Texto mostrado quando o gráfico do AFM não cobre as condições
+export const OUT_OF_CHART_TEXT = "fora do gráfico do AFM";
+
+/**
+ * Traduz o resultado do 3º segmento para a UI.
+ * state: "ok" (passed), "bad" (failed), "ooc" (fora do gráfico com obstáculo: não verificável),
+ *        "na" (fora do gráfico sem obstáculo: não há comparação a fazer, não conta como falha).
+ */
+export function describeThirdSegment(result, obstacleDistance, hasObstacle) {
+    if (result && result.status === "OUT_OF_CHART") {
+        if (!hasObstacle) {
+            return { state: "na", text: obstacleDistance + "m / " + OUT_OF_CHART_TEXT };
+        }
+        return { state: "ooc", text: obstacleDistance + "m / " + OUT_OF_CHART_TEXT };
+    }
+
+    const text = obstacleDistance + "m / " + result.distance + "m";
+
+    if (result.status === "PASSED") {
+        return { state: "ok", text };
+    }
+
+    return { state: "bad", text };
 }
 
 /**
@@ -207,6 +260,32 @@ function windComponent(wind, runwayEntry) {
     return Math.round(component);
 }
 
+
+// Campos de resultado que são limpos no início de cada cálculo
+const OUTPUT_IDS = [
+    "outMTOW", "outTorque", "outV1", "outVr", "outV2", "outVyse",
+    "outTor", "outTakeoffDistance", "outAccelerate-Stop-Distance ",
+    "ttCg2", "ttCg3", "ttCg4", "cgText"
+];
+
+/**
+ * Repõe todos os resultados no estado inicial ("—"), para nunca ficarem valores antigos no ecrã.
+ */
+function clearPerformanceOutputs() {
+    OUTPUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = "—";
+        el.classList.remove("ok", "bad");
+    });
+
+    // O badge volta ao estado inicial do HTML
+    const badge = document.getElementById("cgBadge");
+    if (badge) {
+        badge.classList.remove("ok");
+        badge.classList.add("bad");
+    }
+}
 
 // Nome da chave usada no localStorage para guardar os dados do formulário
 const PERFORMANCE_FORM_KEY = "performanceFormData";
@@ -502,17 +581,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     /**
-     * Valida o campo QNH, permitindo só números e exigindo 3 dígitos mínimos.
+     * Valida o campo QNH: números com um único separador decimal (. ou ,), entre QNH_MIN e QNH_MAX.
      */
     document.getElementById("qnh").addEventListener("input", function () {
-        // Mantém apenas números
-        let v = this.value.replace(/\D/g, "");
+        // Mantém apenas números e separadores decimais
+        let v = this.value.replace(/[^0-9.,]/g, "");
+
+        // Aceita só o primeiro separador decimal; remove os seguintes
+        const sepIndex = v.search(/[.,]/);
+        if (sepIndex !== -1) {
+            v = v.slice(0, sepIndex + 1) + v.slice(sepIndex + 1).replace(/[.,]/g, "");
+        }
 
         // Atualiza o input com o valor limpo
         this.value = v;
 
-        // Se tiver menos de 3 dígitos, marca erro visual
-        if (v.length < 3 || v.length > 4) {
+        // Se não for um QNH válido, marca erro visual
+        if (parseQnh(v) === null) {
             this.classList.add("input-error");
         } else {
             // Se estiver válido, remove a classe de erro
@@ -602,8 +687,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     /**
      * Botão de cálculo da performance.
+     * Limpa os resultados antigos e mostra um erro se o cálculo falhar.
      */
     document.getElementById("calc-btn").addEventListener("click", async () => {
+        // Limpa os resultados anteriores antes de qualquer cálculo
+        clearPerformanceOutputs();
+
+        try {
+            await calculatePerformance();
+        } catch (error) {
+            // Não deixa resultados parciais no ecrã
+            clearPerformanceOutputs();
+            console.error(error);
+            alert("ERROR! \n" + (error && error.message ? error.message : "Não foi possível calcular a performance."));
+        }
+    });
+
+    /**
+     * Cálculo da performance (chamado pelo botão Calc).
+     */
+    async function calculatePerformance() {
         // Verifica se todos os campos obrigatórios estão preenchidos
         if (!canCalculate()) {
             // Mostra mensagem de erro se faltarem campos
@@ -620,8 +723,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Procura os dados da pista selecionada
         const runwayEntry = airportData.find(a => a.icao === airport && a.rwy == rwy);
 
+        // Sem dados da pista não há cálculo possível
+        if (!runwayEntry) {
+            throw new Error(`Sem dados para ${airport} pista ${rwy} em airportsList.json.`);
+        }
+
+        // A lista de obstáculos tem de existir (vazia se não houver obstáculos)
+        if (!Array.isArray(runwayEntry.obstacles)) {
+            throw new Error(`${airport} pista ${rwy}: lista de obstáculos em falta em airportsList.json.`);
+        }
+
         // Calcula a componente do vento para a pista
         const wind = windComponent(document.getElementById("wind").value, runwayEntry);
+
+        // Vento inválido (ex.: sem velocidade) não pode entrar nos gráficos
+        if (!Number.isFinite(wind)) {
+            document.getElementById("wind").classList.add("input-error");
+            throw new Error("Vento inválido. Formato esperado: 270/15.");
+        }
 
         // Lê a condição da pista e converte para maiúsculas
         const surface = document.getElementById("surface").value.toUpperCase();
@@ -629,8 +748,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Lê a OAT e converte para número
         const oat = Number(document.getElementById("oat").value);
 
-        // Lê o QNH e converte para número
-        const qnh = Number(document.getElementById("qnh").value);
+        // OAT inválida (ex.: só "-") não pode entrar nos gráficos
+        if (!Number.isFinite(oat)) {
+            document.getElementById("oat").classList.add("input-error");
+            throw new Error("OAT inválida.");
+        }
+
+        // Lê o QNH (aceita decimais com "." ou ",")
+        const qnh = parseQnh(document.getElementById("qnh").value);
+
+        // QNH inválido: mostra erro em vez de calcular com uma PA errada
+        if (qnh === null) {
+            document.getElementById("qnh").classList.add("input-error");
+            throw new Error(`QNH inválido. Introduza um valor entre ${QNH_MIN} e ${QNH_MAX} hPa (ex.: 1013 ou 1003.25).`);
+        }
 
         // Lê o TOW e converte para número
         const tow = Number(document.getElementById("tow").value);
@@ -641,8 +772,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Lê o estado dos inlets
         const inlet = document.getElementById("inlets").value;
 
-        // Calcula a Pressure Altitude
-        const pa = await getPressureAltitude(qnh, airport);
+        // Calcula a Pressure Altitude com a elevação da pista selecionada
+        const pa = getPressureAltitude(qnh, runwayEntry);
 
         /**
          * MTOW
@@ -1062,6 +1193,7 @@ if (flaps === "up") {
 }
 
 // Calcula o MTOW real do 2º segmento, recalculando required e performed para cada peso
+// null = nenhum peso cumpre o 2º segmento (é tratado como limitante no fim)
 mtowCG2 = getMaxTow2Seg({
     flaps: flaps,
     pa: pa,
@@ -1070,7 +1202,7 @@ mtowCG2 = getMaxTow2Seg({
     wind: wind,
     slope: runwayEntry.slope,
     obstacles: filtered_2Seg
-}) ?? mtowCG2;
+});
         
         /**
          * Flight Path to Clear Distant Obstacles - 3º/4º segmento
@@ -1082,6 +1214,9 @@ mtowCG2 = getMaxTow2Seg({
 
         // Cria uma lista para guardar a análise dos obstáculos do 3º/4º segmento
         const obstacleAnalysis34 = [];
+
+        // Obstáculos cujo gradiente requerido não foi possível ler no gráfico do AFM
+        const requiredOutOfChart34 = [];
 
         // Percorre todos os obstáculos filtrados
         for (const obs of filtered_34Seg) {
@@ -1096,6 +1231,15 @@ mtowCG2 = getMaxTow2Seg({
                 obstacle_height: obs.obstacle_ft
             });
             console.log(gradientRequired34Seg);
+
+            // Required a null (distância/slope/vento/altura fora do gráfico, CG > 7%):
+            // não pode entrar na comparação como 0. Fica registado e o 3º/4º segmento não passa.
+            if (!gradientRequired34Seg || gradientRequired34Seg.result_CG_required == null) {
+                requiredOutOfChart34.push({ obstacle: obs, debug: gradientRequired34Seg?.debug });
+                console.warn("3º/4º segmento: required fora do gráfico do AFM para o obstáculo", obs, gradientRequired34Seg?.debug);
+                continue;
+            }
+
             // Guarda os dados do obstáculo analisado
             obstacleAnalysis34.push({
                 // Guarda o gradiente requerido para o 4º segmento
@@ -1135,47 +1279,50 @@ mtowCG2 = getMaxTow2Seg({
  */
 let mtowCG3 = mtowLimited;
 
-// Calcula a distância percorrida pelo avião no 3º segmento
-const thirdSegment = Gradient_3segFlaps1({
-    pressureAltitude: pa,
-    oat: oat,
-    tow: tow,
-    inlet: inlet,
-    obstacleDistance: criticalObstacleDistance3Seg
-});
-console.log(thirdSegment);
+// Guarda se o 3º/4º segmento não pôde ser verificado por estar fora do gráfico do AFM
+let cgOutOfChart3Seg = false;
+let cgOutOfChart4Seg = false;
 
-// Se o 3º segmento falhar
-if (thirdSegment.status === "FAILED") {
-    // Marca a flag do 3º segmento como failed
-    cgFailed3Seg = true;
+// Existe obstáculo do 3º/4º segmento? (sem obstáculo o requisito é 0 m)
+const hasObstacle34 = criticalObstacle34 != null || requiredOutOfChart34.length > 0;
 
-    // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
-    document.getElementById("ttCg3").textContent =
-        criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
+const ttCg3 = document.getElementById("ttCg3");
 
-    // Remove a classe de sucesso
-    document.getElementById("ttCg3").classList.remove("ok");
-
-    // Adiciona a classe de falha
-    document.getElementById("ttCg3").classList.add("bad");
-
+if (requiredOutOfChart34.length > 0) {
+    // Required fora do gráfico: não é possível verificar o 3º segmento
+    cgOutOfChart3Seg = true;
+    ttCg3.textContent = "Req: " + OUT_OF_CHART_TEXT;
+    ttCg3.classList.remove("ok");
+    ttCg3.classList.add("bad");
 } else {
-    // Marca a flag do 3º segmento como passed
-    cgFailed3Seg = false;
+    // Calcula a distância percorrida pelo avião no 3º segmento
+    const thirdSegment = Gradient_3segFlaps1({
+        pressureAltitude: pa,
+        oat: oat,
+        tow: tow,
+        inlet: inlet,
+        obstacleDistance: criticalObstacleDistance3Seg
+    });
+    console.log(thirdSegment);
+
+    // Traduz o resultado: ok / bad / ooc (fora do gráfico com obstáculo) / na (fora do gráfico sem obstáculo)
+    const view3 = describeThirdSegment(thirdSegment, criticalObstacleDistance3Seg, hasObstacle34);
+
+    // Só uma falha real de comparação marca o 3º segmento como failed
+    cgFailed3Seg = view3.state === "bad";
+
+    // Fora do gráfico com obstáculo: não verificável (não passa)
+    cgOutOfChart3Seg = view3.state === "ooc";
 
     // Mostra a comparação entre distância ao obstáculo e distância percorrida no 3º segmento
-    document.getElementById("ttCg3").textContent =
-        criticalObstacleDistance3Seg + "m / " + thirdSegment.distance + "m";
-
-    // Remove a classe de falha
-    document.getElementById("ttCg3").classList.remove("bad");
-
-    // Adiciona a classe de sucesso
-    document.getElementById("ttCg3").classList.add("ok");
+    ttCg3.textContent = view3.text;
+    ttCg3.classList.remove("ok", "bad");
+    if (view3.state === "ok") ttCg3.classList.add("ok");
+    if (view3.state === "bad" || view3.state === "ooc") ttCg3.classList.add("bad");
 }
 
 // Calcula o MTOW real do 3º segmento, recalculando a distância crítica para cada peso
+// null = nenhum peso cumpre o 3º segmento (é tratado como limitante no fim)
 mtowCG3 = getMaxTow3Seg({
     pa: pa,
     oat: oat,
@@ -1183,7 +1330,7 @@ mtowCG3 = getMaxTow3Seg({
     wind: wind,
     slope: runwayEntry.slope,
     obstacles: filtered_34Seg
-}) ?? mtowCG3;
+});
         
         /**
          * Net Climb Gradient - Single Engine - 4º Final Segment
@@ -1193,6 +1340,14 @@ mtowCG3 = getMaxTow3Seg({
  * Net Climb Gradient - Single Engine - 4º Final Segment
  */
 let mtowCG4 = mtowLimited;
+
+if (requiredOutOfChart34.length > 0) {
+    // Required fora do gráfico: não é possível verificar o 4º segmento
+    cgOutOfChart4Seg = true;
+    document.getElementById("ttCg4").textContent = "Req: " + OUT_OF_CHART_TEXT;
+    document.getElementById("ttCg4").classList.remove("ok");
+    document.getElementById("ttCg4").classList.add("bad");
+} else {
 
 // Calcula a performance do 4º segmento
 const gradient4Seg = Gradient_4segFlapsUp({
@@ -1234,7 +1389,10 @@ if (gradient4Seg.status === "FAILED") {
     document.getElementById("ttCg4").classList.add("ok");
 }
 
+} // fim do else (required do 3º/4º segmento dentro do gráfico)
+
 // Calcula o MTOW real do 4º segmento, recalculando o required crítico para cada peso
+// null = nenhum peso cumpre o 4º segmento (é tratado como limitante no fim)
 mtowCG4 = getMaxTow4Seg({
     pa: pa,
     oat: oat,
@@ -1242,7 +1400,7 @@ mtowCG4 = getMaxTow4Seg({
     wind: wind,
     slope: runwayEntry.slope,
     obstacles: filtered_34Seg
-}) ?? mtowCG4;
+});
 
 
         
@@ -1251,6 +1409,9 @@ mtowCG4 = getMaxTow4Seg({
          */
         // Guarda se o resultado geral do climb gradient falhou
         const cgOverallFailed = cgFailed2Seg || cgFailed3Seg || cgFailed4Seg;
+
+        // Guarda se algum segmento com obstáculo ficou fora do gráfico do AFM (não verificável)
+        const cgOverallOutOfChart = cgOutOfChart3Seg || cgOutOfChart4Seg;
 
         // Se qualquer segmento falhou, o resultado geral é Failed
         if (cgOverallFailed) {
@@ -1262,6 +1423,12 @@ mtowCG4 = getMaxTow4Seg({
 
             // Mostra Failed no texto geral
             document.getElementById("cgText").textContent = "Failed";
+
+        } else if (cgOverallOutOfChart) {
+            // Não verificável: não passa, mas mostra o motivo em vez de Failed
+            document.getElementById("cgBadge").classList.remove("ok");
+            document.getElementById("cgBadge").classList.add("bad");
+            document.getElementById("cgText").textContent = "Fora do gráfico do AFM";
 
         } else {
             // Remove a classe de falha do badge geral
@@ -1279,6 +1446,18 @@ mtowCG4 = getMaxTow4Seg({
         console.log("mtowCG4", mtowCG4);
         // MTOW by CGR
 
+        // Segmentos em que nenhum peso cumpre (null): limitam o MTOW em vez de serem ignorados
+        const mtowBySegment = { "2ºSeg": mtowCG2, "3ºSeg": mtowCG3, "4ºSeg": mtowCG4 };
+        const segmentsWithoutMtow = Object.keys(mtowBySegment).filter(k => mtowBySegment[k] == null);
+
+        // MTOW por WAT/ASDA/TORA/TODA inválido (0) ou nenhum peso cumpre um segmento: failed
+        if (!(mtowLimited > 0) || segmentsWithoutMtow.length > 0) {
+            const reason = segmentsWithoutMtow.length > 0 ? "(" + segmentsWithoutMtow.join(", ") + ") " : "";
+            document.getElementById("outMTOW").textContent = " failed " + reason;
+            console.warn("MTOW failed. mtowLimited:", mtowLimited, "segmentos sem peso válido:", segmentsWithoutMtow);
+            return;
+        }
+
         // Calcula o menor valor entre os três MTOW
        const mtowByCG = Math.min(mtowCG2, mtowCG3, mtowCG4);
 
@@ -1290,13 +1469,13 @@ const mtowRounded = Math.floor(mtowFinal);
 
 // Mostra o resultado no elemento HTML
 document.getElementById("outMTOW").textContent = mtowRounded;
-    
-        
+
+
         console.log("mtowLimited ", mtowLimited);
         console.log("mtowByCG ", mtowByCG);
         console.log("MTOW ", mtowByCG);
 
-    });
+    }
 
     /**
      * Ajusta a direção de abertura dos tooltips quando o rato entra no ícone "i".
