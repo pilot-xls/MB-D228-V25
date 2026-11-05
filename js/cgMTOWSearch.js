@@ -32,6 +32,14 @@ export function segmentPasses(state) {
 }
 
 /**
+ * Formata um gradiente (%) com 1 casa decimal para a UI, evitando dízimas
+ * resultantes de erro de precisão de ponto flutuante (ex.: 3.5000000000000004).
+ */
+function fmt1(n) {
+  return Number.isFinite(n) ? (Math.round(n * 10) / 10).toFixed(1) : n;
+}
+
+/**
  * Calcula o TODR (m) para um peso específico, arredondado ao metro (o mesmo valor que a UI mostra).
  * Devolve null se o cálculo falhar.
  */
@@ -108,7 +116,7 @@ function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr }) {
     state: performed && performed.status === "PASSED" ? "ok" : "bad",
     required,
     gradient,
-    text: required + "% / " + gradient + "%"
+    text: fmt1(required) + "% / " + fmt1(gradient) + "%"
   };
 }
 
@@ -177,7 +185,7 @@ function evaluate34Seg({ pa, oat, tow, inlet, wind, slope, obstacles, todr }) {
     state: fourthSegment && fourthSegment.status === "PASSED" ? "ok" : "bad",
     required: requiredGradient4Seg,
     gradient: gradient4,
-    text: requiredGradient4Seg + "% / " + gradient4 + "%"
+    text: fmt1(requiredGradient4Seg) + "% / " + fmt1(gradient4) + "%"
   };
 
   return { seg3, seg4 };
