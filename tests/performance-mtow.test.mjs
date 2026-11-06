@@ -20,7 +20,7 @@ const {
     formatMtowLimit,
     MTOW_LIMITS
 } = page.module;
-const { getWAT } = await import("../js/ToWAT.js");
+const { getWAT, WAT_TABLE } = await import("../js/ToWAT.js");
 const { evaluateSegments, findMaxTowAllSegments } = await import("../js/cgMTOWSearch.js");
 
 // "6016 kg" → 6016; "failed" → null
@@ -217,12 +217,20 @@ test("computeMtow: nenhum peso cumpre os segmentos → sem MTOW, com o segmento"
 });
 
 test("UI: MTOW limitado pelo peso do avião mostra cód. 7", async () => {
-    // OAT -10: ponto mais frio do gráfico WAT já encostado ao peso máximo do avião →
-    // WAT e STRUCT empatam a 6400 kg; o empate fica para o WAT (cold cap), mostrado com code 7
+    // OAT -10: abaixo do gráfico WAT; o WAT é pelo menos o ponto mais frio da linha (> 6400),
+    // por isso quem limita é o peso máximo do avião (code 7)
     const r = await page.calc({ airport: "LPBG", runway: "01", wind: "010/10", oat: "-10", qnh: "1023", flaps: "up", inlets: "off", tow: "6400" });
     assert.equal(r.mtow, "6400 kg");
-    assert.equal(r.limit, "(WAT, cold cap · code 7)");
+    assert.equal(r.limit, "(aircraft max weight · code 7)");
     assert.equal(r.badgeText, "Passed");
+});
+
+test("formatMtowLimit: WAT do lado frio igual ao peso máximo do avião → 'cold cap · code 7'", () => {
+    // Empate WAT = STRUCT: fica o WAT (primeiro na ordem) e mostra-se o código do peso máximo
+    const r = computeMtow({ limits: { WAT: 6400, ASDA: 6500, TORA: 6500, TODA: 6450, STRUCT: 6400 }, searchSegments: noSegments });
+    assert.equal(r.limitKey, "WAT");
+    assert.equal(formatMtowLimit(r, /* watColdCap */ true), "(WAT, cold cap · code 7)");
+    assert.equal(formatMtowLimit(r, false), "(WAT · code 10)");
 });
 
 test("formatMtowLimit: STRUCT continua a mostrar cód. 7 quando o WAT não está no cold cap", () => {
@@ -297,18 +305,28 @@ test("getWAT flaps 1: pontos extrapolados acima de 6600 kg (fim do gráfico)", (
     assert.deepEqual(getWAT("1", 2277, 25), { status: "ok", wat: 6545, reason: null });
 });
 
-// Lado frio: ponto mais frio da linha já encostado ao peso máximo do avião (6400 kg) →
-// para OAT mais frias o limite é esse peso máximo, não o valor da borda do gráfico
-test("getWAT: OAT mais fria do que o gráfico, com o cap de peso máximo encostado → cold_cap no peso máximo", () => {
-    const r = getWAT("1", 2277, -10);
-    assert.deepEqual(r, { status: "cold_cap", wat: 6400, reason: null });
+// Lado frio: abaixo da OAT mais fria da linha, o WAT é pelo menos o desse ponto (o WAT sobe
+// quando a OAT desce) e nunca menos do que o peso máximo do avião
+test("getWAT: OAT mais fria do que o gráfico → cold_cap com o mínimo garantido, nunca abaixo do peso máximo", () => {
+    // 2000 ft: ponto mais frio 20 °C = 6850 (extrapolado)
+    assert.deepEqual(getWAT("1", 2000, -10), { status: "cold_cap", wat: 6850, reason: null });
+    assert.deepEqual(getWAT("1", 2000, -40, 6400), { status: "cold_cap", wat: 6850, reason: null });
 
-    // Mesmo com um aircraftMTOW explícito diferente do default
-    const r2 = getWAT("1", 2277, -10, 6400);
-    assert.deepEqual(r2, { status: "cold_cap", wat: 6400, reason: null });
+    // 8000 ft: ponto mais frio -10 °C = 6375, a menos de 50 kg do peso máximo → 6400
+    assert.deepEqual(getWAT("1", 8000, -20), { status: "cold_cap", wat: 6400, reason: null });
 
-    // O cap nunca é excedido: nunca acima do peso máximo do avião
-    assert.ok(getWAT("1", 2000, -40).wat <= 6400);
+    // Mais frio nunca dá menos WAT (antes, o cap a 6400 misturado com pontos reais descia)
+    for (const flaps of ["up", "1"]) {
+        for (const pa of [0, 1500, 2277, 2485, 3500, 5000, 7500]) {
+            let prev = -Infinity;
+            for (let oat = 40; oat >= -30; oat--) {
+                const w = getWAT(flaps, pa, oat).wat;
+                if (w == null) continue;
+                assert.ok(w >= prev, `flaps ${flaps} PA ${pa}: ${oat} °C = ${w} < ${prev}`);
+                prev = w;
+            }
+        }
+    }
 });
 
 // Lado frio: ponto mais frio da linha ainda longe do peso máximo (aircraftMTOW maior do
@@ -318,6 +336,56 @@ test("getWAT: ponto mais frio ainda longe do peso máximo do avião → out_of_c
     assert.equal(r.status, "out_of_chart");
     assert.equal(r.wat, null);
     assert.match(r.reason, /below chart/);
+});
+
+// Coerência dos dados com o gráfico do AFM (retas de OAT, eixo de peso até 6600 kg)
+test("WAT_TABLE: o WAT desce com a OAT e com a PA (sem pontos trocados)", () => {
+    for (const [key, rows] of Object.entries(WAT_TABLE)) {
+        const at = new Map(rows.map(r => [`${r.pressure_altitude}|${r.oat}`, r.wat]));
+        for (const r of rows) {
+            const warmer = rows.filter(o => o.pressure_altitude === r.pressure_altitude && o.oat > r.oat);
+            for (const o of warmer) assert.ok(o.wat < r.wat, `${key} ${r.pressure_altitude} ft: ${o.oat} °C (${o.wat}) >= ${r.oat} °C (${r.wat})`);
+            const above = at.get(`${r.pressure_altitude + 1000}|${r.oat}`);
+            if (above != null) assert.ok(above < r.wat, `${key} ${r.oat} °C: ${r.pressure_altitude + 1000} ft (${above}) >= ${r.pressure_altitude} ft (${r.wat})`);
+        }
+    }
+});
+
+test("WAT_TABLE: só os pontos acima de 6600 kg (fora do gráfico) estão marcados como extrapolados", () => {
+    for (const [key, rows] of Object.entries(WAT_TABLE)) {
+        for (const r of rows) {
+            assert.equal(!!r.extrapolated, r.wat > 6600, `${key} ${r.pressure_altitude} ft ${r.oat} °C = ${r.wat}`);
+        }
+    }
+});
+
+// Regressão geral do caso LPBG: o cold cap nunca pode puxar a interpolação para baixo do
+// peso máximo do avião, e o lado frio nunca fica "out of chart" quando o gráfico tem valor
+test("getWAT: cold cap nunca fica abaixo do peso máximo do avião e não há 'below chart' (PA 0-8000, OAT -40..55)", () => {
+    for (const mtow of [6400, 5700]) {
+        for (const flaps of ["up", "1"]) {
+            for (let pa = 0; pa <= 8000; pa += 50) {
+                for (let oat = -40; oat <= 55; oat++) {
+                    const r = getWAT(flaps, pa, oat, mtow);
+                    const where = `MTOW ${mtow} flaps ${flaps} PA ${pa} OAT ${oat}`;
+                    if (r.status === "cold_cap") assert.ok(r.wat >= mtow, `${where}: ${r.wat}`);
+                    if (r.status === "out_of_chart") assert.match(r.reason, /above chart/, where);
+                }
+            }
+        }
+    }
+});
+
+test("getWAT: pontos corrigidos e acrescentados a partir do gráfico", () => {
+    // Flaps UP 3000 ft / 30 °C era 6575 (acima de 2000 ft = 6550): no gráfico ~6335
+    assert.deepEqual(getWAT("up", 3000, 30), { status: "ok", wat: 6325, reason: null });
+    assert.deepEqual(getWAT("up", 3500, 30), { status: "ok", wat: 6213, reason: null }); // antes 6338
+    assert.deepEqual(getWAT("up", 0, 50), { status: "ok", wat: 5900, reason: null });    // antes 5800
+    assert.deepEqual(getWAT("1", 8000, -10), { status: "ok", wat: 6375, reason: null }); // antes 6350
+    // Flaps UP 5000 ft / 15 °C: antes "out of chart"; entre 20 °C (6250) e 10 °C (6675, extrapolado)
+    assert.deepEqual(getWAT("up", 5000, 15), { status: "ok", wat: 6463, reason: null });
+    // Flaps 1, PA 1500, 32 °C: antes 6331 (cold cap a 1000 ft); gráfico ~6398
+    assert.deepEqual(getWAT("1", 1500, 32), { status: "ok", wat: 6395, reason: null });
 });
 
 test("getWAT: OAT acima do gráfico ou PA acima de 8000 ft → out_of_chart sem número", () => {
@@ -350,11 +418,33 @@ test("UI: OAT 56 °C mostra o WAT fora do gráfico no motivo", async () => {
     assert.match(r.limit, /WAT/);
 });
 
-test("UI: OAT abaixo do gráfico WAT indica 'cold cap' (peso máximo, code 7) quando o WAT limita", async () => {
-    const r = await page.calc({ ...EXAMPLE, oat: "15", tow: "5000" });
-    assert.equal(r.limit, "(WAT, cold cap · code 7)");
-    // Lado frio já encostado ao peso máximo do avião, não ao valor da borda do gráfico
-    assert.equal(mtowOf(r), 6400);
+test("UI: OAT abaixo do gráfico WAT → MTOW 6400 (peso do avião, code 7), também com inlets ON", async () => {
+    // 0 °C e 15 °C a 2485 ft: o WAT fica bem acima de 6400 (mesmo com -250 dos inlets)
+    for (const oat of ["0", "15"]) {
+        for (const inlets of ["off", "on"]) {
+            const r = await page.calc({ ...EXAMPLE, oat, inlets, tow: "5000" });
+            // antes, com inlets ON, o cap a 6400 - 250 dava 6150
+            assert.equal(r.mtow, "6400 kg", `OAT ${oat} inlets ${inlets}`);
+            assert.equal(r.limit, "(aircraft max weight · code 7)", `OAT ${oat} inlets ${inlets}`);
+        }
+    }
+});
+
+test("UI: o MTOW nunca desce quando a OAT desce (LPBG, flaps 1/up, inlets OFF/ON)", async () => {
+    for (const flaps of ["1", "up"]) {
+        for (const inlets of ["off", "on"]) {
+            for (const qnh of ["983", "1013", "1033"]) {
+                let prev = -Infinity;
+                for (let oat = 40; oat >= -10; oat -= 5) {
+                    const r = await page.calc({ airport: "LPBG", runway: "19", wind: "000/00", oat: String(oat), qnh, flaps, inlets, tow: "5000" });
+                    const m = mtowOf(r);
+                    if (m == null) continue;
+                    assert.ok(m >= prev, `flaps ${flaps} inlets ${inlets} QNH ${qnh}: ${oat} °C → ${m} < ${prev}`);
+                    prev = m;
+                }
+            }
+        }
+    }
 });
 
 // ------------------------------------------------------------------

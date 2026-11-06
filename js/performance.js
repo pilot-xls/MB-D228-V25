@@ -313,7 +313,7 @@ export function formatMtow(mtowResult) {
 
 /**
  * Fator limitante mostrado junto ao MTOW (ex.: "(WAT · code 10)").
- * watColdCap: OAT abaixo do gráfico WAT, o limite é o peso máximo do avião (code 7),
+ * watColdCap: OAT abaixo do gráfico WAT e o WAT fica no peso máximo do avião (code 7),
  * não o valor do gráfico (code 10).
  */
 export function formatMtowLimit(mtowResult, watColdCap = false) {
@@ -1151,7 +1151,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         debugLog("MTOW", mtowResult);
 
         document.getElementById("outMTOW").textContent = formatMtow(mtowResult);
-        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, wat.status === WAT_COLD_CAP);
+        // "cold cap · code 7" só quando o WAT do lado frio fica igual ao peso máximo do avião;
+        // abaixo disso (ex.: inlets ON) é um limite do gráfico WAT (code 10)
+        const watAtAircraftMax = wat.status === WAT_COLD_CAP && mtowWAT >= aircraftMTOW;
+        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, watAtAircraftMax);
 
         // TOW a vermelho se estiver acima do MTOW (ou se não houver MTOW)
         const towWithinMtow = mtowResult.mtow != null && tow <= mtowResult.mtow;
