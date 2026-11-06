@@ -530,28 +530,71 @@ const TO_ENGINE_MTOW = {
     return { min: Math.min(...vals), max: Math.max(...vals) }; // Devolver min/max
   }, // Separador de métodos
 
-  _fail(statusObj, where, errorMessage, partialDebug = {}) { // Resposta de falha padrão
+  _fail(statusObj, where, errorMessage, partialDebug = {}, outOfChart = null) { // Resposta de falha padrão
+    const debug = { // Debug com detalhe
+      failedAtStep: where,
+      error: errorMessage,
+      ...partialDebug
+    };
+    if (outOfChart) debug.outOfChart = outOfChart; // Entrada fora do gráfico do AFM: qual, valor, limite e motivo (inglês, para a página)
     return {
       input: statusObj.input, // Input normalizado
       status: "failed", // Estado
       result: 0, // Resultado a 0
-      debug: { // Debug com detalhe
-        failedAtStep: where,
-        error: errorMessage,
-        ...partialDebug
-      }
+      debug
     }; // Fechar return
+  }, // Separador de métodos
+
+  _fmt(v) { // Número para mensagens (inteiro ou 1 casa decimal)
+    return Number.isInteger(v) ? String(v) : v.toFixed(1); // Formatar
+  }, // Separador de métodos
+
+  _outOfChart(input, value, unit, r) { // Entrada fora da gama do gráfico: diz qual entrada, o valor e o limite
+    const above = value > r.max; // Acima ou abaixo da gama
+    const limit = above ? `max ${this._fmt(r.max)} ${unit}` : `min ${this._fmt(r.min)} ${unit}`; // Limite ultrapassado
+    return { input, value, unit, min: r.min, max: r.max, reason: `${input} ${this._fmt(value)} ${unit} ${above ? "above" : "below"} chart (${limit})` }; // Ex.: "PA 13000 ft above chart (max 12000 ft)"
+  }, // Separador de métodos
+
+  _paOatOutOfChartError({ PA, OAT }, paB, tB, ctx) { // Erro explícito quando falta um canto da grelha PA/OAT
+    const lines = this._uniqueSorted([paB.lo, paB.hi]).map(pa => ({ // Curvas de PA que enquadram a entrada
+      pa, // PA da curva
+      ...this._rangeOf(pressureAltTemperatureData.filter(r => r.Pressure_Altitude === pa), "Temperature") // Gama de OAT da curva
+    }));
+    const hot = lines.reduce((a, b) => (b.max <= a.max ? b : a)); // Curva que acaba mais cedo (lado quente)
+    const cold = lines.reduce((a, b) => (b.min >= a.min ? b : a)); // Curva que começa mais tarde (lado frio)
+    const pa = this._fmt(PA), oat = this._fmt(OAT); // Texto
+
+    if (OAT > hot.max || OAT < cold.min) { // OAT fora do envelope do gráfico para esta PA
+      const above = OAT > hot.max; // Lado quente ou frio
+      const line = above ? hot : cold; // Curva que limita
+      const limit = above ? line.max : line.min; // OAT limite dessa curva
+      const err = new Error(`${ctx}: OAT ${oat} ºC fora do gráfico para PA ${pa} ft (a curva de PA ${line.pa} ft ${above ? "só vai até" : "só começa em"} ${limit} ºC)`); // Mensagem (debug)
+      err.outOfChart = { // Info para a página (motivo em inglês, como o WAT)
+        input: "OAT", value: OAT, unit: "°C", PA, linePA: line.pa, [above ? "max" : "min"]: limit, // Entrada, valor e limite
+        reason: `OAT ${oat} °C ${above ? "above" : "below"} chart at PA ${pa} ft (${above ? "max" : "min"} ${limit} °C at ${line.pa} ft)` // Ex.: "OAT 45 °C above chart at PA 2547 ft (max 40 °C at 4000 ft)"
+      };
+      return err; // Devolver erro
+    }
+
+    return new Error(`${ctx}: grelha furada (faltam dados do AFM) para PA=[${paB.lo},${paB.hi}] Temp=[${tB.lo},${tB.hi}]`); // Buraco nos dados (não é fora do gráfico)
   }, // Separador de métodos
 
   _enforceAsdrLimitByDecrement(weight, { PA, OAT, wind, runway_conditions, ASDA }) { // Garante que ASDR calculada não excede a ASDA disponível
     let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
+    let lowestComputed = null; // Menor peso em que o forward calculou mas excedeu a distância disponível
+    let lastError = null; // Último erro do forward (peso sem resultado no gráfico)
 
     while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir ASDR<=ASDA
       const asdr = ASDR_FlapsUp({ PA, OAT, Weight: safeWeight, Wind: wind, runway: runway_conditions }); // Recalcular ASDR para o peso candidato
-      if (asdr?.status === "passed" && Number.isFinite(asdr?.result) && Math.round(asdr.result) <= ASDA) { // Encontrou peso válido
-        return { safeWeight, debug: { mode: "ASDR_CHECK_DECREMENT", iterations: iter, asdrAtSafeWeight: asdr.result } }; // Return
+      if (asdr?.status === "passed" && Number.isFinite(asdr?.result)) { // ASDR calculada para este peso
+        if (Math.round(asdr.result) <= ASDA) { // Encontrou peso válido
+          return { safeWeight, debug: { mode: "ASDR_CHECK_DECREMENT", iterations: iter, asdrAtSafeWeight: asdr.result } }; // Return
+        }
+        lowestComputed = { weight: safeWeight, result: asdr.result }; // Calculou, mas excede a distância disponível
+      } else {
+        lastError = asdr?.debug?.error ?? String(asdr?.status); // Forward sem resultado neste peso (ex.: fora dos dados)
       }
       safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador
       iter += 1; // Incrementar contador
@@ -559,7 +602,7 @@ const TO_ENGINE_MTOW = {
 
     return { // Fallback conservador em caso de erro no cálculo forward
       safeWeight: 0, // Se não validar, falha de forma segura
-      debug: { mode: "ASDR_CHECK_FALLBACK", iterations: iter, reason: "não foi possível validar ASDR dentro do limite de iterações" } // Debug
+      debug: { mode: "ASDR_CHECK_FALLBACK", iterations: iter, reason: "não foi possível validar ASDR dentro do limite de iterações", lowestComputed, lastError } // Debug
     };
   }, // Separador de métodos
 
@@ -696,7 +739,7 @@ const TO_ENGINE_MTOW = {
     const p_hi_t_hi = this._findByKeys(pressureAltTemperatureData, { Pressure_Altitude: paB.hi, Temperature: tB.hi }); // Canto
 
     if (!p_lo_t_lo || !p_lo_t_hi || !p_hi_t_lo || !p_hi_t_hi) { // Validar grelha
-      throw new Error(`Step4: grelha furada para PA=[${paB.lo},${paB.hi}] Temp=[${tB.lo},${tB.hi}]`); // Erro
+      throw this._paOatOutOfChartError({ PA, OAT }, paB, tB, "Step4"); // Fora do envelope PA/OAT do gráfico (ou buraco nos dados)
     } // Fechar if
 
     const y_lo = this._interp1D(OAT, tB.lo, tB.hi, p_lo_t_lo.Y_REF1, p_lo_t_hi.Y_REF1); // Interpolar temp em PA=lo
@@ -735,13 +778,18 @@ const TO_ENGINE_MTOW = {
       .filter(r => r.Section === sectionNum) // Só a secção do Step5
       .sort((a, b) => a.Weight - b.Weight); // Ordenar por peso crescente
 
-    if (rows.length < 2) throw new Error(`Step6: dados insuficientes para Section=${sectionNum}`); // Validar
+    // Linhas com Y_Ref_Down <= Y_Ref_Up são dados inválidos do gráfico: ignoram-se (ficam em skippedRows no debug)
+    // em vez de fazer falhar a secção inteira. O peso final é sempre validado pelo cálculo forward (_enforce...).
+    const skippedRows = rows.filter(r => !(r.Y_Ref_Down > r.Y_Ref_Up)).map(r => ({ Weight: r.Weight, Section: r.Section, Y_Ref_Down: r.Y_Ref_Down, Y_Ref_Up: r.Y_Ref_Up })); // Linhas inválidas
+    const validRows = rows.filter(r => r.Y_Ref_Down > r.Y_Ref_Up); // Linhas válidas
+    if (validRows.length < 2) throw new Error(`Step6: dados insuficientes para Section=${sectionNum}` + (skippedRows.length ? ` (${skippedRows.length} linha(s) com Y_Ref_Down <= Y_Ref_Up)` : "")); // Validar
 
-    const points = rows.map(r => { // Transformar em pontos (W, y_at_weight)
-      this._ensureDownUp(r.Y_Ref_Down, r.Y_Ref_Up, "Step6"); // Validar geometria
+    const points = validRows.map(r => { // Transformar em pontos (W, y_at_weight)
       const y_at_weight = this._lerp(r.Y_Ref_Down, r.Y_Ref_Up, deviation); // Aplicar o mesmo deviation
       return { Weight: r.Weight, y_at_weight, raw: r }; // Guardar ponto
     }); // Fechar map
+    const minWeight = points[0].Weight; // Peso mínimo do gráfico nesta secção
+    const dataDebug = skippedRows.length ? { skippedRows } : {}; // Linhas ignoradas (dados do AFM a corrigir)
 
     const ys = points.map(p => p.y_at_weight); // Lista de y
     const yMin = Math.min(...ys); // Envelope inferior
@@ -752,7 +800,7 @@ const TO_ENGINE_MTOW = {
       return { // Return falha
         status: "failed", // Estado
         result: 0, // Resultado
-        debug: { reason: "y_target acima do envelope", sectionNum, deviation, y_target, yMin, yMax } // Debug
+        debug: { reason: "y_target acima do envelope", sectionNum, deviation, y_target, minWeight, ...dataDebug, yMin, yMax } // Debug
       }; // Fechar return
     } // Fechar if
 
@@ -761,7 +809,7 @@ const TO_ENGINE_MTOW = {
       const maxWeight = points[points.length - 1].Weight; // Último peso (máximo)
       return { // Return clamp
         weight: maxWeight, // Clamp ao máximo
-        debug: { mode: "CLAMP_MAX_WEIGHT", sectionNum, deviation, y_target, yMin, yMax } // Debug
+        debug: { mode: "CLAMP_MAX_WEIGHT", sectionNum, deviation, y_target, minWeight, ...dataDebug, yMin, yMax } // Debug
       }; // Fechar return
     } // Fechar if
 
@@ -786,7 +834,7 @@ const TO_ENGINE_MTOW = {
     } // Fechar for
 
     if (!p0 || !p1) { // Segurança (não devia acontecer porque já validámos envelope)
-      return { status: "failed", result: 0, debug: { reason: "não foi possível bracketizar y_target", sectionNum, deviation, y_target, yMin, yMax } }; // Falha
+      return { status: "failed", result: 0, debug: { reason: "não foi possível bracketizar y_target", sectionNum, deviation, y_target, minWeight, ...dataDebug, yMin, yMax } }; // Falha
     } // Fechar if
 
     const weight = this._interp1D( // Interpolar Weight em função do y_at_weight (inversão 1D)
@@ -799,7 +847,7 @@ const TO_ENGINE_MTOW = {
 
     return { // Return sucesso
       weight, // Peso calculado
-      debug: { mode: "INTERP_BY_SECTION_DEVIATION", sectionNum, deviation, y_target, bracket: { p0, p1 }, yMin, yMax } // Debug
+      debug: { mode: "INTERP_BY_SECTION_DEVIATION", sectionNum, deviation, y_target, minWeight, ...dataDebug, bracket: { p0, p1 }, yMin, yMax } // Debug
     }; // Fechar return
   }, // Separador de métodos
 
@@ -836,11 +884,12 @@ const TO_ENGINE_MTOW = {
     const wiR = this._rangeOf(windData, "Wind"); // Range Wind
     const asdaR = this._rangeOf(resultData, "ASD_m"); // Range ASDA
 
-    const outOfRange = (name, v, r) => `${name} fora do range [${r.min}, ${r.max}] (data). Valor=${v}`; // Mensagem
-    if (PA < paR.min || PA > paR.max) return this._fail(base, "range", outOfRange("PA", PA, paR)); // Range PA
-    if (OAT < tR.min || OAT > tR.max) return this._fail(base, "range", outOfRange("OAT", OAT, tR)); // Range OAT
-    if (wind < wiR.min || wind > wiR.max) return this._fail(base, "range", outOfRange("Wind", wind, wiR)); // Range Wind
-    if (ASDA < asdaR.min) return this._fail(base, "range", outOfRange("ASDA", ASDA, asdaR)); // Range ASDA (low => fail)
+    const outOfRange = (name, v, r) => `${name} fora do range [${r.min}, ${r.max}] (data). Valor=${v}`; // Mensagem (debug)
+    // Fora da gama do gráfico: falha com debug.outOfChart (qual entrada, valor, limite e motivo para a página)
+    if (PA < paR.min || PA > paR.max) return this._fail(base, "range", outOfRange("PA", PA, paR), {}, this._outOfChart("PA", PA, "ft", paR)); // Range PA
+    if (OAT < tR.min || OAT > tR.max) return this._fail(base, "range", outOfRange("OAT", OAT, tR), {}, this._outOfChart("OAT", OAT, "°C", tR)); // Range OAT
+    if (wind < wiR.min || wind > wiR.max) return this._fail(base, "range", outOfRange("Wind", wind, wiR), {}, this._outOfChart("Wind", wind, "kt", wiR)); // Range Wind
+    if (ASDA < asdaR.min) return this._fail(base, "range", outOfRange("ASDA", ASDA, asdaR), {}, this._outOfChart("ASDA", ASDA, "m", asdaR)); // Range ASDA (low => fail)
     const ASDA_used = (ASDA > asdaR.max) ? asdaR.max : ASDA; // ASDA (high => clamp)
 
     const debug = {}; // Debug acumulado
@@ -851,31 +900,31 @@ const TO_ENGINE_MTOW = {
     try { // Step1
       debug.step1 = this.getYFromASDA(ASDA_used); // ASDA -> y (com clamp)
     } catch (e) {
-      return this._fail(base, "step1", e?.message ?? String(e), { ...debug }); // Falha
+      return this._fail(base, "step1", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha
     } // Fechar try/catch
 
     try { // Step2
       debug.step2 = this.getYBeforeRunway(runway_conditions, debug.step1.y); // Condição -> DRY
     } catch (e) {
-      return this._fail(base, "step2", e?.message ?? String(e), { ...debug }); // Falha
+      return this._fail(base, "step2", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha
     } // Fechar try/catch
 
     try { // Step3
       debug.step3 = this.getYBeforeWind(wind, debug.step2.y_beforeRunway); // Vento -> Wind=0
     } catch (e) {
-      return this._fail(base, "step3", e?.message ?? String(e), { ...debug }); // Falha
+      return this._fail(base, "step3", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha
     } // Fechar try/catch
 
     try { // Step4
       debug.step4 = this.getYRef1({ PA, OAT }); // PA/OAT -> y_ref1
     } catch (e) {
-      return this._fail(base, "step4", e?.message ?? String(e), { ...debug }); // Falha
+      return this._fail(base, "step4", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha
     } // Fechar try/catch
 
     try { // Step5
       debug.step5 = this.getReflineSection(debug.step4.y_ref1); // y_ref1 -> section+deviation
     } catch (e) {
-      return this._fail(base, "step5", e?.message ?? String(e), { ...debug }); // Falha
+      return this._fail(base, "step5", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha
     } // Fechar try/catch
 
     try { // Step6
@@ -887,12 +936,27 @@ const TO_ENGINE_MTOW = {
 
       debug.step6 = s6; // Guardar debug Step6
 
-      if (s6.status === "failed") { // Se Step6 falhou (acima do envelope)
-        return this._fail(base, "step6", "y_target acima do envelope (section+deviation)", { ...debug }); // Falha padrão
+      if (s6.status === "failed") { // Se Step6 falhou (acima do envelope): a ASDA não chega nem para o peso mínimo do gráfico
+        const minW = s6.debug?.minWeight; // Peso mínimo do gráfico nesta secção
+        return this._fail(base, "step6", "y_target acima do envelope (section+deviation)", { ...debug }, { // Falha explícita
+          input: "ASDA", value: ASDA, unit: "m", minWeight: minW, // Entrada e limite
+          reason: `ASDA ${this._fmt(ASDA)} m: MTOW below chart minimum weight (${minW} kg)` // Motivo para a página
+        });
       } // Fechar if
 
       const conservative = this._enforceAsdrLimitByDecrement(s6.weight, { PA, OAT, wind, runway_conditions, ASDA: ASDA_used }); // Garantir consistência com ASDR calculada
       debug.step6Conservative = conservative.debug; // Registar ajuste no debug
+
+      if (!(conservative.safeWeight > 0)) { // Nenhum peso validado pelo cálculo forward: nunca devolver "passed" com 0 kg
+        const lc = conservative.debug.lowestComputed; // Menor peso calculado (excede a ASDA)
+        if (lc) {
+          return this._fail(base, "step6", `ASDR excede a ASDA mesmo no menor peso calculável (${lc.weight} kg: ${Math.round(lc.result)} m)`, { ...debug }, { // Falha explícita
+            input: "ASDA", value: ASDA, unit: "m", minWeight: lc.weight, // Entrada e limite
+            reason: `ASDA ${this._fmt(ASDA)} m: MTOW below chart minimum weight (${lc.weight} kg needs ${Math.round(lc.result)} m)` // Motivo para a página
+          });
+        }
+        return this._fail(base, "step6", `verificação ASDR sem resultado: ${conservative.debug.lastError}`, { ...debug }); // Erro do forward
+      }
 
       return { // Sucesso
         input: base.input, // Input normalizado
@@ -901,7 +965,7 @@ const TO_ENGINE_MTOW = {
         debug // Debug completo
       }; // Fechar return
     } catch (e) {
-      return this._fail(base, "step6", e?.message ?? String(e), { ...debug }); // Falha
+      return this._fail(base, "step6", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha
     } // Fechar try/catch
   } // Último método não precisa de vírgula
 };

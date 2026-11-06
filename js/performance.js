@@ -290,6 +290,20 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
 }
 
 /**
+ * Motivo de um limite MTOW (ASDA/TORA/TODA) sem resultado, a partir do debug do módulo.
+ * - Entrada fora do gráfico do AFM: { outOfChart: true, reason: "OAT 45 °C above chart at PA 2547 ft (max 40 °C at 4000 ft)" }
+ * - Outro erro (ex.: dados do gráfico): { outOfChart: false, reason: "no chart result (step6: <erro do módulo>)" }
+ */
+export function describeMtowChartProblem(res) {
+    const d = (res && res.debug) || {};
+    if (d.outOfChart && d.outOfChart.reason) {
+        return { outOfChart: true, reason: d.outOfChart.reason };
+    }
+    const detail = d.error || d.reason || (res && res.status) || "unknown error";
+    return { outOfChart: false, reason: "no chart result (" + (d.failedAtStep ? d.failedAtStep + ": " : "") + detail + ")" };
+}
+
+/**
  * Texto do MTOW (ex.: "6016 kg", "failed" ou "out of AFM chart").
  */
 export function formatMtow(mtowResult) {
@@ -922,8 +936,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Limite por TORA
         const mtowTORA = (isFlapsUp ? MTOW_TORA_FlapsUp : MTOW_TORA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.tora });
 
-        // Limite por TODA (o módulo recebe a TODA no parâmetro "TORA")
-        const mtowTODA = (isFlapsUp ? MTOW_TODA_FlapsUp : MTOW_TODA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TORA: runwayEntry.toda });
+        // Limite por TODA
+        const mtowTODA = (isFlapsUp ? MTOW_TODA_FlapsUp : MTOW_TODA_Flaps1)({ PA: pa, OAT: oat, Wind: wind, slope: runwayEntry.slope, TODA: runwayEntry.toda });
 
         const directLimits = {
             WAT: mtowWAT,
@@ -940,8 +954,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         for (const [key, res] of [["ASDA", mtowASDA], ["TORA", mtowTORA], ["TODA", mtowTODA]]) {
             if (!(res.result > 0)) {
-                limitProblems[key] = { outOfChart: false, reason: "no chart result" };
+                limitProblems[key] = describeMtowChartProblem(res);
                 console.warn("MTOW " + key + " sem resultado:", (res.debug && (res.debug.error || res.debug.reason)) || res.status, res.debug);
+            }
+            // Linhas do gráfico ignoradas por dados inválidos (o resultado continua validado pelo cálculo forward)
+            const skipped = res.debug && res.debug.step6 && res.debug.step6.debug && res.debug.step6.debug.skippedRows;
+            if (skipped && skipped.length > 0) {
+                console.warn("MTOW " + key + ": linhas do gráfico do AFM ignoradas (dados inválidos, ver tests/tools/mtow-data-check.mjs):", skipped);
             }
         }
         if (!(aircraftMTOW > 0)) {
