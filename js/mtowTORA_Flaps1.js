@@ -14,7 +14,7 @@ export default MTOW; // Export default
 export { MTOW };     // Export nomeado
 
 // ============================
-// DATASETS errado
+// DATASETS (weightSectionData = a de torrFlaps1_CSATH.js, verificada no gráfico do AFM)
 // ============================
 
 const pressureAltTemperatureData = [
@@ -83,7 +83,16 @@ const reflineWeightData = [
 
 
 const weightSectionData = [
-  { "Weight": 4600, "Section": 1, "Y_Ref_Down": 584, "Y_Ref_Up": 500 },
+
+  
+  { "Weight": 4500, "Section": 1, "Y_Ref_Down": 585, "Y_Ref_Up": 562 },
+  { "Weight": 4500, "Section": 2, "Y_Ref_Down": 562, "Y_Ref_Up": 533 },
+  { "Weight": 4500, "Section": 3, "Y_Ref_Down": 533, "Y_Ref_Up": 511 },
+  { "Weight": 4500, "Section": 4, "Y_Ref_Down": 511, "Y_Ref_Up": 495 },
+  { "Weight": 4500, "Section": 5, "Y_Ref_Down": 495, "Y_Ref_Up": 475 },
+  { "Weight": 4500, "Section": 6, "Y_Ref_Down": 475, "Y_Ref_Up": 456 },  
+  
+  { "Weight": 4600, "Section": 1, "Y_Ref_Down": 584, "Y_Ref_Up": 560 },
   { "Weight": 4600, "Section": 2, "Y_Ref_Down": 560, "Y_Ref_Up": 533 },
   { "Weight": 4600, "Section": 3, "Y_Ref_Down": 533, "Y_Ref_Up": 507 },
   { "Weight": 4600, "Section": 4, "Y_Ref_Down": 507, "Y_Ref_Up": 490 },
@@ -92,8 +101,8 @@ const weightSectionData = [
 
   { "Weight": 4700, "Section": 1, "Y_Ref_Down": 580, "Y_Ref_Up": 556 },
   { "Weight": 4700, "Section": 2, "Y_Ref_Down": 556, "Y_Ref_Up": 529 },
-  { "Weight": 4700, "Section": 3, "Y_Ref_Down": 529, "Y_Ref_Up": 507 },
-  { "Weight": 4700, "Section": 4, "Y_Ref_Down": 507, "Y_Ref_Up": 484 },
+  { "Weight": 4700, "Section": 3, "Y_Ref_Down": 529, "Y_Ref_Up": 502 },
+  { "Weight": 4700, "Section": 4, "Y_Ref_Down": 502, "Y_Ref_Up": 484 },
   { "Weight": 4700, "Section": 5, "Y_Ref_Down": 484, "Y_Ref_Up": 464 },
   { "Weight": 4700, "Section": 6, "Y_Ref_Down": 464, "Y_Ref_Up": 443 },
 
@@ -102,30 +111,30 @@ const weightSectionData = [
   { "Weight": 4800, "Section": 3, "Y_Ref_Down": 525, "Y_Ref_Up": 498 },
   { "Weight": 4800, "Section": 4, "Y_Ref_Down": 498, "Y_Ref_Up": 478 },
   { "Weight": 4800, "Section": 5, "Y_Ref_Down": 478, "Y_Ref_Up": 460 },
-  { "Weight": 4800, "Section": 6, "Y_Ref_Down": 460, "Y_Ref_Up": 441 },
+  { "Weight": 4800, "Section": 6, "Y_Ref_Down": 460, "Y_Ref_Up": 439 },
 
-  { "Weight": 4900, "Section": 1, "Y_Ref_Down": 549, "Y_Ref_Up": 523 },
-  { "Weight": 4900, "Section": 2, "Y_Ref_Down": 523, "Y_Ref_Up": 494 },
-  { "Weight": 4900, "Section": 3, "Y_Ref_Down": 494, "Y_Ref_Up": 474 },
-  { "Weight": 4900, "Section": 4, "Y_Ref_Down": 474, "Y_Ref_Up": 455 },
-  { "Weight": 4900, "Section": 5, "Y_Ref_Down": 455, "Y_Ref_Up": 435 },
-  { "Weight": 4900, "Section": 6, "Y_Ref_Down": 435, "Y_Ref_Up": 415 },
+  { "Weight": 4900, "Section": 1, "Y_Ref_Down": 575, "Y_Ref_Up": 549 },
+  { "Weight": 4900, "Section": 2, "Y_Ref_Down": 549, "Y_Ref_Up": 523 },
+  { "Weight": 4900, "Section": 3, "Y_Ref_Down": 523, "Y_Ref_Up": 494 },
+  { "Weight": 4900, "Section": 4, "Y_Ref_Down": 494, "Y_Ref_Up": 474 },
+  { "Weight": 4900, "Section": 5, "Y_Ref_Down": 474, "Y_Ref_Up": 455 },
+  { "Weight": 4900, "Section": 6, "Y_Ref_Down": 455, "Y_Ref_Up": 431 },
 
   { "Weight": 5000, "Section": 1, "Y_Ref_Down": 574, "Y_Ref_Up": 547 },
   { "Weight": 5000, "Section": 2, "Y_Ref_Down": 547, "Y_Ref_Up": 517 },
   { "Weight": 5000, "Section": 3, "Y_Ref_Down": 517, "Y_Ref_Up": 486 },
-  { "Weight": 5000, "Section": 4, "Y_Ref_Down": 486, "Y_Ref_Up": 467 },
-  { "Weight": 5000, "Section": 5, "Y_Ref_Down": 467, "Y_Ref_Up": 447 },
+  { "Weight": 5000, "Section": 4, "Y_Ref_Down": 486, "Y_Ref_Up": 468 },
+  { "Weight": 5000, "Section": 5, "Y_Ref_Down": 468, "Y_Ref_Up": 447 },
   { "Weight": 5000, "Section": 6, "Y_Ref_Down": 447, "Y_Ref_Up": 423 },
 
-  { "Weight": 5100, "Section": 1, "Y_Ref_Down": 543, "Y_Ref_Up": 515 },
-  { "Weight": 5100, "Section": 2, "Y_Ref_Down": 515, "Y_Ref_Up": 486 },
-  { "Weight": 5100, "Section": 3, "Y_Ref_Down": 486, "Y_Ref_Up": 464 },
-  { "Weight": 5100, "Section": 4, "Y_Ref_Down": 464, "Y_Ref_Up": 441 },
-  { "Weight": 5100, "Section": 5, "Y_Ref_Down": 441, "Y_Ref_Up": 421 },
-  { "Weight": 5100, "Section": 6, "Y_Ref_Down": 421, "Y_Ref_Up": 400 },
+  { "Weight": 5100, "Section": 1, "Y_Ref_Down": 572, "Y_Ref_Up": 543 },
+  { "Weight": 5100, "Section": 2, "Y_Ref_Down": 543, "Y_Ref_Up": 515 },
+  { "Weight": 5100, "Section": 3, "Y_Ref_Down": 515, "Y_Ref_Up": 486 },
+  { "Weight": 5100, "Section": 4, "Y_Ref_Down": 486, "Y_Ref_Up": 464 },
+  { "Weight": 5100, "Section": 5, "Y_Ref_Down": 464, "Y_Ref_Up": 441 },
+  { "Weight": 5100, "Section": 6, "Y_Ref_Down": 441, "Y_Ref_Up": 421 },
 
-  { "Weight": 5200, "Section": 1, "Y_Ref_Down": 567, "Y_Ref_Up": 540 },
+  { "Weight": 5200, "Section": 1, "Y_Ref_Down": 569, "Y_Ref_Up": 540 },
   { "Weight": 5200, "Section": 2, "Y_Ref_Down": 540, "Y_Ref_Up": 510 },
   { "Weight": 5200, "Section": 3, "Y_Ref_Down": 510, "Y_Ref_Up": 481 },
   { "Weight": 5200, "Section": 4, "Y_Ref_Down": 481, "Y_Ref_Up": 459 },
@@ -144,14 +153,14 @@ const weightSectionData = [
   { "Weight": 5400, "Section": 3, "Y_Ref_Down": 498, "Y_Ref_Up": 466 },
   { "Weight": 5400, "Section": 4, "Y_Ref_Down": 466, "Y_Ref_Up": 441 },
   { "Weight": 5400, "Section": 5, "Y_Ref_Down": 441, "Y_Ref_Up": 411 },
-  { "Weight": 5400, "Section": 6, "Y_Ref_Down": 411, "Y_Ref_Up": 385 },
+  { "Weight": 5400, "Section": 6, "Y_Ref_Down": 411, "Y_Ref_Up": 386 },
 
-  { "Weight": 5500, "Section": 1, "Y_Ref_Down": 566, "Y_Ref_Up": 528 },
-  { "Weight": 5500, "Section": 2, "Y_Ref_Down": 521, "Y_Ref_Up": 481 },
-  { "Weight": 5500, "Section": 3, "Y_Ref_Down": 481, "Y_Ref_Up": 453 },
+  { "Weight": 5500, "Section": 1, "Y_Ref_Down": 556, "Y_Ref_Up": 521 },
+  { "Weight": 5500, "Section": 2, "Y_Ref_Down": 521, "Y_Ref_Up": 488 },
+  { "Weight": 5500, "Section": 3, "Y_Ref_Down": 488, "Y_Ref_Up": 453 },
   { "Weight": 5500, "Section": 4, "Y_Ref_Down": 453, "Y_Ref_Up": 423 },
   { "Weight": 5500, "Section": 5, "Y_Ref_Down": 423, "Y_Ref_Up": 396 },
-  { "Weight": 5500, "Section": 6, "Y_Ref_Down": 396, "Y_Ref_Up": 367 },
+  { "Weight": 5500, "Section": 6, "Y_Ref_Down": 396, "Y_Ref_Up": 366 },
 
   { "Weight": 5600, "Section": 1, "Y_Ref_Down": 551, "Y_Ref_Up": 517 },
   { "Weight": 5600, "Section": 2, "Y_Ref_Down": 517, "Y_Ref_Up": 478 },
@@ -167,19 +176,19 @@ const weightSectionData = [
   { "Weight": 5700, "Section": 5, "Y_Ref_Down": 394, "Y_Ref_Up": 359 },
   { "Weight": 5700, "Section": 6, "Y_Ref_Down": 359, "Y_Ref_Up": 324 },
 
-  { "Weight": 5800, "Section": 1, "Y_Ref_Down": 500, "Y_Ref_Up": 459 },
-  { "Weight": 5800, "Section": 2, "Y_Ref_Down": 459, "Y_Ref_Up": 418 },
-  { "Weight": 5800, "Section": 3, "Y_Ref_Down": 418, "Y_Ref_Up": 377 },
-  { "Weight": 5800, "Section": 4, "Y_Ref_Down": 377, "Y_Ref_Up": 340 },
-  { "Weight": 5800, "Section": 5, "Y_Ref_Down": 340, "Y_Ref_Up": 302 },
-  { "Weight": 5800, "Section": 6, "Y_Ref_Down": 302, "Y_Ref_Up": 266 },
+  { "Weight": 5800, "Section": 1, "Y_Ref_Down": 543, "Y_Ref_Up": 500 },
+  { "Weight": 5800, "Section": 2, "Y_Ref_Down": 500, "Y_Ref_Up": 459 },
+  { "Weight": 5800, "Section": 3, "Y_Ref_Down": 459, "Y_Ref_Up": 418 },
+  { "Weight": 5800, "Section": 4, "Y_Ref_Down": 418, "Y_Ref_Up": 377 },
+  { "Weight": 5800, "Section": 5, "Y_Ref_Down": 377, "Y_Ref_Up": 340 },
+  { "Weight": 5800, "Section": 6, "Y_Ref_Down": 340, "Y_Ref_Up": 302 },
 
   { "Weight": 5900, "Section": 1, "Y_Ref_Down": 536, "Y_Ref_Up": 493 },
   { "Weight": 5900, "Section": 2, "Y_Ref_Down": 493, "Y_Ref_Up": 448 },
   { "Weight": 5900, "Section": 3, "Y_Ref_Down": 448, "Y_Ref_Up": 407 },
   { "Weight": 5900, "Section": 4, "Y_Ref_Down": 407, "Y_Ref_Up": 366 },
   { "Weight": 5900, "Section": 5, "Y_Ref_Down": 366, "Y_Ref_Up": 325 },
-  { "Weight": 5900, "Section": 6, "Y_Ref_Down": 325, "Y_Ref_Up": 285 },
+  { "Weight": 5900, "Section": 6, "Y_Ref_Down": 325, "Y_Ref_Up": 282 },
 
   { "Weight": 6000, "Section": 1, "Y_Ref_Down": 529, "Y_Ref_Up": 484 },
   { "Weight": 6000, "Section": 2, "Y_Ref_Down": 484, "Y_Ref_Up": 439 },
@@ -200,23 +209,19 @@ const weightSectionData = [
   { "Weight": 6200, "Section": 3, "Y_Ref_Down": 417, "Y_Ref_Up": 366 },
   { "Weight": 6200, "Section": 4, "Y_Ref_Down": 366, "Y_Ref_Up": 315 },
   { "Weight": 6200, "Section": 5, "Y_Ref_Down": 315, "Y_Ref_Up": 264 },
-  { "Weight": 6200, "Section": 6, "Y_Ref_Down": 264, "Y_Ref_Up": 213 },
 
   { "Weight": 6300, "Section": 1, "Y_Ref_Down": 511, "Y_Ref_Up": 460 },
   { "Weight": 6300, "Section": 2, "Y_Ref_Down": 460, "Y_Ref_Up": 407 },
   { "Weight": 6300, "Section": 3, "Y_Ref_Down": 407, "Y_Ref_Up": 353 },
   { "Weight": 6300, "Section": 4, "Y_Ref_Down": 353, "Y_Ref_Up": 298 },
   { "Weight": 6300, "Section": 5, "Y_Ref_Down": 298, "Y_Ref_Up": 245 },
-  { "Weight": 6300, "Section": 6, "Y_Ref_Down": 245, "Y_Ref_Up": 191 },
 
   { "Weight": 6400, "Section": 1, "Y_Ref_Down": 509, "Y_Ref_Up": 451 },
   { "Weight": 6400, "Section": 2, "Y_Ref_Down": 451, "Y_Ref_Up": 396 },
   { "Weight": 6400, "Section": 3, "Y_Ref_Down": 396, "Y_Ref_Up": 343 },
   { "Weight": 6400, "Section": 4, "Y_Ref_Down": 343, "Y_Ref_Up": 282 },
-  { "Weight": 6400, "Section": 5, "Y_Ref_Down": 282, "Y_Ref_Up": 441 },
-  { "Weight": 6400, "Section": 6, "Y_Ref_Down": 441, "Y_Ref_Up": 388 },
 
-  { "Weight": 6500, "Section": 1, "Y_Ref_Down": 388, "Y_Ref_Up": 325 },
+  { "Weight": 6500, "Section": 1, "Y_Ref_Down": 502, "Y_Ref_Up": 441 },
   { "Weight": 6500, "Section": 2, "Y_Ref_Down": 441, "Y_Ref_Up": 388 },
   { "Weight": 6500, "Section": 3, "Y_Ref_Down": 388, "Y_Ref_Up": 325 },
   { "Weight": 6500, "Section": 4, "Y_Ref_Down": 325, "Y_Ref_Up": 266 }
@@ -551,24 +556,67 @@ const ENGINE = {
     return { min: Math.min(...vals), max: Math.max(...vals) }; // Devolver min/max
   },
 
-  _fail(statusObj, where, errorMessage, partialDebug = {}) { // Resposta de falha padrão
+  _fail(statusObj, where, errorMessage, partialDebug = {}, outOfChart = null) { // Resposta de falha padrão
+    const debug = { failedAtStep: where, error: errorMessage, ...partialDebug }; // Debug
+    if (outOfChart) debug.outOfChart = outOfChart; // Entrada fora do gráfico do AFM: qual, valor, limite e motivo (inglês, para a página)
     return { // Estrutura padrão de falha
       input: statusObj.input, // Input normalizado
       status: "failed", // Estado
       result: 0, // Resultado 0
-      debug: { failedAtStep: where, error: errorMessage, ...partialDebug } // Debug
+      debug // Debug
     };
+  },
+
+  _fmt(v) { // Número para mensagens (inteiro ou 1 casa decimal)
+    return Number.isInteger(v) ? String(v) : v.toFixed(1); // Formatar
+  },
+
+  _outOfChart(input, value, unit, r) { // Entrada fora da gama do gráfico: diz qual entrada, o valor e o limite
+    const above = value > r.max; // Acima ou abaixo da gama
+    const limit = above ? `max ${this._fmt(r.max)} ${unit}` : `min ${this._fmt(r.min)} ${unit}`; // Limite ultrapassado
+    return { input, value, unit, min: r.min, max: r.max, reason: `${input} ${this._fmt(value)} ${unit} ${above ? "above" : "below"} chart (${limit})` }; // Ex.: "PA 13000 ft above chart (max 12000 ft)"
+  },
+
+  _paOatOutOfChartError({ PA, OAT }, paB, tB, ctx) { // Erro explícito quando falta um canto da grelha PA/OAT
+    const lines = this._uniqueSorted([paB.lo, paB.hi]).map(pa => ({ // Curvas de PA que enquadram a entrada
+      pa, // PA da curva
+      ...this._rangeOf(pressureAltTemperatureData.filter(r => r.Pressure_Altitude === pa), "Temperature") // Gama de OAT da curva
+    }));
+    const hot = lines.reduce((a, b) => (b.max <= a.max ? b : a)); // Curva que acaba mais cedo (lado quente)
+    const cold = lines.reduce((a, b) => (b.min >= a.min ? b : a)); // Curva que começa mais tarde (lado frio)
+    const pa = this._fmt(PA), oat = this._fmt(OAT); // Texto
+
+    if (OAT > hot.max || OAT < cold.min) { // OAT fora do envelope do gráfico para esta PA
+      const above = OAT > hot.max; // Lado quente ou frio
+      const line = above ? hot : cold; // Curva que limita
+      const limit = above ? line.max : line.min; // OAT limite dessa curva
+      const err = new Error(`${ctx}: OAT ${oat} ºC fora do gráfico para PA ${pa} ft (a curva de PA ${line.pa} ft ${above ? "só vai até" : "só começa em"} ${limit} ºC)`); // Mensagem (debug)
+      err.outOfChart = { // Info para a página (motivo em inglês, como o WAT)
+        input: "OAT", value: OAT, unit: "°C", PA, linePA: line.pa, [above ? "max" : "min"]: limit, // Entrada, valor e limite
+        reason: `OAT ${oat} °C ${above ? "above" : "below"} chart at PA ${pa} ft (${above ? "max" : "min"} ${limit} °C at ${line.pa} ft)` // Ex.: "OAT 45 °C above chart at PA 2547 ft (max 40 °C at 4000 ft)"
+      };
+      return err; // Devolver erro
+    }
+
+    return new Error(`${ctx}: grelha furada (faltam dados do AFM) para PA=[${paB.lo},${paB.hi}] Temp=[${tB.lo},${tB.hi}]`); // Buraco nos dados (não é fora do gráfico)
   },
 
   _enforceTorrLimitByDecrement(weight, { PA, OAT, wind, slope, TORA }) { // Garante que TORR calculada não excede a TORA disponível
     let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
+    let lowestComputed = null; // Menor peso em que o forward calculou mas excedeu a distância disponível
+    let lastError = null; // Último erro do forward (peso sem resultado no gráfico)
 
     while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir TORR<=TORA
       const torr = TORR_Flaps1({ PA, OAT, Weight: safeWeight, Wind: wind, slope }); // Recalcular TORR para o peso candidato
-      if (torr?.status === "passed" && Number.isFinite(torr?.result) && Math.round(torr.result) <= TORA) { // Encontrou peso válido
-        return { safeWeight, debug: { mode: "TORR_CHECK_DECREMENT", iterations: iter, torrAtSafeWeight: torr.result } }; // Return
+      if (torr?.status === "passed" && Number.isFinite(torr?.result)) { // TORR calculada para este peso
+        if (Math.round(torr.result) <= TORA) { // Encontrou peso válido
+          return { safeWeight, debug: { mode: "TORR_CHECK_DECREMENT", iterations: iter, torrAtSafeWeight: torr.result } }; // Return
+        }
+        lowestComputed = { weight: safeWeight, result: torr.result }; // Calculou, mas excede a distância disponível
+      } else {
+        lastError = torr?.debug?.error ?? String(torr?.status); // Forward sem resultado neste peso (ex.: fora dos dados)
       }
       safeWeight -= 1; // Reduz 1 kg para tornar o resultado conservador
       iter += 1; // Incrementar contador
@@ -576,7 +624,7 @@ const ENGINE = {
 
     return { // Fallback conservador em caso de erro no cálculo forward
       safeWeight: 0, // Se não validar, falha de forma segura
-      debug: { mode: "TORR_CHECK_FALLBACK", iterations: iter, reason: "não foi possível validar TORR dentro do limite de iterações" } // Debug
+      debug: { mode: "TORR_CHECK_FALLBACK", iterations: iter, reason: "não foi possível validar TORR dentro do limite de iterações", lowestComputed, lastError } // Debug
     };
   },
 
@@ -757,7 +805,7 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
     const p_hi_t_hi = this._findByKeys(pressureAltTemperatureData, { Pressure_Altitude: paB.hi, Temperature: tB.hi }); // Canto (pa hi, t hi)
 
     if (!p_lo_t_lo || !p_lo_t_hi || !p_hi_t_lo || !p_hi_t_hi) { // Validar grelha
-      throw new Error(`Step4: grelha furada para PA=[${paB.lo},${paB.hi}] Temp=[${tB.lo},${tB.hi}]`); // Erro
+      throw this._paOatOutOfChartError({ PA, OAT }, paB, tB, "Step4"); // Fora do envelope PA/OAT do gráfico (ou buraco nos dados)
     }
 
     const y_lo = this._interp1D(OAT, tB.lo, tB.hi, p_lo_t_lo.Y_REF1, p_lo_t_hi.Y_REF1); // Interpolar em temp para PA lo
@@ -791,13 +839,18 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
       .filter(r => r.Section === sectionNum) // Só a secção
       .sort((a, b) => a.Weight - b.Weight); // Ordenar por peso
 
-    if (rows.length < 2) throw new Error(`Step6: dados insuficientes para Section=${sectionNum}`); // Validar
+    // Linhas com Y_Ref_Down <= Y_Ref_Up são dados inválidos do gráfico: ignoram-se (ficam em skippedRows no debug)
+    // em vez de fazer falhar a secção inteira. O peso final é sempre validado pelo cálculo forward (_enforce...).
+    const skippedRows = rows.filter(r => !(r.Y_Ref_Down > r.Y_Ref_Up)).map(r => ({ Weight: r.Weight, Section: r.Section, Y_Ref_Down: r.Y_Ref_Down, Y_Ref_Up: r.Y_Ref_Up })); // Linhas inválidas
+    const validRows = rows.filter(r => r.Y_Ref_Down > r.Y_Ref_Up); // Linhas válidas
+    if (validRows.length < 2) throw new Error(`Step6: dados insuficientes para Section=${sectionNum}` + (skippedRows.length ? ` (${skippedRows.length} linha(s) com Y_Ref_Down <= Y_Ref_Up)` : "")); // Validar
 
-    const points = rows.map(r => { // Criar pontos Weight->y_at_weight
-      this._ensureDownUp(r.Y_Ref_Down, r.Y_Ref_Up, "Step6"); // Validar
+    const points = validRows.map(r => { // Criar pontos Weight->y_at_weight
       const y_at_weight = this._lerp(r.Y_Ref_Down, r.Y_Ref_Up, deviation); // Aplicar deviation
       return { Weight: r.Weight, y_at_weight, raw: r }; // Return ponto
     }); // Fechar map
+    const minWeight = points[0].Weight; // Peso mínimo do gráfico nesta secção
+    const dataDebug = skippedRows.length ? { skippedRows } : {}; // Linhas ignoradas (dados do AFM a corrigir)
 
     const yMin = Math.min(...points.map(p => p.y_at_weight)); // menor y da tabela
 	const yMax = Math.max(...points.map(p => p.y_at_weight)); // maior y da tabela
@@ -807,7 +860,7 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
 	  return {
 		status: "failed",
 		result: 0,
-		debug: { reason: "y_target acima do envelope", sectionNum, deviation, y_target, yMax }
+		debug: { reason: "y_target acima do envelope", sectionNum, deviation, y_target, minWeight, ...dataDebug, yMax }
 	  };
 	}
 
@@ -816,7 +869,7 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
 	  const maxWeight = points[points.length - 1].Weight;
 	  return {
 		weight: maxWeight,
-		debug: { mode: "CLAMP_MAX_WEIGHT", sectionNum, deviation, y_target, yMin }
+		debug: { mode: "CLAMP_MAX_WEIGHT", sectionNum, deviation, y_target, minWeight, ...dataDebug, yMin }
 	  };
 	}
 
@@ -840,11 +893,11 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
     }
 
     if (!p0 || !p1) { // Segurança
-      return { status: "failed", result: 0, debug: { reason: "não foi possível bracketizar y_target", sectionNum, deviation, y_target } }; // Falha
+      return { status: "failed", result: 0, debug: { reason: "não foi possível bracketizar y_target", sectionNum, deviation, y_target, minWeight, ...dataDebug } }; // Falha
     }
 
     const weight = this._interp1D(y_target, p0.y_at_weight, p1.y_at_weight, p0.Weight, p1.Weight); // Inverter por interp1D
-    return { weight, debug: { mode: "INTERP_BY_SECTION_DEVIATION", sectionNum, deviation, y_target, bracket: { p0, p1 } } }; // Return
+    return { weight, debug: { mode: "INTERP_BY_SECTION_DEVIATION", sectionNum, deviation, y_target, minWeight, ...dataDebug, bracket: { p0, p1 } } }; // Return
   },
 
   // ----------------------------------------------------
@@ -872,33 +925,56 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
     try { toraKey = this._detectToraKey(); } catch (e) { return this._fail(base, "validation", e?.message ?? String(e)); } // Detectar
     const toraR = this._rangeOf(resultData, toraKey); // Range TORA
 
-    const outOfRange = (name, v, r) => `${name} fora do range [${r.min}, ${r.max}] (data). Valor=${v}`; // Mensagem
+    const outOfRange = (name, v, r) => `${name} fora do range [${r.min}, ${r.max}] (data). Valor=${v}`; // Mensagem (debug)
 
-    if (PA < paR.min || PA > paR.max) return this._fail(base, "range", outOfRange("PA", PA, paR)); // Range PA
-    if (OAT < tR.min || OAT > tR.max) return this._fail(base, "range", outOfRange("OAT", OAT, tR)); // Range OAT
-    if (wind < wiR.min || wind > wiR.max) return this._fail(base, "range", outOfRange("Wind", wind, wiR)); // Range wind
-    if (slope < slopeR.min || slope > slopeR.max) return this._fail(base, "range", outOfRange("slope", slope, slopeR)); // Range slope
-    if (TORA < toraR.min || TORA > toraR.max) return this._fail(base, "range", outOfRange("TORA", TORA, toraR)); // Range TORA
+    // Fora da gama do gráfico: falha com debug.outOfChart (qual entrada, valor, limite e motivo para a página)
+    if (PA < paR.min || PA > paR.max) return this._fail(base, "range", outOfRange("PA", PA, paR), {}, this._outOfChart("PA", PA, "ft", paR)); // Range PA
+    if (OAT < tR.min || OAT > tR.max) return this._fail(base, "range", outOfRange("OAT", OAT, tR), {}, this._outOfChart("OAT", OAT, "°C", tR)); // Range OAT
+    if (wind < wiR.min || wind > wiR.max) return this._fail(base, "range", outOfRange("Wind", wind, wiR), {}, this._outOfChart("Wind", wind, "kt", wiR)); // Range wind
+    if (slope < slopeR.min || slope > slopeR.max) return this._fail(base, "range", outOfRange("slope", slope, slopeR), {}, this._outOfChart("slope", slope, "%", slopeR)); // Range slope
+    if (TORA < toraR.min) return this._fail(base, "range", outOfRange("TORA", TORA, toraR), {}, this._outOfChart("TORA", TORA, "m", toraR)); // Range TORA (low => fail)
+    const TORA_used = (TORA > toraR.max) ? toraR.max : TORA; // TORA acima do gráfico => usa o máximo do gráfico (conservador)
 
     const debug = {}; // Debug acumulado
+    if (TORA_used !== TORA) { // Registrar clamp de TORA no debug
+      debug.toraClamp = { requested: TORA, used: TORA_used, range: { min: toraR.min, max: toraR.max } }; // Info clamp
+    } // Fechar if
 
-    try { debug.step1 = this.getYFromTORA(TORA); } catch (e) { return this._fail(base, "step1", e?.message ?? String(e), { ...debug }); } // Step1
-    try { debug.step2 = this.getYBeforeSlope(slope, debug.step1.y); } catch (e) { return this._fail(base, "step2", e?.message ?? String(e), { ...debug }); } // Step2
-    try { debug.step3 = this.getYBeforeWind(wind, debug.step2.y_beforeSlope); } catch (e) { return this._fail(base, "step3", e?.message ?? String(e), { ...debug }); } // Step3
-    try { debug.step4 = this.getYRef1({ PA, OAT }); } catch (e) { return this._fail(base, "step4", e?.message ?? String(e), { ...debug }); } // Step4
-    try { debug.step5 = this.getReflineSection(debug.step4.y_ref1); } catch (e) { return this._fail(base, "step5", e?.message ?? String(e), { ...debug }); } // Step5
+    try { debug.step1 = this.getYFromTORA(TORA_used); } catch (e) { return this._fail(base, "step1", e?.message ?? String(e), { ...debug }, e?.outOfChart); } // Step1
+    try { debug.step2 = this.getYBeforeSlope(slope, debug.step1.y); } catch (e) { return this._fail(base, "step2", e?.message ?? String(e), { ...debug }, e?.outOfChart); } // Step2
+    try { debug.step3 = this.getYBeforeWind(wind, debug.step2.y_beforeSlope); } catch (e) { return this._fail(base, "step3", e?.message ?? String(e), { ...debug }, e?.outOfChart); } // Step3
+    try { debug.step4 = this.getYRef1({ PA, OAT }); } catch (e) { return this._fail(base, "step4", e?.message ?? String(e), { ...debug }, e?.outOfChart); } // Step4
+    try { debug.step5 = this.getReflineSection(debug.step4.y_ref1); } catch (e) { return this._fail(base, "step5", e?.message ?? String(e), { ...debug }, e?.outOfChart); } // Step5
 
     try { // Step6
       const s6 = this.getExitWeightInSection(debug.step5.sectionNum, debug.step5.deviation, debug.step3.y_beforeWind); // Calcular peso
       debug.step6 = s6; // Guardar debug
 
-      if (s6.status === "failed") return this._fail(base, "step6", "y_target fora do envelope (section+deviation)", { ...debug }); // Falhar se não dá
+      if (s6.status === "failed") { // y_target acima do envelope: a distância não chega nem para o peso mínimo do gráfico
+        const minW = s6.debug?.minWeight; // Peso mínimo do gráfico nesta secção
+        return this._fail(base, "step6", "y_target fora do envelope (section+deviation)", { ...debug }, { // Falha explícita
+          input: "TORA", value: TORA, unit: "m", minWeight: minW, // Entrada e limite
+          reason: `TORA ${this._fmt(TORA)} m: MTOW below chart minimum weight (${minW} kg)` // Motivo para a página
+        });
+      }
 
-      const conservative = this._enforceTorrLimitByDecrement(s6.weight, { PA, OAT, wind, slope, TORA }); // Garantir consistência com TORR calculada
+      const conservative = this._enforceTorrLimitByDecrement(s6.weight, { PA, OAT, wind, slope, TORA: TORA_used }); // Garantir consistência com TORR calculada
       debug.step6Conservative = conservative.debug; // Registar ajuste no debug
+
+      if (!(conservative.safeWeight > 0)) { // Nenhum peso validado pelo cálculo forward: nunca devolver "passed" com 0 kg
+        const lc = conservative.debug.lowestComputed; // Menor peso calculado (excede a distância)
+        if (lc) {
+          return this._fail(base, "step6", `TORR excede a TORA mesmo no menor peso calculável (${lc.weight} kg: ${Math.round(lc.result)} m)`, { ...debug }, { // Falha explícita
+            input: "TORA", value: TORA, unit: "m", minWeight: lc.weight, // Entrada e limite
+            reason: `TORA ${this._fmt(TORA)} m: MTOW below chart minimum weight (${lc.weight} kg needs ${Math.round(lc.result)} m)` // Motivo para a página
+          });
+        }
+        return this._fail(base, "step6", `verificação TORR sem resultado: ${conservative.debug.lastError}`, { ...debug }); // Erro do forward
+      }
+
       return { input: base.input, status: "passed", result: conservative.safeWeight, debug }; // Return final
     } catch (e) {
-      return this._fail(base, "step6", e?.message ?? String(e), { ...debug }); // Falha step6
+      return this._fail(base, "step6", e?.message ?? String(e), { ...debug }, e?.outOfChart); // Falha step6
     }
   }
 };
