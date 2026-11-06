@@ -10,28 +10,7 @@
         "lda": 949,
         "slope": -0.5,
         "threshold_displaced": 0,
-        "obstacles": [
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
-        ]
+        "obstacles": []
     },
     {
         "icao": "LIRJ",
@@ -69,26 +48,7 @@
         "slope": 0.4,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
+            
         ]
     },
     {
@@ -103,16 +63,7 @@
         "slope": -0.4,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "casa",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "vale",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
+            
         ]
     },
     {
@@ -127,26 +78,7 @@
         "slope": 0,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
+            
         ]
     },
     {
@@ -161,26 +93,7 @@
         "slope": 0,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
+            
         ]
     },
     {
@@ -195,26 +108,7 @@
         "slope": 0,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "0",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
+           
         ]
     },
     {
@@ -229,16 +123,7 @@
         "slope": 0,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "casa",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "vale",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            }
+           
         ]
     },
     {
@@ -265,12 +150,7 @@
         "lda": 1700,
         "slope": -1.2,
         "threshold_displaced": 0,
-        "obstacles": [
-            {
-                "name": "WDI",
-                "obstacle_ft": 26,
-                "obstacle_dist": 715
-            }
+        "obstacles": [            
         ]
     },
     {
@@ -311,11 +191,7 @@
         "slope": 0.5,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "Mastro",
-                "obstacle_ft": 131,
-                "obstacle_dist": 750
-            }
+            
         ]
     },
     {
@@ -329,11 +205,11 @@
         "lda": 1100,
         "slope": -0.5,
         "threshold_displaced": 0,
-        "obstacles": [
+        "obstacles": [  
             {
-                "name": "Torre",
-                "obstacle_ft": 256,
-                "obstacle_dist": 0
+                "name": "Mastro",
+                "obstacle_ft": 131,
+                "obstacle_dist": 750
             }
         ]
     },
@@ -353,21 +229,6 @@
                 "name": "Antenna",
                 "obstacle_ft": 0,
                 "obstacle_dist": 1900
-            },
-            {
-                "name": "Antenna (visibility meter)",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "Antenna",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
-            },
-            {
-                "name": "Antenna (WDI)",
-                "obstacle_ft": 0,
-                "obstacle_dist": 0
             }
         ]
     },
@@ -383,11 +244,7 @@
         "slope": -1.1,
         "threshold_displaced": 0,
         "obstacles": [
-            {
-                "name": "Tree",
-                "obstacle_ft": 56,
-                "obstacle_dist": 0
-            }
+            
         ]
     },
     {
@@ -399,19 +256,6 @@
         "toda": 770,
         "asda": 860,
         "lda": 860,
-        "slope": 0,
-        "threshold_displaced": 0,
-        "obstacles": []
-    },
-    {
-        "icao": "LPPM",
-        "rwy": "29",
-        "heading": 290,
-        "elevation": 5,
-        "tora": 860,
-        "toda": 860,
-        "asda": 860,
-        "lda": 770,
         "slope": 0,
         "threshold_displaced": 0,
         "obstacles": [
@@ -440,6 +284,21 @@
                 "obstacle_ft": 7,
                 "obstacle_dist": 27
             }
+        ]
+    },
+    {
+        "icao": "LPPM",
+        "rwy": "29",
+        "heading": 290,
+        "elevation": 5,
+        "tora": 860,
+        "toda": 860,
+        "asda": 860,
+        "lda": 770,
+        "slope": 0,
+        "threshold_displaced": 0,
+        "obstacles": [
+            
         ]
     }
 ]
