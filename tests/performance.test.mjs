@@ -227,11 +227,13 @@ test("required 2.º seg: acima de 7 % fica assinalado (antes devolvia null e o o
     assert.notEqual(req2(60, 5200).aboveChart, true);
 });
 
-test("required 2.º seg: nunca sobe quando o obstáculo se afasta (para lá da última linha usa a de menor CG)", () => {
-    for (const wind of [0, 15]) {
-        for (const h of [26, 50, 60, 170, 300]) {
+test("required 2.º seg: nunca sobe quando o obstáculo se afasta (0-5000 m, vento -20..30 kt)", () => {
+    // inclui: para lá da última linha usa a de menor CG; vento de frente com a linha de vento
+    // já fora do gráfico usa a borda dessa linha (antes perdia o efeito do vento a 4000/4500 m)
+    for (const wind of [-20, 0, 15, 30]) {
+        for (const h of [7, 26, 50, 60, 170, 300]) {
             let prev = Infinity;
-            for (let d = 0; d <= 3900; d += 10) {
+            for (let d = 0; d <= 5000; d += 10) {
                 const q = req2(h, d, wind);
                 const v = q.aboveChart ? 99 : q.result_CG_required;
                 if (v == null) continue;
@@ -263,4 +265,100 @@ test("2.º segmento: com obstáculos e sem TODA não se ignora nada (fora do gr�
     assert.equal(e.SEG2.text, "TODA missing");
     // Sem obstáculos a TODA não é precisa
     assert.equal(evaluateSegments({ ...seg2Params, obstacles2Seg: [] }).SEG2.state, "ok");
+});
+
+test("required 2.º seg: nunca sobe com mais vento de frente (-20..50 kt)", () => {
+    // inclui ventos de frente cuja linha já saiu do gráfico e o ruído da digitalização no início da tabela
+    for (const h of [7, 26, 60, 160, 310, 400]) {
+        for (let d = 0; d <= 5000; d += 50) {
+            let prev = Infinity;
+            for (let wind = -20; wind <= 50; wind += 1) {
+                const q = req2(h, d, wind);
+                const v = q.aboveChart ? 99 : q.result_CG_required;
+                if (v == null) continue;
+                assert.ok(v <= prev, `${h} ft ${d} m: vento ${wind} = ${v} > ${prev}`);
+                prev = v;
+            }
+        }
+    }
+});
+
+test("required 2.º seg: entre duas linhas, a de cima acima de 7 % não atira o obstáculo para fora do gráfico", () => {
+    // Edifícios de LPPM 11 (102 ft) a 585 m: linha de 100 ft = 6.4 %, linha de 110 ft > 7 % (prolongada)
+    const q = req2(102, 585);
+    assert.equal(q.aboveChart, undefined);
+    assert.ok(q.result_CG_required >= req2(100, 585).result_CG_required && q.result_CG_required <= 7, String(q.result_CG_required));
+});
+
+test("required 2.º seg: abaixo de 50 ft com a linha de 50 ft acima de 7 % → linha prolongada (geometria do gráfico)", () => {
+    // Vedação de 7 ft de LPPM 11 a 275 m do RZ: antes "> 7 %", agora ~1.3 %
+    const fence = req2(7, 275);
+    assert.equal(fence.aboveChart, undefined);
+    assert.equal(fence.extended, true);
+    assert.equal(fence.result_CG_required, 1.3);
+    // Contínuo com o gráfico no ponto de 7 % da linha de 50 ft (~318 m)
+    const a = req2(40, 316).result_CG_required, b = req2(40, 318).result_CG_required;
+    assert.ok(Math.abs(a - b) <= 0.2, `${a} vs ${b}`);
+    // Muito perto do Reference Zero continua acima do gráfico
+    assert.equal(req2(11, 26).aboveChart, true);
+    assert.equal(req2(7, 100).aboveChart, true);
+});
+
+// ------------------------------------------------------------------
+// 5) Gradientes do 2.º/4.º segmento nos pesos baixos
+// ------------------------------------------------------------------
+
+const { default: Grad2Up } = await import("../js/cg2segFlapsUp_CSATH.js");
+const { default: Grad2F1 } = await import("../js/cg2segFlaps1_CSATH.js");
+const { default: Grad4Up } = await import("../js/cg4segFlapsUp_CSATH.js");
+const GRADIENTS = { "2.º seg UP": Grad2Up, "2.º seg F1": Grad2F1, "4.º seg UP": Grad4Up };
+const grad = (G, pa, oat, tow, inlet = "off") => G({ pressureAltitude: pa, oat, tow, inlet, gradientRequired: -99 });
+
+test("gradientes: pesos baixos já não dão 0 % (antes 'Peso 4500 não contém a section 7')", () => {
+    for (const [name, G] of Object.entries(GRADIENTS)) {
+        for (const [pa, oat] of [[5, 15], [5, -10], [2277, 0]]) {
+            const g4500 = grad(G, pa, oat, 4500).gradient, g5000 = grad(G, pa, oat, 5000).gradient;
+            assert.ok(g4500 > 0 && g4500 >= g5000, `${name} PA ${pa} ${oat} °C: 4500 kg ${g4500} vs 5000 kg ${g5000}`);
+        }
+    }
+});
+
+test("gradientes: nunca sobem com o peso, a OAT ou a PA, e inlets ON nunca dão mais do que OFF", () => {
+    const W = [4500, 4550, 4600, 4650, 4700, 4800, 4900, 5000, 5500, 6000, 6400];
+    const ok = r => !(r.status === "FAILED" && r.gradient === 0);   // fora de PA/OAT do gráfico
+    for (const [name, G] of Object.entries(GRADIENTS)) {
+        for (let pa = 0; pa <= 8000; pa += 1000) {
+            for (let oat = -20; oat <= 50; oat += 5) {
+                let prev = Infinity;
+                for (const tow of W) {
+                    const r = grad(G, pa, oat, tow);
+                    if (!ok(r)) continue;
+                    assert.ok(r.gradient <= prev + 0.05, `${name} PA ${pa} ${oat} °C: ${tow} kg ${r.gradient} > ${prev}`);
+                    prev = r.gradient;
+                    const on = grad(G, pa, oat, tow, "on");
+                    if (ok(on)) assert.ok(on.gradient <= r.gradient + 0.05, `${name} PA ${pa} ${oat} °C ${tow} kg: ON ${on.gradient} > OFF ${r.gradient}`);
+                }
+            }
+        }
+        for (const tow of [4500, 4600, 4700, 5000, 6400]) {
+            for (let pa = 0; pa <= 8000; pa += 1000) {
+                let prev = Infinity;
+                for (let oat = -20; oat <= 50; oat++) {
+                    const r = grad(G, pa, oat, tow);
+                    if (!ok(r)) continue;
+                    assert.ok(r.gradient <= prev + 0.05, `${name} PA ${pa} ${tow} kg: ${oat} °C ${r.gradient} > ${prev}`);
+                    prev = r.gradient;
+                }
+            }
+            for (let oat = -20; oat <= 50; oat += 5) {
+                let prev = Infinity;
+                for (let pa = 0; pa <= 8000; pa += 100) {
+                    const r = grad(G, pa, oat, tow);
+                    if (!ok(r)) continue;
+                    assert.ok(r.gradient <= prev + 0.05, `${name} ${oat} °C ${tow} kg: PA ${pa} ${r.gradient} > ${prev}`);
+                    prev = r.gradient;
+                }
+            }
+        }
+    }
 });

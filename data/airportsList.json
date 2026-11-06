@@ -239,13 +239,7 @@
         "slope": 1.1,
         "threshold_displaced": 0,
         "_comment": "Obsc medida a partir do fim da TODA (DER)",
-        "obstacles": [
-            {
-                "name": "Antenna",
-                "obstacle_ft": 0,
-                "obstacle_dist": 1900
-            }
-        ]
+        "obstacles": []
     },
     {
         "icao": "LPCS",
@@ -285,11 +279,6 @@
                 "name": "Edifícios",
                 "obstacle_ft": 102,
                 "obstacle_dist": 390
-            },
-            {
-                "name": "Reservatório de água",
-                "obstacle_ft": 0,
-                "obstacle_dist": 1310
             },
             {
                 "name": "Talude",
