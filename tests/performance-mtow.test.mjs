@@ -116,7 +116,7 @@ test("amostra LPBG 19/01 × QNH × OAT × vento × flaps × inlets: MTOW → Pas
 });
 
 // ------------------------------------------------------------------
-// 3) Pista 19 com vento de frente forte (2.º segmento não monótono)
+// 3) Pista 19 com vento de frente forte (2.º segmento)
 // ------------------------------------------------------------------
 
 test("LPBG 19, vento 190/20, OAT -10..0: o MTOW mostrado dá sempre Passed", async () => {
@@ -131,19 +131,25 @@ test("LPBG 19, vento 190/20, OAT -10..0: o MTOW mostrado dá sempre Passed", asy
     }
 });
 
-test("LPBG 19, QNH 1003, OAT -10, 190/20: 6252 kg (antes MTOW e Failed) já não é MTOW", async () => {
-    const r = await page.calc({ airport: "LPBG", runway: "19", wind: "190/20", oat: "-10", qnh: "1003", flaps: "1", inlets: "off", tow: "6252" });
-    assert.ok(mtowOf(r) < 6252);
-    assert.equal(r.limit, "(2nd seg · code 2)");
-    assert.equal(r.badgeText, "Failed");
-    assert.equal(r.reason, "TOW above MTOW (limit: 2nd seg)");
+test("LPBG 19, vento de frente, frio: sem o salto 6400 → ~5065 kg do 2.º segmento", async () => {
+    // obstacle_dist é medida a partir do fim da TODA: o WDI (26 ft a 715 m) fica a (1700 - TOD) + 715 m
+    // do Reference Zero. Antes era medido do início da corrida e, quando o TOD passava os 715 m,
+    // o WDI ficava "logo a seguir" ao RZ e o MTOW caía de 6400 para ~5065 kg com 1 °C a menos.
+    for (const qnh of ["1003", "1013", "1023", "1043"]) {
+        for (const oat of ["-10", "-8", "-7", "-5", "0"]) {
+            for (const wind of ["190/15", "190/20"]) {
+                const r = await page.calc({ airport: "LPBG", runway: "19", wind, oat, qnh, flaps: "1", inlets: "off", tow: "6400" });
+                assert.equal(r.mtow, "6400 kg", `QNH ${qnh} OAT ${oat} ${wind}: ${r.mtow} ${r.limit}`);
+            }
+        }
+    }
 });
 
 test("procura do MTOW: o peso encontrado cumpre os segmentos e o peso acima não (mesma função da UI)", () => {
     const obstacles2Seg = [{ obstacle_ft: 26, obstacle_dist: 715 }];
-    for (const oat of [-10, 0, 15]) {
+    for (const oat of [-10, 0, 15, 30, 35]) {
         for (const wind of [0, 10, 20]) {
-            const params = { flaps: "1", pa: 2547, oat, inlet: "off", wind, slope: -1.2, obstacles2Seg, obstacles34Seg: [] };
+            const params = { flaps: "1", pa: 2547, oat, inlet: "off", wind, slope: -1.2, toda: 1700, obstacles2Seg, obstacles34Seg: [] };
             const cap = 6300;
             const { mtow, limitedBy } = findMaxTowAllSegments(params, cap);
             if (mtow == null) continue;
@@ -433,13 +439,13 @@ test("UI: OAT abaixo do gráfico WAT → MTOW 6400 (peso do avião, code 7), tam
 test("UI: o MTOW nunca desce quando a OAT desce (LPBG, flaps 1/up, inlets OFF/ON)", async () => {
     for (const flaps of ["1", "up"]) {
         for (const inlets of ["off", "on"]) {
-            for (const qnh of ["983", "1013", "1033"]) {
+            for (const [qnh, wind] of [["983", "000/00"], ["1013", "000/00"], ["1033", "000/00"], ["1013", "190/15"], ["1023", "190/15"], ["1043", "190/15"]]) {
                 let prev = -Infinity;
-                for (let oat = 40; oat >= -10; oat -= 5) {
-                    const r = await page.calc({ airport: "LPBG", runway: "19", wind: "000/00", oat: String(oat), qnh, flaps, inlets, tow: "5000" });
+                for (let oat = 40; oat >= -10; oat -= 1) {
+                    const r = await page.calc({ airport: "LPBG", runway: "19", wind, oat: String(oat), qnh, flaps, inlets, tow: "5000" });
                     const m = mtowOf(r);
                     if (m == null) continue;
-                    assert.ok(m >= prev, `flaps ${flaps} inlets ${inlets} QNH ${qnh}: ${oat} °C → ${m} < ${prev}`);
+                    assert.ok(m >= prev, `flaps ${flaps} inlets ${inlets} QNH ${qnh} ${wind}: ${oat} °C → ${m} < ${prev}`);
                     prev = m;
                 }
             }

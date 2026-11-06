@@ -19,7 +19,8 @@ const {
     QNH_MAX
 } = await import("../js/performance.js");
 const { default: ThirdSegmentDistanceFlaps1 } = await import("../js/cg3segFlaps1_CSATH.js");
-const { getMaxTow3Seg, getMaxTow4Seg } = await import("../js/cgMTOWSearch.js");
+const { getMaxTow3Seg, getMaxTow4Seg, evaluateSegments, obstacleDistanceFromReferenceZero } = await import("../js/cgMTOWSearch.js");
+const { default: Gradient_Required2Seg } = await import("../js/cgRequired2Seg_CSATH.js");
 
 const airports = JSON.parse(readFileSync(new URL("../data/airportsList.json", import.meta.url), "utf8"));
 const LPBG_01 = airports.find(a => a.icao === "LPBG" && a.rwy === "01");
@@ -172,17 +173,19 @@ test("UI: fora do gráfico sem obstáculo não conta como falha; com obstáculo 
 // 3) MTOW por segmento (cgMTOWSearch.js)
 // ------------------------------------------------------------------
 
-const base34 = { inlet: "off", wind: 0 };
+// obstacle_dist é medida a partir do fim da TODA: com obstáculos é preciso a TODA
+const base34 = { inlet: "off", wind: 0, toda: 1700 };
 
 test("getMaxTow3Seg: sem obstáculos não limita, mesmo fora do gráfico (OAT 35)", () => {
     assert.equal(getMaxTow3Seg({ ...base34, pa: 2277, oat: 35, slope: -1.2, obstacles: [] }), 6500);
 });
 
 test("getMaxTow3Seg: com obstáculo e fora do gráfico devolve null (nenhum peso verificável)", () => {
+    // TODA de 1000 m: o obstáculo fica a (1000 - TOD) + 2000 m do RZ, dentro do gráfico (0-2400 m)
     const obstacles = [{ obstacle_ft: 500, obstacle_dist: 2000 }];
-    assert.equal(getMaxTow3Seg({ ...base34, pa: 2277, oat: 35, slope: 0, obstacles }), null);
+    assert.equal(getMaxTow3Seg({ ...base34, toda: 1000, pa: 2277, oat: 35, slope: 0, obstacles }), null);
     // Dentro do gráfico há um MTOW numérico
-    const mtow = getMaxTow3Seg({ ...base34, pa: 2277, oat: 15, slope: 0, obstacles });
+    const mtow = getMaxTow3Seg({ ...base34, toda: 1000, pa: 2277, oat: 15, slope: 0, obstacles });
     assert.equal(typeof mtow, "number");
 });
 
@@ -190,4 +193,74 @@ test("getMaxTow4Seg: required a null não é ignorado (antes era tratado como 0)
     // slope -1.2 está fora da SlopeTable do required 3º/4º seg (0, 1, 2) → required null
     const obstacles = [{ obstacle_ft: 500, obstacle_dist: 2000 }];
     assert.equal(getMaxTow4Seg({ ...base34, pa: 2277, oat: 15, slope: -1.2, obstacles }), null);
+});
+
+// ------------------------------------------------------------------
+// 4) 2.º segmento: required gradient (cgRequired2Seg_CSATH.js) e obstáculos
+// ------------------------------------------------------------------
+
+const req2 = (h, d = 1500, wind = 0) => Gradient_Required2Seg({ obstacleDistance: d, wind, obstacle_height_ft: h });
+
+test("required 2.º seg: alturas fora da grelha de 10 ft interpolam entre linhas (antes davam 7 %)", () => {
+    assert.equal(req2(50).result_CG_required, 1);
+    assert.equal(req2(60).result_CG_required, 1.3);
+    assert.equal(req2(56).result_CG_required, 1.2);
+    const r131 = req2(131).result_CG_required;
+    assert.ok(r131 >= req2(130).result_CG_required && r131 <= req2(140).result_CG_required, String(r131));
+    assert.ok(req2(164, 2000).result_CG_required < 7);
+});
+
+test("required 2.º seg: abaixo de 50 ft é proporcional à linha de 50 ft; 0 ft não exige nada", () => {
+    // WDI de LPBG 19 (26 ft) a 1323 m do Reference Zero: linha de 50 ft = 1.2 % → 1.2 × 26/50
+    assert.equal(req2(50, 1323).result_CG_required, 1.2);
+    assert.equal(req2(26, 1323).result_CG_required, 0.6);
+    assert.equal(req2(0).result_CG_required, 0);
+});
+
+test("required 2.º seg: acima de 7 % fica assinalado (antes devolvia null e o obstáculo era ignorado)", () => {
+    for (const [h, d] of [[200, 400], [60, 100], [60, 3], [26, 50]]) {
+        const q = req2(h, d);
+        assert.equal(q.result_CG_required, null, `${h} ft a ${d} m`);
+        assert.equal(q.aboveChart, true, `${h} ft a ${d} m`);
+    }
+    // Para lá dos 5000 m do gráfico não é "acima de 7 %": não conta
+    assert.notEqual(req2(60, 5200).aboveChart, true);
+});
+
+test("required 2.º seg: nunca sobe quando o obstáculo se afasta (para lá da última linha usa a de menor CG)", () => {
+    for (const wind of [0, 15]) {
+        for (const h of [26, 50, 60, 170, 300]) {
+            let prev = Infinity;
+            for (let d = 0; d <= 3900; d += 10) {
+                const q = req2(h, d, wind);
+                const v = q.aboveChart ? 99 : q.result_CG_required;
+                if (v == null) continue;
+                assert.ok(v <= prev, `vento ${wind} ${h} ft: ${d} m = ${v} > ${prev}`);
+                prev = v;
+            }
+        }
+    }
+});
+
+test("segmentos: distância ao Reference Zero = (TODA - TOD) + obstacle_dist (medida do fim da TODA)", () => {
+    assert.equal(obstacleDistanceFromReferenceZero({ obstacle_dist: 715 }, 1092, 1700), 1323);
+    assert.equal(obstacleDistanceFromReferenceZero({ obstacle_dist: 0 }, 1700, 1700), 0);
+});
+
+const seg2Params = { flaps: "1", pa: 0, oat: 15, tow: 6000, inlet: "off", wind: 0, slope: 0, obstacles34Seg: [] };
+
+test("2.º segmento: obstáculo que exige mais de 7 % não passa (fora do gráfico)", () => {
+    // 200 ft a 50 m do fim de uma TODA de 1000 m: muito perto do Reference Zero
+    const e = evaluateSegments({ ...seg2Params, toda: 1000, obstacles2Seg: [{ obstacle_ft: 200, obstacle_dist: 50 }] });
+    assert.equal(e.SEG2.state, "ooc");
+    assert.match(e.SEG2.text, /Req > 7%/);
+    assert.equal(e.passed, false);
+});
+
+test("2.º segmento: com obstáculos e sem TODA não se ignora nada (fora do gráfico)", () => {
+    const e = evaluateSegments({ ...seg2Params, obstacles2Seg: [{ obstacle_ft: 100, obstacle_dist: 500 }] });
+    assert.equal(e.SEG2.state, "ooc");
+    assert.equal(e.SEG2.text, "TODA missing");
+    // Sem obstáculos a TODA não é precisa
+    assert.equal(evaluateSegments({ ...seg2Params, obstacles2Seg: [] }).SEG2.state, "ok");
 });
