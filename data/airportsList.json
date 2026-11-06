@@ -10,6 +10,7 @@
         "lda": 949,
         "slope": -0.5,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": []
     },
     {
@@ -23,6 +24,7 @@
         "lda": 949,
         "slope": 0.5,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             {
                 "name": "casa",
@@ -47,6 +49,7 @@
         "lda": 1455,
         "slope": 0.4,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
@@ -62,6 +65,7 @@
         "lda": 977,
         "slope": -0.4,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
@@ -77,6 +81,7 @@
         "lda": 2495,
         "slope": 0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
@@ -92,6 +97,7 @@
         "lda": 2849,
         "slope": 0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
@@ -107,6 +113,7 @@
         "lda": 2735,
         "slope": 0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
            
         ]
@@ -122,6 +129,7 @@
         "lda": 2736,
         "slope": 0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
            
         ]
@@ -137,6 +145,7 @@
         "lda": 1700,
         "slope": 1.2,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": []
     },
     {
@@ -150,6 +159,7 @@
         "lda": 1700,
         "slope": -1.2,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [            
         ]
     },
@@ -164,6 +174,7 @@
         "lda": 946,
         "slope": 1.0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": []
     },
     {
@@ -177,6 +188,7 @@
         "lda": 946,
         "slope": -1.0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": []
     },
     {
@@ -190,6 +202,7 @@
         "lda": 1100,
         "slope": 0.5,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
@@ -205,6 +218,7 @@
         "lda": 1100,
         "slope": -0.5,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [  
             {
                 "name": "Mastro",
@@ -224,6 +238,7 @@
         "lda": 1400,
         "slope": 1.1,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             {
                 "name": "Antenna",
@@ -243,6 +258,7 @@
         "lda": 1210,
         "slope": -1.1,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
@@ -258,6 +274,7 @@
         "lda": 860,
         "slope": 0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             {
                 "name": "Elevação natural",
@@ -297,6 +314,7 @@
         "lda": 770,
         "slope": 0,
         "threshold_displaced": 0,
+        "_comment": "Obsc medida a partir do fim da TODA (DER)",
         "obstacles": [
             
         ]
