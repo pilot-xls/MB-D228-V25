@@ -313,7 +313,7 @@ export function formatMtow(mtowResult) {
 
 /**
  * Fator limitante mostrado junto ao MTOW (ex.: "(WAT · code 10)").
- * watColdCap: OAT abaixo do gráfico WAT, o limite é o peso máximo do avião (code 7),
+ * watColdCap: OAT abaixo do gráfico WAT e o WAT fica no peso máximo do avião (code 7),
  * não o valor do gráfico (code 10).
  */
 export function formatMtowLimit(mtowResult, watColdCap = false) {
@@ -1121,12 +1121,14 @@ document.addEventListener("DOMContentLoaded", async () => {
          * para o TOW introduzido. É a mesma função usada na procura do MTOW.
          */
         // Obstáculos do 2º segmento
-        const obstacles2Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft < 400 && o.obstacle_dist < 5000);
+        // (o gráfico do 2.º segmento vai até 400 ft inclusive; acima disso é o 3.º/4.º segmento)
+        const obstacles2Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft <= 400 && o.obstacle_dist < 5000);
 
         // Obstáculos do 3º/4º segmento (acima de 400 ft e dentro de 2500 m)
         const obstacles34Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft > 400 && o.obstacle_dist < 2500);
 
-        const segmentParams = { flaps, pa, oat, inlet, wind, slope: runwayEntry.slope, obstacles2Seg, obstacles34Seg };
+        // obstacle_dist é medida a partir do fim da TODA: a distância ao Reference Zero é (TODA - TOD) + obstacle_dist
+        const segmentParams = { flaps, pa, oat, inlet, wind, slope: runwayEntry.slope, toda: runwayEntry.toda, obstacles2Seg, obstacles34Seg };
 
         const segments = evaluateSegments({ ...segmentParams, tow });
         debugLog("Segmentos no TOW", segments);
@@ -1151,7 +1153,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         debugLog("MTOW", mtowResult);
 
         document.getElementById("outMTOW").textContent = formatMtow(mtowResult);
-        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, wat.status === WAT_COLD_CAP);
+        // "cold cap · code 7" só quando o WAT do lado frio fica igual ao peso máximo do avião;
+        // abaixo disso (ex.: inlets ON) é um limite do gráfico WAT (code 10)
+        const watAtAircraftMax = wat.status === WAT_COLD_CAP && mtowWAT >= aircraftMTOW;
+        document.getElementById("outMTOWLimit").textContent = formatMtowLimit(mtowResult, watAtAircraftMax);
 
         // TOW a vermelho se estiver acima do MTOW (ou se não houver MTOW)
         const towWithinMtow = mtowResult.mtow != null && tow <= mtowResult.mtow;

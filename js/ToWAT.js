@@ -2,18 +2,32 @@
 //  TABELA WAT – FLAPS UP & FLAPS 1
 // =====================================
 
-const WAT_TABLE = {
+// Valores verificados contra o gráfico WAT do AFM (D5-POHX-05-0007-01), digitalizado: todos
+// os pontos lidos do gráfico estão a -35/+16 kg da reta medida.
+//
+// extrapolated: true → nessa PA a reta da OAT já saiu pela borda direita do gráfico (6600 kg).
+// O valor foi obtido prolongando a reta e é conservador: arredondado para baixo a 25 kg e,
+// a mais de 400 ft da borda, o menor de dois ajustes (troço final da reta / reta inteira).
+// Estes pontos servem para interpolar entre linhas de PA: sem eles, a linha de PA mais baixa
+// caía no cold cap e a interpolação com a linha de cima dava um WAT abaixo do real (ex.:
+// LPBG 19, 25 °C, QNH 1013 → 6386 em vez de 6400), ou "out of chart" quando o gráfico tem
+// valor (ex.: flaps up, 5000 ft, 15 °C).
+export const WAT_TABLE = {
   flaps_up: [
     { pressure_altitude: 0, oat: 55, wat: 5610 },
-    { pressure_altitude: 0, oat: 50, wat: 5800 },
+    { pressure_altitude: 0, oat: 50, wat: 5900 }, // corrigido: era 5800 (gráfico ~5905)
     { pressure_altitude: 0, oat: 45, wat: 6225 },
     { pressure_altitude: 0, oat: 40, wat: 6525 },
+    { pressure_altitude: 0, oat: 35, wat: 6700, extrapolated: true },
+    { pressure_altitude: 0, oat: 30, wat: 6975, extrapolated: true },
 
     { pressure_altitude: 1000, oat: 55, wat: 5400 },
     { pressure_altitude: 1000, oat: 50, wat: 5700 },
     { pressure_altitude: 1000, oat: 45, wat: 6000 },
     { pressure_altitude: 1000, oat: 40, wat: 6275 },
     { pressure_altitude: 1000, oat: 35, wat: 6525 },
+    { pressure_altitude: 1000, oat: 30, wat: 6750, extrapolated: true },
+    { pressure_altitude: 1000, oat: 25, wat: 6900, extrapolated: true },
 
     { pressure_altitude: 2000, oat: 55, wat: 5200 },
     { pressure_altitude: 2000, oat: 50, wat: 5475 },
@@ -21,13 +35,18 @@ const WAT_TABLE = {
     { pressure_altitude: 2000, oat: 40, wat: 6050 },
     { pressure_altitude: 2000, oat: 35, wat: 6300 },
     { pressure_altitude: 2000, oat: 30, wat: 6550 },
+    { pressure_altitude: 2000, oat: 25, wat: 6675, extrapolated: true },
+    { pressure_altitude: 2000, oat: 20, wat: 6925, extrapolated: true },
 
     { pressure_altitude: 3000, oat: 55, wat: 5000 },
     { pressure_altitude: 3000, oat: 50, wat: 5275 },
     { pressure_altitude: 3000, oat: 45, wat: 5550 },
     { pressure_altitude: 3000, oat: 40, wat: 5850 },
     { pressure_altitude: 3000, oat: 35, wat: 6050 },
-    { pressure_altitude: 3000, oat: 30, wat: 6575 },
+    { pressure_altitude: 3000, oat: 30, wat: 6325 }, // corrigido: era 6575 (gráfico ~6335; 2000 ft = 6550, 4000 ft = 6100)
+    { pressure_altitude: 3000, oat: 25, wat: 6575 }, // faltava (gráfico ~6580)
+    { pressure_altitude: 3000, oat: 20, wat: 6700, extrapolated: true },
+    { pressure_altitude: 3000, oat: 10, wat: 7075, extrapolated: true },
 
     { pressure_altitude: 4000, oat: 55, wat: 4800 },
     { pressure_altitude: 4000, oat: 50, wat: 5075 },
@@ -37,6 +56,7 @@ const WAT_TABLE = {
     { pressure_altitude: 4000, oat: 30, wat: 6100 },
     { pressure_altitude: 4000, oat: 25, wat: 6300 },
     { pressure_altitude: 4000, oat: 20, wat: 6525 },
+    { pressure_altitude: 4000, oat: 10, wat: 6850, extrapolated: true },
 
     { pressure_altitude: 5000, oat: 55, wat: 4600 },
     { pressure_altitude: 5000, oat: 50, wat: 4875 },
@@ -46,6 +66,8 @@ const WAT_TABLE = {
     { pressure_altitude: 5000, oat: 30, wat: 5875 },
     { pressure_altitude: 5000, oat: 25, wat: 6050 },
     { pressure_altitude: 5000, oat: 20, wat: 6250 },
+    { pressure_altitude: 5000, oat: 10, wat: 6675, extrapolated: true },
+    { pressure_altitude: 5000, oat: 0, wat: 6950, extrapolated: true },
 
     { pressure_altitude: 6000, oat: 55, wat: 4400 },
     { pressure_altitude: 6000, oat: 50, wat: 4675 },
@@ -56,6 +78,8 @@ const WAT_TABLE = {
     { pressure_altitude: 6000, oat: 25, wat: 5850 },
     { pressure_altitude: 6000, oat: 20, wat: 6050 },
     { pressure_altitude: 6000, oat: 10, wat: 6425 },
+    { pressure_altitude: 6000, oat: 0, wat: 6725, extrapolated: true },
+    { pressure_altitude: 6000, oat: -10, wat: 7000, extrapolated: true },
 
     { pressure_altitude: 7000, oat: 55, wat: 4200 },
     { pressure_altitude: 7000, oat: 50, wat: 4450 },
@@ -67,6 +91,7 @@ const WAT_TABLE = {
     { pressure_altitude: 7000, oat: 20, wat: 5800 },
     { pressure_altitude: 7000, oat: 10, wat: 6175 },
     { pressure_altitude: 7000, oat: 0, wat: 6500 },
+    { pressure_altitude: 7000, oat: -10, wat: 6750, extrapolated: true },
 
     { pressure_altitude: 8000, oat: 55, wat: 4000 },
     { pressure_altitude: 8000, oat: 50, wat: 4250 },
@@ -87,12 +112,16 @@ const WAT_TABLE = {
     { pressure_altitude: 0, oat: 45, wat: 6025 },
     { pressure_altitude: 0, oat: 40, wat: 6300 },
     { pressure_altitude: 0, oat: 35, wat: 6600 },
+    { pressure_altitude: 0, oat: 30, wat: 6830, extrapolated: true },
+    { pressure_altitude: 0, oat: 25, wat: 7050, extrapolated: true },
 
     { pressure_altitude: 1000, oat: 55, wat: 5250 },
     { pressure_altitude: 1000, oat: 50, wat: 5550 },
     { pressure_altitude: 1000, oat: 45, wat: 5800 },
     { pressure_altitude: 1000, oat: 40, wat: 6050 },
     { pressure_altitude: 1000, oat: 35, wat: 6350 },
+    { pressure_altitude: 1000, oat: 30, wat: 6625, extrapolated: true },
+    { pressure_altitude: 1000, oat: 25, wat: 6800, extrapolated: true },
 
     { pressure_altitude: 2000, oat: 55, wat: 5075 },
     { pressure_altitude: 2000, oat: 50, wat: 5350 },
@@ -100,6 +129,8 @@ const WAT_TABLE = {
     { pressure_altitude: 2000, oat: 40, wat: 5850 },
     { pressure_altitude: 2000, oat: 35, wat: 6125 },
     { pressure_altitude: 2000, oat: 30, wat: 6375 },
+    { pressure_altitude: 2000, oat: 25, wat: 6620, extrapolated: true },
+    { pressure_altitude: 2000, oat: 20, wat: 6850, extrapolated: true },
 
     { pressure_altitude: 3000, oat: 55, wat: 4900 },
     { pressure_altitude: 3000, oat: 50, wat: 5150 },
@@ -108,6 +139,8 @@ const WAT_TABLE = {
     { pressure_altitude: 3000, oat: 35, wat: 5900 },
     { pressure_altitude: 3000, oat: 30, wat: 6150 },
     { pressure_altitude: 3000, oat: 25, wat: 6350 },
+    { pressure_altitude: 3000, oat: 20, wat: 6625, extrapolated: true },
+    { pressure_altitude: 3000, oat: 10, wat: 6975, extrapolated: true },
 
     { pressure_altitude: 4000, oat: 55, wat: 4700 },
     { pressure_altitude: 4000, oat: 50, wat: 4950 },
@@ -117,6 +150,8 @@ const WAT_TABLE = {
     { pressure_altitude: 4000, oat: 30, wat: 5925 },
     { pressure_altitude: 4000, oat: 25, wat: 6125 },
     { pressure_altitude: 4000, oat: 20, wat: 6375 },
+    { pressure_altitude: 4000, oat: 10, wat: 6725, extrapolated: true },
+    { pressure_altitude: 4000, oat: 0, wat: 7100, extrapolated: true },
 
     { pressure_altitude: 5000, oat: 55, wat: 4550 },
     { pressure_altitude: 5000, oat: 50, wat: 4775 },
@@ -127,6 +162,7 @@ const WAT_TABLE = {
     { pressure_altitude: 5000, oat: 25, wat: 5900 },
     { pressure_altitude: 5000, oat: 20, wat: 6125 },
     { pressure_altitude: 5000, oat: 10, wat: 6500 },
+    { pressure_altitude: 5000, oat: 0, wat: 6850, extrapolated: true },
 
     { pressure_altitude: 6000, oat: 55, wat: 4350 },
     { pressure_altitude: 6000, oat: 50, wat: 4600 },
@@ -138,18 +174,20 @@ const WAT_TABLE = {
     { pressure_altitude: 6000, oat: 20, wat: 5850 },
     { pressure_altitude: 6000, oat: 10, wat: 6225 },
     { pressure_altitude: 6000, oat: 0, wat: 6575 },
+    { pressure_altitude: 6000, oat: -10, wat: 6875, extrapolated: true },
 
     { pressure_altitude: 7000, oat: 30, wat: 5250 },
     { pressure_altitude: 7000, oat: 25, wat: 5450 },
     { pressure_altitude: 7000, oat: 20, wat: 5650 },
     { pressure_altitude: 7000, oat: 10, wat: 5975 },
     { pressure_altitude: 7000, oat: 0, wat: 6350 },
+    { pressure_altitude: 7000, oat: -10, wat: 6650, extrapolated: true },
 
     { pressure_altitude: 8000, oat: 25, wat: 5250 },
     { pressure_altitude: 8000, oat: 20, wat: 5400 },
     { pressure_altitude: 8000, oat: 10, wat: 5750 },
     { pressure_altitude: 8000, oat: 0, wat: 6050 },
-    { pressure_altitude: 8000, oat: -10, wat: 6350 }
+    { pressure_altitude: 8000, oat: -10, wat: 6375 } // corrigido: era 6350 (gráfico ~6390)
   ]
 };
 
@@ -159,12 +197,14 @@ const WAT_TABLE = {
 //
 // O WAT desce com a OAT e com a PA. Por isso:
 //  - OAT ABAIXO da menor OAT de uma linha de PA: a curva já saiu pelo topo do gráfico.
-//    Se o ponto mais frio dessa linha já está perto do peso máximo do avião (dentro de
-//    50 kg), o AFM considera que para temperaturas mais frias o limite passa a ser o
-//    peso máximo do avião (não o valor da borda, que fica 25-40 kg abaixo do correto):
-//    devolve-se o peso máximo (status "cold_cap"). Se o ponto mais frio ainda está longe
-//    desse peso máximo, a curva continua a subir fora do gráfico e não há valor seguro
-//    a devolver: status "out_of_chart".
+//    Para OAT mais frias o WAT real é PELO MENOS o do ponto mais frio da linha (o WAT
+//    sobe quando a OAT desce). Se esse ponto já está perto do peso máximo do avião (dentro
+//    de 50 kg) ou acima, devolve-se o maior dos dois (status "cold_cap"): um mínimo
+//    garantido do WAT, nunca abaixo do peso máximo do avião. Não se devolve só o peso
+//    máximo: com inlets ON (-250 kg) isso daria 6150 em vez de 6400, e misturado com
+//    pontos reais na interpolação o MTOW descia quando a OAT descia. Se o ponto mais
+//    frio ainda está longe desse peso máximo, a curva continua a subir fora do gráfico
+//    e não há valor seguro a devolver: status "out_of_chart".
 //  - OAT ACIMA da maior OAT de uma linha de PA, ou PA acima da maior PA da tabela:
 //    fora do gráfico do AFM. Usar a borda seria NÃO conservador, por isso não se
 //    devolve número (status "out_of_chart").
@@ -201,10 +241,11 @@ function interpolate1D(rows, oat, aircraftMTOW) {
   if (tOAT < minOAT) {
     const coldest = sorted[0];
 
-    // O ponto mais frio da linha já está encostado ao peso máximo do avião:
-    // para temperaturas mais frias o limite é esse peso máximo (code 7), não a borda.
+    // O ponto mais frio da linha já está encostado ao peso máximo do avião (ou acima):
+    // para temperaturas mais frias o WAT é pelo menos esse ponto, nunca menos do que o
+    // peso máximo do avião (code 7), não a borda.
     if (coldest.wat >= aircraftMTOW - COLD_CAP_MARGIN) {
-      return { wat: aircraftMTOW, coldCap: true };
+      return { wat: Math.max(aircraftMTOW, coldest.wat), coldCap: true };
     }
 
     // O ponto mais frio ainda está longe do peso máximo: a curva continua a subir
@@ -280,7 +321,8 @@ function interpolate2D(table, pa, oat, aircraftMTOW) {
  * Devolve:
  *  - { status: "ok", wat, reason: null }        → valor normal do gráfico
  *  - { status: "cold_cap", wat, reason: null }  → OAT abaixo do gráfico, mas o ponto mais
- *    frio da linha já está encostado ao peso máximo do avião: devolve-se esse peso máximo.
+ *    frio da linha já está encostado ao peso máximo do avião (ou acima): wat é o mínimo
+ *    garantido do WAT (o ponto mais frio da linha), nunca abaixo do peso máximo do avião.
  *  - { status: "out_of_chart", wat: null, reason } → fora do gráfico do AFM, sem valor
  */
 export function getWAT(flaps, pressureAltitude, oat, aircraftMTOW = DEFAULT_AIRCRAFT_MAX_WEIGHT) {

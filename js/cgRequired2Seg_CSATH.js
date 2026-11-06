@@ -698,11 +698,12 @@ function computeCGFromHeight(x, obstacle_height_ft, debug) {
 );
 
 if (rowsSameHeight.length === 0) {
-  debugStep3.status = "clamped";
-  debugStep3.reason = "Obstacle height fora do gráfico — assumido CG > 7%";
-  debugStep3.CG = 7;
+  // Gradient_Required só chama com alturas da grelha (50..400 ft de 10 em 10)
+  debugStep3.status = "failed";
+  debugStep3.reason = "Obstacle height fora do gráfico (50-400 ft)";
+  debugStep3.aboveChart = true;
   debug.step3 = debugStep3;
-  return 7;
+  return null;
 }
 
 	      // Range global do gráfico (para esta altura)
@@ -713,6 +714,7 @@ if (rowsSameHeight.length === 0) {
   if (x < minX) {
     debugStep3.status = "failed";
     debugStep3.reason = `Climb Gradient required higher than 7%`;
+    debugStep3.aboveChart = true;
     debugStep3.range = { minX, maxX };
     debug.step3 = debugStep3;
     return null;
@@ -720,9 +722,12 @@ if (rowsSameHeight.length === 0) {
 
   // Se estiver à direita: NÃO falha. "Clampa" para o último CG disponível.
   if (x > maxX) {
-    // Última linha válida = a que tem o maior x_ref_right
+    // Última linha do gráfico = a de menor gradiente entre as que acabam mais à direita
+    // (a última section e a anterior acabam no mesmo x: no empate fica a de menor CG,
+    // senão o required subia quando o obstáculo se afastava)
     const lastRow = rowsSameHeight.reduce((best, r) =>
-      r.x_ref_right > best.x_ref_right ? r : best
+      r.x_ref_right > best.x_ref_right ||
+      (r.x_ref_right === best.x_ref_right && r.result_CG_required < best.result_CG_required) ? r : best
     );
 
     debugStep3.status = "passed";
@@ -799,14 +804,24 @@ if (rowsSameHeight.length === 0) {
 
 /**
  * inputs:
- *  - obstacleDistance: distância ao obstáculo
+ *  - obstacleDistance: distância ao obstáculo a partir do Reference Zero (m)
  *  - wind: vento (- tail, + head)
  *  - obstacle_height_ft: altura do obstáculo em ft
+ *
+ * Altura: o gráfico tem linhas de 50 a 400 ft, de 10 em 10 ft.
+ *  - entre duas linhas → interpola entre elas (ex.: 26 ft não existe, 131 ft fica entre 130 e 140)
+ *  - abaixo de 50 ft → required da linha de 50 ft × altura/50: o gráfico é proporcional à
+ *    altura (≈ altura / (distância − ~120 m)); se a linha de 50 ft já passar de 7 %, fica
+ *    acima do gráfico (não verificável)
+ *  - 0 ft ou menos → não há altura a livrar: required 0
+ *  - acima de 400 ft → fora deste gráfico (3.º/4.º segmento)
  *
  * output:
  *  {
  *    status: "passed" | "failed",
  *    result_CG_required: number | null,
+ *    aboveChart: true quando o required passa de 7 % (obstáculo demasiado perto/alto
+ *                para o gráfico): NÃO pode ser ignorado, o 2.º segmento não é verificável
  *    debug: { step1, step2, step3 }
  *  }
  */
@@ -816,6 +831,24 @@ export default function Gradient_Required({
   obstacle_height_ft
 }) {
   const debug = {};
+
+  // Sem altura acima da pista não há obstáculo a livrar
+  if (!(obstacle_height_ft > 0)) {
+    debug.height = { status: "passed", reason: "obstacle height <= 0 ft: nothing to clear" };
+    return { status: "passed", result_CG_required: 0, debug };
+  }
+
+  // Acima de 400 ft o obstáculo é do 3.º/4.º segmento, não deste gráfico
+  if (obstacle_height_ft > 400) {
+    debug.height = { status: "failed", reason: `obstacle height ${obstacle_height_ft} ft above chart (max 400 ft)` };
+    return { status: "failed", result_CG_required: null, aboveChart: true, debug };
+  }
+
+  // Linhas do gráfico entre as quais fica a altura (abaixo de 50 ft lê-se a de 50 ft e escala-se)
+  const h = Math.max(50, obstacle_height_ft);
+  const hLow = Math.floor(h / 10) * 10;
+  const hHigh = Math.ceil(h / 10) * 10;
+  debug.height = { input: obstacle_height_ft, used: h, lines: hLow === hHigh ? [hLow] : [hLow, hHigh] };
 
   // STEP 1
   const x1 = computeXFromDistance(obstacleDistance, debug);
@@ -830,32 +863,37 @@ export default function Gradient_Required({
   // STEP 2
   const step2Res = computeXWithWind(x1, wind, debug);
   if (!step2Res) {
+    // À esquerda da 1.ª section (obstáculo a poucos metros do Reference Zero): acima de 7 %
+    const minX0 = Math.min(...Wind.filter(w => w.wind === 0).map(w => w.x_ref_left));
     return {
       status: "failed",
       result_CG_required: null,
+      aboveChart: x1 < minX0,
       debug
     };
   }
 
   const { x: x2, section } = step2Res;
 
-  // STEP 3
-	const cg = computeCGFromHeight(x2, obstacle_height_ft, debug);
-	if (cg == null) {
-	  return {
-		status: "failed",
-		result_CG_required: null,
-		debug
-	  };
-	}
-	// verificar se foi um clamp para CG=7
-	if (debug.step3?.status === "clamped" && debug.step3?.CG === 7) {
-	  return {
-		status: "failed",
-		result_CG_required: 7,
-		debug
-	  };
-	}
+  // STEP 3 (uma ou duas linhas de altura; interpola entre elas)
+  const cgLow = computeCGFromHeight(x2, hLow, debug);
+  const step3Low = debug.step3;
+  const cgHigh = hHigh === hLow ? cgLow : computeCGFromHeight(x2, hHigh, debug);
+  if (hHigh !== hLow) debug.step3 = { low: step3Low, high: debug.step3 };
+
+  if (cgLow == null || cgHigh == null) {
+    return {
+      status: "failed",
+      result_CG_required: null,
+      aboveChart: !!(step3Low?.aboveChart || debug.step3?.aboveChart || debug.step3?.high?.aboveChart),
+      debug
+    };
+  }
+
+  const cgLine = cgLow + (cgHigh - cgLow) * (h - hLow) / 10;
+  // Abaixo de 50 ft: proporcional à altura (0 ft → 0 %)
+  const cgRaw = obstacle_height_ft < 50 ? cgLine * obstacle_height_ft / 50 : cgLine;
+  const cg = Math.round(cgRaw * 10) / 10;
 
   return {
     status: "passed",
