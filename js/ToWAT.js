@@ -81,12 +81,18 @@ const WAT_TABLE = {
     { pressure_altitude: 8000, oat: -10, wat: 6550 }
   ],
 
+  // Pontos com extrapolated: true ficam acima de 6600 kg, onde o gráfico do AFM acaba:
+  // a curva de OAT sai pela borda direita e o valor foi lido prolongando a reta da curva.
+  // Só servem para interpolar entre linhas de PA: sem eles, a linha de PA mais baixa
+  // caía no cold cap (peso máximo do avião, 6400) e a interpolação com a linha de cima
+  // dava um WAT abaixo do real (ex.: LPBG 19, 25 °C, QNH 1013 → 6386 em vez de 6400).
   flaps_1: [
     { pressure_altitude: 0, oat: 55, wat: 5425 },
     { pressure_altitude: 0, oat: 50, wat: 5750 },
     { pressure_altitude: 0, oat: 45, wat: 6025 },
     { pressure_altitude: 0, oat: 40, wat: 6300 },
     { pressure_altitude: 0, oat: 35, wat: 6600 },
+    { pressure_altitude: 0, oat: 30, wat: 6830, extrapolated: true },
 
     { pressure_altitude: 1000, oat: 55, wat: 5250 },
     { pressure_altitude: 1000, oat: 50, wat: 5550 },
@@ -100,6 +106,7 @@ const WAT_TABLE = {
     { pressure_altitude: 2000, oat: 40, wat: 5850 },
     { pressure_altitude: 2000, oat: 35, wat: 6125 },
     { pressure_altitude: 2000, oat: 30, wat: 6375 },
+    { pressure_altitude: 2000, oat: 25, wat: 6620, extrapolated: true },
 
     { pressure_altitude: 3000, oat: 55, wat: 4900 },
     { pressure_altitude: 3000, oat: 50, wat: 5150 },

@@ -285,7 +285,16 @@ test("getWAT dentro do gráfico mantém os valores", () => {
 
 // Ponto mais frio da linha, exatamente na tabela: devolve o valor real do gráfico
 test("getWAT: OAT igual ao ponto mais frio da tabela devolve o valor real (não o cap)", () => {
-    assert.deepEqual(getWAT("1", 2000, 30), { status: "ok", wat: 6375, reason: null });
+    assert.deepEqual(getWAT("1", 3000, 25), { status: "ok", wat: 6350, reason: null });
+});
+
+// Flaps 1: curvas que saem pela borda direita do gráfico (6600 kg). Os pontos extrapolados
+// evitam que a linha de PA mais baixa caia no cold cap (6400) e puxe a interpolação para baixo.
+test("getWAT flaps 1: pontos extrapolados acima de 6600 kg (fim do gráfico)", () => {
+    assert.deepEqual(getWAT("1", 2000, 25), { status: "ok", wat: 6620, reason: null });
+    assert.deepEqual(getWAT("1", 0, 30), { status: "ok", wat: 6830, reason: null });
+    // LPBG 19 (2277 ft), 25 °C: 6620 (2000 ft) com 6350 (3000 ft), já não 6400 (cap) com 6350 → 6386
+    assert.deepEqual(getWAT("1", 2277, 25), { status: "ok", wat: 6545, reason: null });
 });
 
 // Lado frio: ponto mais frio da linha já encostado ao peso máximo do avião (6400 kg) →
@@ -351,6 +360,19 @@ test("UI: OAT abaixo do gráfico WAT indica 'cold cap' (peso máximo, code 7) qu
 // ------------------------------------------------------------------
 // 7) Regressões
 // ------------------------------------------------------------------
+
+test("UI: LPBG 19, 25 °C, QNH 1013, flaps 1 → MTOW 6400 (peso máximo do avião, code 7), não 6386", async () => {
+    const cond = { airport: "LPBG", runway: "19", wind: "000/00", oat: "25", qnh: "1013", flaps: "1" };
+    const off = await page.calc({ ...cond, inlets: "off", tow: "6400" });
+    assert.equal(off.mtow, "6400 kg");
+    assert.equal(off.limit, "(aircraft max weight · code 7)");
+    assert.equal(off.badgeText, "Passed");
+
+    // Inlets ON: WAT do gráfico (6545) - 250
+    const on = await page.calc({ ...cond, inlets: "on", tow: "6000" });
+    assert.equal(on.mtow, "6295 kg");
+    assert.equal(on.limit, "(WAT · code 10)");
+});
 
 test('QNH "1003.25" / "1003,25" na UI: PA = elevação + 263 (não 0)', async () => {
     const dot = await page.calc({ ...EXAMPLE, qnh: "1003.25", tow: "5000" });
