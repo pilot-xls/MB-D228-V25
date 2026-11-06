@@ -124,7 +124,22 @@ test("varrimento (PA 0..4000 passo 250, OAT -10..50, 5 ventos, 5 slopes, 1700 m)
 });
 
 // ------------------------------------------------------------------
-// 4) Motivo mostrado na página
+// 4) Dados: nenhum erro e a mesma tabela de pesos que o módulo forward
+// ------------------------------------------------------------------
+
+test("dados: nenhum módulo MTOW tem linhas que o motor rejeita; tabelas de pesos iguais às do forward", async () => {
+    const { checkAll } = await import("./tools/mtow-data-check.mjs");
+    for (const r of checkAll()) {
+        const errors = r.issues.filter(i => i.sev === "ERRO");
+        assert.equal(errors.length, 0, `${r.module}: ` + errors.map(e => `${e.where} ${e.msg}`).join("; "));
+        // weightSectionData verificada no gráfico do AFM (TORA flaps 1) e igual à do forward nos 6 módulos
+        const weightDiffs = r.diffIssues.filter(i => i.table === "weightSectionData");
+        assert.equal(weightDiffs.length, 0, `${r.module}: ` + weightDiffs.map(e => `${e.where} ${e.msg}`).join("; "));
+    }
+});
+
+// ------------------------------------------------------------------
+// 5) Motivo mostrado na página
 // ------------------------------------------------------------------
 
 test("describeMtowChartProblem: fora do gráfico usa o motivo do módulo; outro erro diz o passo e o erro", async () => {

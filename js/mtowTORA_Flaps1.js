@@ -14,7 +14,7 @@ export default MTOW; // Export default
 export { MTOW };     // Export nomeado
 
 // ============================
-// DATASETS errado
+// DATASETS (weightSectionData = a de torrFlaps1_CSATH.js, verificada no gráfico do AFM)
 // ============================
 
 const pressureAltTemperatureData = [
@@ -83,7 +83,16 @@ const reflineWeightData = [
 
 
 const weightSectionData = [
-  { "Weight": 4600, "Section": 1, "Y_Ref_Down": 584, "Y_Ref_Up": 500 },
+
+  
+  { "Weight": 4500, "Section": 1, "Y_Ref_Down": 585, "Y_Ref_Up": 562 },
+  { "Weight": 4500, "Section": 2, "Y_Ref_Down": 562, "Y_Ref_Up": 533 },
+  { "Weight": 4500, "Section": 3, "Y_Ref_Down": 533, "Y_Ref_Up": 511 },
+  { "Weight": 4500, "Section": 4, "Y_Ref_Down": 511, "Y_Ref_Up": 495 },
+  { "Weight": 4500, "Section": 5, "Y_Ref_Down": 495, "Y_Ref_Up": 475 },
+  { "Weight": 4500, "Section": 6, "Y_Ref_Down": 475, "Y_Ref_Up": 456 },  
+  
+  { "Weight": 4600, "Section": 1, "Y_Ref_Down": 584, "Y_Ref_Up": 560 },
   { "Weight": 4600, "Section": 2, "Y_Ref_Down": 560, "Y_Ref_Up": 533 },
   { "Weight": 4600, "Section": 3, "Y_Ref_Down": 533, "Y_Ref_Up": 507 },
   { "Weight": 4600, "Section": 4, "Y_Ref_Down": 507, "Y_Ref_Up": 490 },
@@ -92,8 +101,8 @@ const weightSectionData = [
 
   { "Weight": 4700, "Section": 1, "Y_Ref_Down": 580, "Y_Ref_Up": 556 },
   { "Weight": 4700, "Section": 2, "Y_Ref_Down": 556, "Y_Ref_Up": 529 },
-  { "Weight": 4700, "Section": 3, "Y_Ref_Down": 529, "Y_Ref_Up": 507 },
-  { "Weight": 4700, "Section": 4, "Y_Ref_Down": 507, "Y_Ref_Up": 484 },
+  { "Weight": 4700, "Section": 3, "Y_Ref_Down": 529, "Y_Ref_Up": 502 },
+  { "Weight": 4700, "Section": 4, "Y_Ref_Down": 502, "Y_Ref_Up": 484 },
   { "Weight": 4700, "Section": 5, "Y_Ref_Down": 484, "Y_Ref_Up": 464 },
   { "Weight": 4700, "Section": 6, "Y_Ref_Down": 464, "Y_Ref_Up": 443 },
 
@@ -102,30 +111,30 @@ const weightSectionData = [
   { "Weight": 4800, "Section": 3, "Y_Ref_Down": 525, "Y_Ref_Up": 498 },
   { "Weight": 4800, "Section": 4, "Y_Ref_Down": 498, "Y_Ref_Up": 478 },
   { "Weight": 4800, "Section": 5, "Y_Ref_Down": 478, "Y_Ref_Up": 460 },
-  { "Weight": 4800, "Section": 6, "Y_Ref_Down": 460, "Y_Ref_Up": 441 },
+  { "Weight": 4800, "Section": 6, "Y_Ref_Down": 460, "Y_Ref_Up": 439 },
 
-  { "Weight": 4900, "Section": 1, "Y_Ref_Down": 549, "Y_Ref_Up": 523 },
-  { "Weight": 4900, "Section": 2, "Y_Ref_Down": 523, "Y_Ref_Up": 494 },
-  { "Weight": 4900, "Section": 3, "Y_Ref_Down": 494, "Y_Ref_Up": 474 },
-  { "Weight": 4900, "Section": 4, "Y_Ref_Down": 474, "Y_Ref_Up": 455 },
-  { "Weight": 4900, "Section": 5, "Y_Ref_Down": 455, "Y_Ref_Up": 435 },
-  { "Weight": 4900, "Section": 6, "Y_Ref_Down": 435, "Y_Ref_Up": 415 },
+  { "Weight": 4900, "Section": 1, "Y_Ref_Down": 575, "Y_Ref_Up": 549 },
+  { "Weight": 4900, "Section": 2, "Y_Ref_Down": 549, "Y_Ref_Up": 523 },
+  { "Weight": 4900, "Section": 3, "Y_Ref_Down": 523, "Y_Ref_Up": 494 },
+  { "Weight": 4900, "Section": 4, "Y_Ref_Down": 494, "Y_Ref_Up": 474 },
+  { "Weight": 4900, "Section": 5, "Y_Ref_Down": 474, "Y_Ref_Up": 455 },
+  { "Weight": 4900, "Section": 6, "Y_Ref_Down": 455, "Y_Ref_Up": 431 },
 
   { "Weight": 5000, "Section": 1, "Y_Ref_Down": 574, "Y_Ref_Up": 547 },
   { "Weight": 5000, "Section": 2, "Y_Ref_Down": 547, "Y_Ref_Up": 517 },
   { "Weight": 5000, "Section": 3, "Y_Ref_Down": 517, "Y_Ref_Up": 486 },
-  { "Weight": 5000, "Section": 4, "Y_Ref_Down": 486, "Y_Ref_Up": 467 },
-  { "Weight": 5000, "Section": 5, "Y_Ref_Down": 467, "Y_Ref_Up": 447 },
+  { "Weight": 5000, "Section": 4, "Y_Ref_Down": 486, "Y_Ref_Up": 468 },
+  { "Weight": 5000, "Section": 5, "Y_Ref_Down": 468, "Y_Ref_Up": 447 },
   { "Weight": 5000, "Section": 6, "Y_Ref_Down": 447, "Y_Ref_Up": 423 },
 
-  { "Weight": 5100, "Section": 1, "Y_Ref_Down": 543, "Y_Ref_Up": 515 },
-  { "Weight": 5100, "Section": 2, "Y_Ref_Down": 515, "Y_Ref_Up": 486 },
-  { "Weight": 5100, "Section": 3, "Y_Ref_Down": 486, "Y_Ref_Up": 464 },
-  { "Weight": 5100, "Section": 4, "Y_Ref_Down": 464, "Y_Ref_Up": 441 },
-  { "Weight": 5100, "Section": 5, "Y_Ref_Down": 441, "Y_Ref_Up": 421 },
-  { "Weight": 5100, "Section": 6, "Y_Ref_Down": 421, "Y_Ref_Up": 400 },
+  { "Weight": 5100, "Section": 1, "Y_Ref_Down": 572, "Y_Ref_Up": 543 },
+  { "Weight": 5100, "Section": 2, "Y_Ref_Down": 543, "Y_Ref_Up": 515 },
+  { "Weight": 5100, "Section": 3, "Y_Ref_Down": 515, "Y_Ref_Up": 486 },
+  { "Weight": 5100, "Section": 4, "Y_Ref_Down": 486, "Y_Ref_Up": 464 },
+  { "Weight": 5100, "Section": 5, "Y_Ref_Down": 464, "Y_Ref_Up": 441 },
+  { "Weight": 5100, "Section": 6, "Y_Ref_Down": 441, "Y_Ref_Up": 421 },
 
-  { "Weight": 5200, "Section": 1, "Y_Ref_Down": 567, "Y_Ref_Up": 540 },
+  { "Weight": 5200, "Section": 1, "Y_Ref_Down": 569, "Y_Ref_Up": 540 },
   { "Weight": 5200, "Section": 2, "Y_Ref_Down": 540, "Y_Ref_Up": 510 },
   { "Weight": 5200, "Section": 3, "Y_Ref_Down": 510, "Y_Ref_Up": 481 },
   { "Weight": 5200, "Section": 4, "Y_Ref_Down": 481, "Y_Ref_Up": 459 },
@@ -144,14 +153,14 @@ const weightSectionData = [
   { "Weight": 5400, "Section": 3, "Y_Ref_Down": 498, "Y_Ref_Up": 466 },
   { "Weight": 5400, "Section": 4, "Y_Ref_Down": 466, "Y_Ref_Up": 441 },
   { "Weight": 5400, "Section": 5, "Y_Ref_Down": 441, "Y_Ref_Up": 411 },
-  { "Weight": 5400, "Section": 6, "Y_Ref_Down": 411, "Y_Ref_Up": 385 },
+  { "Weight": 5400, "Section": 6, "Y_Ref_Down": 411, "Y_Ref_Up": 386 },
 
-  { "Weight": 5500, "Section": 1, "Y_Ref_Down": 566, "Y_Ref_Up": 528 },
-  { "Weight": 5500, "Section": 2, "Y_Ref_Down": 521, "Y_Ref_Up": 481 },
-  { "Weight": 5500, "Section": 3, "Y_Ref_Down": 481, "Y_Ref_Up": 453 },
+  { "Weight": 5500, "Section": 1, "Y_Ref_Down": 556, "Y_Ref_Up": 521 },
+  { "Weight": 5500, "Section": 2, "Y_Ref_Down": 521, "Y_Ref_Up": 488 },
+  { "Weight": 5500, "Section": 3, "Y_Ref_Down": 488, "Y_Ref_Up": 453 },
   { "Weight": 5500, "Section": 4, "Y_Ref_Down": 453, "Y_Ref_Up": 423 },
   { "Weight": 5500, "Section": 5, "Y_Ref_Down": 423, "Y_Ref_Up": 396 },
-  { "Weight": 5500, "Section": 6, "Y_Ref_Down": 396, "Y_Ref_Up": 367 },
+  { "Weight": 5500, "Section": 6, "Y_Ref_Down": 396, "Y_Ref_Up": 366 },
 
   { "Weight": 5600, "Section": 1, "Y_Ref_Down": 551, "Y_Ref_Up": 517 },
   { "Weight": 5600, "Section": 2, "Y_Ref_Down": 517, "Y_Ref_Up": 478 },
@@ -167,19 +176,19 @@ const weightSectionData = [
   { "Weight": 5700, "Section": 5, "Y_Ref_Down": 394, "Y_Ref_Up": 359 },
   { "Weight": 5700, "Section": 6, "Y_Ref_Down": 359, "Y_Ref_Up": 324 },
 
-  { "Weight": 5800, "Section": 1, "Y_Ref_Down": 500, "Y_Ref_Up": 459 },
-  { "Weight": 5800, "Section": 2, "Y_Ref_Down": 459, "Y_Ref_Up": 418 },
-  { "Weight": 5800, "Section": 3, "Y_Ref_Down": 418, "Y_Ref_Up": 377 },
-  { "Weight": 5800, "Section": 4, "Y_Ref_Down": 377, "Y_Ref_Up": 340 },
-  { "Weight": 5800, "Section": 5, "Y_Ref_Down": 340, "Y_Ref_Up": 302 },
-  { "Weight": 5800, "Section": 6, "Y_Ref_Down": 302, "Y_Ref_Up": 266 },
+  { "Weight": 5800, "Section": 1, "Y_Ref_Down": 543, "Y_Ref_Up": 500 },
+  { "Weight": 5800, "Section": 2, "Y_Ref_Down": 500, "Y_Ref_Up": 459 },
+  { "Weight": 5800, "Section": 3, "Y_Ref_Down": 459, "Y_Ref_Up": 418 },
+  { "Weight": 5800, "Section": 4, "Y_Ref_Down": 418, "Y_Ref_Up": 377 },
+  { "Weight": 5800, "Section": 5, "Y_Ref_Down": 377, "Y_Ref_Up": 340 },
+  { "Weight": 5800, "Section": 6, "Y_Ref_Down": 340, "Y_Ref_Up": 302 },
 
   { "Weight": 5900, "Section": 1, "Y_Ref_Down": 536, "Y_Ref_Up": 493 },
   { "Weight": 5900, "Section": 2, "Y_Ref_Down": 493, "Y_Ref_Up": 448 },
   { "Weight": 5900, "Section": 3, "Y_Ref_Down": 448, "Y_Ref_Up": 407 },
   { "Weight": 5900, "Section": 4, "Y_Ref_Down": 407, "Y_Ref_Up": 366 },
   { "Weight": 5900, "Section": 5, "Y_Ref_Down": 366, "Y_Ref_Up": 325 },
-  { "Weight": 5900, "Section": 6, "Y_Ref_Down": 325, "Y_Ref_Up": 285 },
+  { "Weight": 5900, "Section": 6, "Y_Ref_Down": 325, "Y_Ref_Up": 282 },
 
   { "Weight": 6000, "Section": 1, "Y_Ref_Down": 529, "Y_Ref_Up": 484 },
   { "Weight": 6000, "Section": 2, "Y_Ref_Down": 484, "Y_Ref_Up": 439 },
@@ -200,23 +209,19 @@ const weightSectionData = [
   { "Weight": 6200, "Section": 3, "Y_Ref_Down": 417, "Y_Ref_Up": 366 },
   { "Weight": 6200, "Section": 4, "Y_Ref_Down": 366, "Y_Ref_Up": 315 },
   { "Weight": 6200, "Section": 5, "Y_Ref_Down": 315, "Y_Ref_Up": 264 },
-  { "Weight": 6200, "Section": 6, "Y_Ref_Down": 264, "Y_Ref_Up": 213 },
 
   { "Weight": 6300, "Section": 1, "Y_Ref_Down": 511, "Y_Ref_Up": 460 },
   { "Weight": 6300, "Section": 2, "Y_Ref_Down": 460, "Y_Ref_Up": 407 },
   { "Weight": 6300, "Section": 3, "Y_Ref_Down": 407, "Y_Ref_Up": 353 },
   { "Weight": 6300, "Section": 4, "Y_Ref_Down": 353, "Y_Ref_Up": 298 },
   { "Weight": 6300, "Section": 5, "Y_Ref_Down": 298, "Y_Ref_Up": 245 },
-  { "Weight": 6300, "Section": 6, "Y_Ref_Down": 245, "Y_Ref_Up": 191 },
 
   { "Weight": 6400, "Section": 1, "Y_Ref_Down": 509, "Y_Ref_Up": 451 },
   { "Weight": 6400, "Section": 2, "Y_Ref_Down": 451, "Y_Ref_Up": 396 },
   { "Weight": 6400, "Section": 3, "Y_Ref_Down": 396, "Y_Ref_Up": 343 },
   { "Weight": 6400, "Section": 4, "Y_Ref_Down": 343, "Y_Ref_Up": 282 },
-  { "Weight": 6400, "Section": 5, "Y_Ref_Down": 282, "Y_Ref_Up": 441 },
-  { "Weight": 6400, "Section": 6, "Y_Ref_Down": 441, "Y_Ref_Up": 388 },
 
-  { "Weight": 6500, "Section": 1, "Y_Ref_Down": 388, "Y_Ref_Up": 325 },
+  { "Weight": 6500, "Section": 1, "Y_Ref_Down": 502, "Y_Ref_Up": 441 },
   { "Weight": 6500, "Section": 2, "Y_Ref_Down": 441, "Y_Ref_Up": 388 },
   { "Weight": 6500, "Section": 3, "Y_Ref_Down": 388, "Y_Ref_Up": 325 },
   { "Weight": 6500, "Section": 4, "Y_Ref_Down": 325, "Y_Ref_Up": 266 }
