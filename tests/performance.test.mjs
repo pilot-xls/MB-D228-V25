@@ -362,3 +362,13 @@ test("gradientes: nunca sobem com o peso, a OAT ou a PA, e inlets ON nunca dão 
         }
     }
 });
+
+test("2.º seg flaps 1: painel OAT/PA igual ao gráfico do AFM (antes ~0.5 % abaixo)", () => {
+    // [PA ft, OAT °C, gradiente na reference line (6000 kg, inlets OFF) lido no gráfico D5-POHX-05-0088-01]
+    const AFM = [[0, -20, 4.83], [0, 15, 4.06], [0, 40, 1.94], [2000, 11, 3.77], [2000, 35, 1.45],
+                 [4000, 7, 3.41], [4000, 30, 0.95], [6000, 3, 2.34], [8000, -1, 1.50], [8000, 20, -0.15]];
+    for (const [pa, oat, g] of AFM) {
+        const r = grad(Grad2F1, pa, oat, 6000).gradient;
+        assert.ok(Math.abs(r - g) <= 0.07, `${pa} ft ${oat} °C: app ${r.toFixed(2)} vs AFM ${g}`);
+    }
+});

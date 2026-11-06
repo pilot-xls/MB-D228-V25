@@ -4,95 +4,153 @@
 // ----------------------
 
 // PA / OAT → y_ref
+// Painel OAT/PA do gráfico do AFM (Climb Gradient - Single Engine - Second Segment - Flaps 1,
+// D5-POHX-05-0088-01), redigitalizado: a tabela anterior dava ~0.5 % abaixo do AFM em todo o
+// painel. Linhas de 0 a 8000 ft traçadas no gráfico (troço plano + joelho + troço inclinado,
+// erro < 0.02 %), nós de 5 em 5 °C e no joelho; 10 000 e 12 000 ft corrigidas pelo desvio medido
+// (+0.44 %). y_ref nas coordenadas deste módulo (gradiente na reference line, 6000 kg).
 const PA_OAT_TABLE = [
   {
     pressure_altitude: 12000,
     values: [
-      { oat: -40, y_ref: 826 },
-      { oat: -30, y_ref: 884 },
-      { oat: -20, y_ref: 941 },
-      { oat: -10, y_ref: 999 },
-      { oat: 0, y_ref: 1062 },
-      { oat: 10, y_ref: 1120 }
+      { oat: -40, y_ref: 783 },
+      { oat: -30, y_ref: 839 },
+      { oat: -20, y_ref: 899 },
+      { oat: -10, y_ref: 958 },
+      { oat: 0, y_ref: 1022 },
+      { oat: 10, y_ref: 1079 }
     ]
   },
   {
     pressure_altitude: 10000,
     values: [
-      { oat: -40, y_ref: 701 },
-      { oat: -30, y_ref: 769 },
-      { oat: -20, y_ref: 834 },
-      { oat: -10, y_ref: 899 },
-      { oat: 0, y_ref: 968 },
-      { oat: 10, y_ref: 1030 },
-      { oat: 20, y_ref: 1098 },
-      { oat: 30, y_ref: 1160 }
+      { oat: -40, y_ref: 658 },
+      { oat: -30, y_ref: 727 },
+      { oat: -20, y_ref: 791 },
+      { oat: -10, y_ref: 855 },
+      { oat: 0, y_ref: 927 },
+      { oat: 10, y_ref: 989 },
+      { oat: 20, y_ref: 1057 },
+      { oat: 30, y_ref: 1119 }
     ]
   },
   {
     pressure_altitude: 8000,
     values: [
-      { oat: -40, y_ref: 646 },
-      { oat: -30, y_ref: 675 },
-      { oat: -20, y_ref: 711 },
-      { oat: -10, y_ref: 787 },
-      { oat: 0, y_ref: 863 },
-      { oat: 10, y_ref: 936 },
-      { oat: 20, y_ref: 1012 },
-      { oat: 30, y_ref: 1087 },
-      { oat: 40, y_ref: 1160 }
+      { oat: -40, y_ref: 602 },
+      { oat: -35, y_ref: 614 },
+      { oat: -30, y_ref: 626 },
+      { oat: -25, y_ref: 638 },
+      { oat: -23, y_ref: 643 },
+      { oat: -20, y_ref: 665 },
+      { oat: -15, y_ref: 703 },
+      { oat: -10, y_ref: 741 },
+      { oat: -5, y_ref: 778 },
+      { oat: 0, y_ref: 816 },
+      { oat: 5, y_ref: 856 },
+      { oat: 10, y_ref: 896 },
+      { oat: 15, y_ref: 934 },
+      { oat: 20, y_ref: 970 },
+      { oat: 25, y_ref: 1007 },
+      { oat: 30, y_ref: 1043 },
+      { oat: 35, y_ref: 1079 },
+      { oat: 39, y_ref: 1109 }
     ]
   },
   {
     pressure_altitude: 6000,
     values: [
-      { oat: -30, y_ref: 636 },
-      { oat: -20, y_ref: 657 },
-      { oat: -10, y_ref: 683 },
-      { oat: 0, y_ref: 751 },
-      { oat: 10, y_ref: 834 },
-      { oat: 20, y_ref: 914 },
-      { oat: 30, y_ref: 997 },
-      { oat: 40, y_ref: 1080 }
+      { oat: -36, y_ref: 573 },
+      { oat: -35, y_ref: 576 },
+      { oat: -30, y_ref: 587 },
+      { oat: -25, y_ref: 599 },
+      { oat: -20, y_ref: 610 },
+      { oat: -15, y_ref: 622 },
+      { oat: -10, y_ref: 634 },
+      { oat: -7.5, y_ref: 640 },
+      { oat: -5, y_ref: 661 },
+      { oat: 0, y_ref: 704 },
+      { oat: 5, y_ref: 745 },
+      { oat: 10, y_ref: 787 },
+      { oat: 15, y_ref: 830 },
+      { oat: 20, y_ref: 874 },
+      { oat: 25, y_ref: 918 },
+      { oat: 30, y_ref: 959 },
+      { oat: 35, y_ref: 999 },
+      { oat: 40, y_ref: 1040 },
+      { oat: 45, y_ref: 1080 }
     ]
   },
   {
     pressure_altitude: 4000,
     values: [
-      { oat: -30, y_ref: 596 },
-      { oat: -20, y_ref: 614 },
-      { oat: -10, y_ref: 639 },
-      { oat: 0, y_ref: 657 },
-      { oat: 10, y_ref: 708 },
-      { oat: 20, y_ref: 809 },
-      { oat: 30, y_ref: 907 },
-      { oat: 40, y_ref: 1008 }
+      { oat: -32, y_ref: 544 },
+      { oat: -30, y_ref: 548 },
+      { oat: -25, y_ref: 558 },
+      { oat: -20, y_ref: 568 },
+      { oat: -15, y_ref: 578 },
+      { oat: -10, y_ref: 588 },
+      { oat: -5, y_ref: 598 },
+      { oat: 0, y_ref: 608 },
+      { oat: 5, y_ref: 619 },
+      { oat: 6, y_ref: 621 },
+      { oat: 10, y_ref: 660 },
+      { oat: 15, y_ref: 711 },
+      { oat: 20, y_ref: 761 },
+      { oat: 25, y_ref: 812 },
+      { oat: 30, y_ref: 865 },
+      { oat: 35, y_ref: 917 },
+      { oat: 40, y_ref: 967 },
+      { oat: 45, y_ref: 1015 },
+      { oat: 50, y_ref: 1064 },
+      { oat: 53, y_ref: 1093 }
     ]
   },
   {
     pressure_altitude: 2000,
     values: [
-      { oat: -20, y_ref: 578 },
-      { oat: -10, y_ref: 599 },
-      { oat: 0, y_ref: 621 },
-      { oat: 10, y_ref: 639 },
-      { oat: 20, y_ref: 690 },
-      { oat: 30, y_ref: 802 },
-      { oat: 40, y_ref: 918 },
-      { oat: 50, y_ref: 1030 }
+      { oat: -28, y_ref: 517 },
+      { oat: -25, y_ref: 523 },
+      { oat: -20, y_ref: 533 },
+      { oat: -15, y_ref: 543 },
+      { oat: -10, y_ref: 553 },
+      { oat: -5, y_ref: 563 },
+      { oat: 0, y_ref: 573 },
+      { oat: 5, y_ref: 583 },
+      { oat: 10, y_ref: 593 },
+      { oat: 15, y_ref: 603 },
+      { oat: 17, y_ref: 607 },
+      { oat: 20, y_ref: 640 },
+      { oat: 25, y_ref: 699 },
+      { oat: 30, y_ref: 756 },
+      { oat: 35, y_ref: 813 },
+      { oat: 40, y_ref: 874 },
+      { oat: 45, y_ref: 933 },
+      { oat: 50, y_ref: 988 },
+      { oat: 53, y_ref: 1022 }
     ]
   },
   {
     pressure_altitude: 0,
     values: [
-      { oat: -20, y_ref: 542 },
-      { oat: -10, y_ref: 563 },
-      { oat: 0, y_ref: 585 },
-      { oat: 10, y_ref: 603 },
-      { oat: 20, y_ref: 625 },
-      { oat: 30, y_ref: 693 },
-      { oat: 40, y_ref: 813 },
-      { oat: 50, y_ref: 936 }
+      { oat: -25, y_ref: 489 },
+      { oat: -20, y_ref: 498 },
+      { oat: -15, y_ref: 508 },
+      { oat: -10, y_ref: 518 },
+      { oat: -5, y_ref: 528 },
+      { oat: 0, y_ref: 538 },
+      { oat: 5, y_ref: 547 },
+      { oat: 10, y_ref: 557 },
+      { oat: 15, y_ref: 567 },
+      { oat: 20, y_ref: 577 },
+      { oat: 25, y_ref: 587 },
+      { oat: 25.5, y_ref: 589 },
+      { oat: 30, y_ref: 643 },
+      { oat: 35, y_ref: 705 },
+      { oat: 40, y_ref: 766 },
+      { oat: 45, y_ref: 829 },
+      { oat: 50, y_ref: 894 },
+      { oat: 55, y_ref: 955 }
     ]
   }
 ];
