@@ -622,6 +622,24 @@ function computeXWithWind(xFromStep1, windInput, debug) {
 
   // 2) encontrar linhas de Wind para o windInput (mesma section)
   const windRowsSameSection = Wind.filter(w => w.section === section);
+  // Vento de frente forte com obstáculo longe: a linha desse vento acaba antes desta
+  // section (já saiu pela direita do gráfico). O x real fica à direita da borda dessa
+  // linha e nunca à esquerda do vento de frente imediatamente abaixo: usa-se o maior dos
+  // dois (contínuo e conservador), em vez de perder o efeito do vento. Assim mais vento de
+  // frente nunca aumenta o required.
+  for (const wv of [...new Set(Wind.map(w => w.wind))].filter(w => w > 0).sort((a, b) => a - b)) {
+    if (windRowsSameSection.some(r => r.wind === wv)) continue;
+    const last = Wind.filter(r => r.wind === wv).reduce((a, r) => (r.section > a.section ? r : a));
+    if (last.section >= section) continue;
+    const below = windRowsSameSection.filter(r => r.wind < wv).reduce((a, r) => (!a || r.wind > a.wind ? r : a), null);
+    windRowsSameSection.push({
+      wind: wv,
+      section,
+      x_ref_left: Math.max(last.x_ref_right, below ? below.x_ref_left : -Infinity),
+      x_ref_right: Math.max(last.x_ref_right, below ? below.x_ref_right : -Infinity),
+      beyondChart: true
+    });
+  }
   if (windRowsSameSection.length === 0) {
     debugStep2.status = "failed";
     debugStep2.reason = "não existem dados de Wind para esta section";
@@ -676,6 +694,16 @@ function computeXWithWind(xFromStep1, windInput, debug) {
     debugStep2.tw = tw;
     debugStep2.xA = xA;
     debugStep2.xB = xB;
+  }
+
+  // Coerência com o vento (corrige ruído da digitalização, ex.: início da section 1 entre
+  // 113 e 117 px): mais vento de frente nunca desloca o x para a esquerda (required maior),
+  // mais vento de cauda nunca o desloca para a direita.
+  const xAt = r => lerp(r.x_ref_left, r.x_ref_right, tSection);
+  if (windInput > 0) {
+    for (const r of windRowsSameSection) if (r.wind >= 0 && r.wind <= windInput) xNew = Math.max(xNew, xAt(r));
+  } else if (windInput < 0) {
+    for (const r of windRowsSameSection) if (r.wind <= 0 && r.wind >= windInput) xNew = Math.min(xNew, xAt(r));
   }
 
   debugStep2.status = "passed";
@@ -800,6 +828,60 @@ if (rowsSameHeight.length === 0) {
   return CG;
 }
 
+// ================== LINHAS ACIMA DE 7 % ==================
+// Quando uma linha de altura já passa de 7 % (obstáculo perto do Reference Zero), prolonga-se
+// essa linha pela sua própria geometria: CG = 7 · (D7 − D0) / (D − D0), ancorada no ponto de
+// 7 % da linha (D7, sem salto) e com D0 ajustado aos pontos da linha (erro < 0.25 %).
+// D é a distância equivalente sem vento (o vento já está no x do step 2). D <= D0: sem limite.
+// Serve para interpolar entre linhas e para obstáculos abaixo de 50 ft (linha de 50 ft × h/50);
+// se o resultado passar de 7 %, o obstáculo fica acima do gráfico.
+
+// x do gráfico → distância (m), inversa da tabela Obstacle_Distance
+function distanceFromX(x) {
+  const rows = [...Obstacle_Distance].sort((a, b) => a.x_ref_left - b.x_ref_left);
+  for (let i = 0; i < rows.length - 1; i++) {
+    const a = rows[i], b = rows[i + 1];
+    if (x <= b.x_ref_left || i === rows.length - 2) {
+      return a.distance + (x - a.x_ref_left) / (b.x_ref_left - a.x_ref_left) * (b.distance - a.distance);
+    }
+  }
+  return null;
+}
+
+const LINE_EXTENSIONS = new Map();
+
+// Âncora (D7, CG) e D0 de uma linha de altura (calculado uma vez)
+function lineExtension(hLine) {
+  if (LINE_EXTENSIONS.has(hLine)) return LINE_EXTENSIONS.get(hLine);
+  const rows = Obstacle_height.filter(r => r.obstacle_height_ft === hLine);
+  const anchor = rows.reduce((a, r) => (r.x_ref_left < a.x_ref_left ? r : a));
+  const D7 = distanceFromX(anchor.x_ref_left);
+  const CG7 = anchor.result_CG_required;
+  const pts = rows.filter(r => r.result_CG_required >= 3).map(r => [distanceFromX(r.x_ref_left), r.result_CG_required]);
+  let best = { D0: 0, e: Infinity };
+  for (let D0 = 0; D0 < D7 - 1; D0 += 1) {
+    let e = 0;
+    for (const [D, cg] of pts) e += (CG7 * (D7 - D0) / (D - D0) - cg) ** 2;
+    if (e < best.e) best = { D0, e };
+  }
+  const ext = { D7, CG7, D0: best.D0 };
+  LINE_EXTENSIONS.set(hLine, ext);
+  return ext;
+}
+
+// CG de uma linha de altura no x do step 2: do gráfico, ou prolongada acima de 7 %
+// (Infinity se o obstáculo estiver a menos de D0). null se não houver valor por outro motivo.
+function cgOfLine(x2, hLine, debug) {
+  const cg = computeCGFromHeight(x2, hLine, debug);
+  const step3 = debug.step3;
+  if (cg != null) return { cg, extended: false, step3 };
+  if (!step3?.aboveChart) return { cg: null, extended: false, step3 };
+  const { D7, CG7, D0 } = lineExtension(hLine);
+  const D = distanceFromX(x2);
+  step3.extension = { D, D7, D0 };
+  return { cg: D > D0 ? CG7 * (D7 - D0) / (D - D0) : Infinity, extended: true, step3 };
+}
+
 // ================== MAIN API ==================
 
 /**
@@ -810,9 +892,10 @@ if (rowsSameHeight.length === 0) {
  *
  * Altura: o gráfico tem linhas de 50 a 400 ft, de 10 em 10 ft.
  *  - entre duas linhas → interpola entre elas (ex.: 26 ft não existe, 131 ft fica entre 130 e 140)
- *  - abaixo de 50 ft → required da linha de 50 ft × altura/50: o gráfico é proporcional à
- *    altura (≈ altura / (distância − ~120 m)); se a linha de 50 ft já passar de 7 %, fica
- *    acima do gráfico (não verificável)
+ *  - abaixo de 50 ft → required da linha de 50 ft × altura/50 (o gráfico é proporcional à
+ *    altura)
+ *  - uma linha acima de 7 % é prolongada pela sua geometria (cgOfLine); se o resultado final
+ *    passar de 7 %, ou o obstáculo estiver a menos de D0 do Reference Zero, fica acima do gráfico
  *  - 0 ft ou menos → não há altura a livrar: required 0
  *  - acima de 400 ft → fora deste gráfico (3.º/4.º segmento)
  *
@@ -875,29 +958,28 @@ export default function Gradient_Required({
 
   const { x: x2, section } = step2Res;
 
-  // STEP 3 (uma ou duas linhas de altura; interpola entre elas)
-  const cgLow = computeCGFromHeight(x2, hLow, debug);
-  const step3Low = debug.step3;
-  const cgHigh = hHigh === hLow ? cgLow : computeCGFromHeight(x2, hHigh, debug);
-  if (hHigh !== hLow) debug.step3 = { low: step3Low, high: debug.step3 };
+  // STEP 3 (uma ou duas linhas de altura; interpola entre elas; acima de 7 % prolonga a linha)
+  const low = cgOfLine(x2, hLow, debug);
+  const high = hHigh === hLow ? low : cgOfLine(x2, hHigh, debug);
+  debug.step3 = hHigh === hLow ? low.step3 : { low: low.step3, high: high.step3 };
 
-  if (cgLow == null || cgHigh == null) {
-    return {
-      status: "failed",
-      result_CG_required: null,
-      aboveChart: !!(step3Low?.aboveChart || debug.step3?.aboveChart || debug.step3?.high?.aboveChart),
-      debug
-    };
+  if (low.cg == null || high.cg == null) {
+    return { status: "failed", result_CG_required: null, aboveChart: false, debug };
   }
 
-  const cgLine = cgLow + (cgHigh - cgLow) * (h - hLow) / 10;
+  const cgLine = hHigh === hLow ? low.cg : low.cg + (high.cg - low.cg) * (h - hLow) / 10;
   // Abaixo de 50 ft: proporcional à altura (0 ft → 0 %)
   const cgRaw = obstacle_height_ft < 50 ? cgLine * obstacle_height_ft / 50 : cgLine;
-  const cg = Math.round(cgRaw * 10) / 10;
+
+  // Acima de 7 % (ou sem limite finito): fora do gráfico, não verificável
+  if (!Number.isFinite(cgRaw) || cgRaw > 7) {
+    return { status: "failed", result_CG_required: null, aboveChart: true, debug };
+  }
 
   return {
     status: "passed",
-    result_CG_required: cg,
+    result_CG_required: Math.round(cgRaw * 10) / 10,
+    extended: low.extended || high.extended || undefined,
     debug
   };
 }

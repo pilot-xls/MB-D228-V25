@@ -551,9 +551,38 @@ function mapYThroughWeight(yRef, tow) {
   const yLow = yAtWeight(wLow);
   const yHigh = yAtWeight(wHigh);
 
-  if (yLow == null && yHigh == null) return null;
-  if (yLow == null) return yHigh;
-  if (yHigh == null) return yLow;
+  // Um dos pesos não tem esta section (pesos baixos em condições frias: a linha não foi
+  // digitalizada/sai da zona do gráfico). Em vez de gradiente 0, usa o mínimo garantido:
+  // o melhor gradiente conhecido (menor y) entre
+  //  - os pesos >= TOW (mais pesado sobe menos), cada um na mesma posição se tiver a section
+  //    ou no fim da sua última section abaixo desta (condição menos favorável);
+  //  - o próprio TOW interpolado no fim da última section que os dois pesos têm.
+  // Assim o gradiente nunca sobe com o peso nem desce quando a OAT/PA descem.
+  if (yLow == null || yHigh == null) {
+    const s = refSection.section;
+    const candidates = [];
+    for (const w of WEIGHT_TABLE) {
+      if (w.weight < tow) continue;
+      const own = w.sections.find(x => x.section === s);
+      if (own) {
+        candidates.push(yFromSectionAndRelPos(own, rel));
+      } else {
+        const below = w.sections.filter(x => x.section < s);
+        if (below.length) candidates.push(below.reduce((a, x) => (x.section > a.section ? x : a)).y_ref_top);
+      }
+    }
+    for (let k = s - 1; k >= 1; k--) {
+      const lo = wLow.sections.find(x => x.section === k);
+      const hi = wHigh.sections.find(x => x.section === k);
+      if (lo && hi) {
+        candidates.push(wLow.weight === wHigh.weight ? lo.y_ref_top : lerp(tow, wLow.weight, lo.y_ref_top, wHigh.weight, hi.y_ref_top));
+        break;
+      }
+    }
+    if (!candidates.length) return null;
+    reportFail(`Peso ${tow}: section ${s} sem dados neste peso; usado o mínimo garantido.`);
+    return Math.min(...candidates);
+  }
 
   if (wLow.weight === wHigh.weight) return yLow;
 
