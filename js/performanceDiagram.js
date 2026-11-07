@@ -30,14 +30,14 @@ export function windComponents(wind, heading) {
 /**
  * Trajetória (flight path) em segmentos, com x em metros desde o início da pista:
  *  - 2º segmento: sobe com g2 (%) do Reference Zero (35 ft) até 400 ft
- *  - 3º segmento: nivelado a 400 ft até x = Reference Zero + d3 (distância do gráfico do AFM)
+ *  - 3º segmento: nivelado a 400 ft durante d3 m (distância do gráfico do AFM), logo a seguir ao 2º segmento
  *  - 4º segmento: sobe com g4 (%) a partir daí
  * Devolve null se não houver dados para a desenhar.
  */
 export function buildFlightPath({ todr, tor, g2, d3, g4 }) {
   if (!Number.isFinite(todr) || !Number.isFinite(g2) || g2 <= 0) return null;
   const x400 = todr + ((SEG2_END_FT - REF_HEIGHT_FT) / (g2 / 100)) / FT_PER_M;
-  const xLevelEnd = Number.isFinite(d3) && d3 > 0 ? Math.max(x400, todr + d3) : x400;
+  const xLevelEnd = Number.isFinite(d3) && d3 > 0 ? x400 + d3 : x400;
   const g4eff = Number.isFinite(g4) && g4 > 0 ? g4 : g2;
   const torOk = Number.isFinite(tor) && tor > 0 && tor < todr;
   const path_torOk = torOk;
@@ -144,20 +144,11 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
   if (path) {
     const lab = (x, h, t) => `<text x="${f1(sx(x))}" y="${f1(sy(h) - 9)}" text-anchor="middle" class="dg-seg dg-halo dg-seg-${t}">${t}</text>`;
     segLabels += lab((path.todr + path.x400) / 2 - 8, (REF_HEIGHT_FT + SEG2_END_FT) / 2, "2nd");
-    if (path.hasLevel) segLabels += lab((path.x400 + path.xLevelEnd) / 2, SEG2_END_FT, "3rd");
+    if (path.hasLevel) segLabels += `<text x="${f1(sx((path.x400 + path.xLevelEnd) / 2))}" y="${f1(sy(SEG2_END_FT) - 9)}" text-anchor="middle" class="dg-seg dg-halo dg-seg-3rd">3rd · ${Math.round(d3)} m</text>`;
     const x4 = Math.min(path.xLevelEnd + (maxX - path.xLevelEnd) * 0.55, maxX);
     const h4 = path.heightAt(x4);
     if (h4 <= maxH * 0.95 && sx(x4) < W - 30) segLabels += lab(x4, h4, "4th");
     segLabels += `<text x="${f1(sx(path.x400) - 8)}" y="${f1(sy(SEG2_END_FT) - 6)}" text-anchor="end" class="dg-axis dg-halo">${SEG2_END_FT} ft</text>`;
-  }
-
-  // Fim do 3º segmento (distância do gráfico do AFM, a partir do Reference Zero)
-  let seg3Marker = "";
-  if (path && Number.isFinite(d3) && d3 > 0) {
-    const xm = sx(path.todr + d3);
-    const right = xm < W / 2;
-    seg3Marker = `<line x1="${f1(xm)}" y1="${base}" x2="${f1(xm)}" y2="${f1(sy(SEG2_END_FT))}" class="dg-seg3"/>
-  <text x="${f1(xm + (right ? 5 : -5))}" y="${f1(sy(SEG2_END_FT) + 14)}" text-anchor="${right ? "start" : "end"}" class="dg-small dg-halo">3rd seg ends ${Math.round(d3)} m</text>`;
   }
 
   // Obstáculos com etiquetas sem sobreposição
@@ -205,7 +196,6 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
   <text x="${padL}" y="${base + 24}" class="dg-small">TORA ${tora} m${toda > tora ? ` · TODA ${toda} m` : ""}</text>
   ${path ? `<line x1="${f1(sx(path.todr))}" y1="${base}" x2="${f1(sx(path.todr))}" y2="${f1(sy(REF_HEIGHT_FT))}" class="dg-ref"/><text x="${f1(todX)}" y="${base + 40}" text-anchor="middle" class="dg-small">TOD ${todr} m</text>` : ""}
   ${pathSvg}
-  ${seg3Marker}
   ${segLabels}
   ${obs}
   <text x="12" y="${H - 8}" class="dg-label ${anyBad || !path ? "bad" : "ok"}">${verdict}</text>
@@ -215,7 +205,7 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
 export function sideInfoHtml(segments) {
   const row = (name, s) => s && s.text ? `<div><span class="muted">${name}</span> <span class="mono ${s.state === "ok" ? "ok" : s.state === "bad" || s.state === "ooc" ? "bad" : ""}">${esc(s.text)}</span></div>` : "";
   return `<div class="dg-info"><div class="dg-legend"><span class="lg lg-ground">Ground roll</span><span class="lg lg-lift">Lift-off → 35 ft</span><span class="lg lg-s2">2nd</span><span class="lg lg-s3">3rd</span><span class="lg lg-s4">4th</span></div>${row("2nd seg req/calc", segments.SEG2)}${row("3rd seg obstacle/dist", segments.SEG3)}${row("4th seg req/calc", segments.SEG4)}
-  <div class="muted">Schematic only. Dashed orange line = end of the 3rd segment (AFM distance from Reference Zero). The Status above is the verdict.</div></div>`;
+  <div class="muted">Schematic only: 3rd segment drawn level at 400 ft with the AFM distance. The Status above is the verdict.</div></div>`;
 }
 
 // ---------------------------------------------------------------------------------------------
