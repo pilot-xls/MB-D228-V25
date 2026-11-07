@@ -124,6 +124,59 @@ test("varrimento (PA 0..4000 passo 250, OAT -10..50, 5 ventos, 5 slopes, 1700 m)
 });
 
 // ------------------------------------------------------------------
+// 3b) Vento e slope entre linhas do gráfico: interpolados (antes usava-se só a linha de baixo)
+// ------------------------------------------------------------------
+
+test("vento intermédio: cauda 5 kt fica entre cauda 10 kt e calmo; frente 5 kt entre calmo e frente 10 kt", () => {
+    for (const m of MODULES) {
+        const W = Wind => m.fn(m.call({ PA: 1000, OAT: 25, Wind, slope: 0 }, { ...GRID, distance: 1000 })).result;
+        const [tw10, tw5, calm, hw5, hw10] = [-10, -5, 0, 5, 10].map(W);
+        assert.ok(tw10 <= tw5 && tw5 <= calm, `${m.name}: TW10 ${tw10} <= TW5 ${tw5} <= calmo ${calm}`);
+        // Se calmo dá mais do que cauda 10 kt, cauda 5 kt também tem de dar mais (já não é tratado como cauda 10 kt)
+        if (calm > tw10) assert.ok(tw5 > tw10, `${m.name}: TW5 ${tw5} igual a TW10 ${tw10}`);
+        assert.ok(calm <= hw5 && hw5 <= hw10, `${m.name}: calmo ${calm} <= HW5 ${hw5} <= HW10 ${hw10}`);
+        // Se frente 10 kt dá mais do que calmo, frente 5 kt também tem de dar mais (já não é tratado como calmo)
+        if (hw10 > calm) assert.ok(hw5 > calm, `${m.name}: HW5 ${hw5} igual a calmo ${calm}`);
+    }
+});
+
+test("vento e slope intermédios: MTOW no maior peso que o forward aceita (nunca acima)", () => {
+    for (const m of MODULES) {
+        let n = 0, near = 0;
+        for (let PA = 0; PA <= 4000; PA += 500) {
+            for (let OAT = -10; OAT <= 40; OAT += 10) {
+                for (const Wind of [-5, 5, 15]) {
+                    for (const slope of (m.usesSlope ? [-1.2, 0.5] : [0])) {
+                        for (const distance of [800, 1300, 1700]) {
+                            const g = { ...GRID, distance };
+                            const p = { PA, OAT, Wind, slope };
+                            const r = m.fn(m.call(p, g));
+                            if (r.status !== "passed") continue;
+                            const ok = Wt => { const f = m.forward(p, Wt, g); return f.status === "passed" && Number.isFinite(f.result) && Math.round(f.result) <= distance; };
+                            assert.ok(ok(r.result), `${m.name} ${JSON.stringify(p)} ${distance} m: ${r.result} kg excede a distância no forward`);
+                            let Wmax = r.result;
+                            while (Wmax < 6500 && ok(Wmax + 1)) Wmax++;
+                            n++;
+                            if (Wmax - r.result <= 10) near++;
+                        }
+                    }
+                }
+            }
+        }
+        // Antes da correção ~30 % destes casos ficavam centenas de kg abaixo (até ~880 kg)
+        assert.ok(near / n >= 0.95, `${m.name}: só ${near} de ${n} a <= 10 kg do forward`);
+    }
+});
+
+test("distância no limite do peso mínimo do gráfico: devolve o peso mínimo quando o forward o aceita", () => {
+    // O inverso dá 'abaixo do peso mínimo' por uma fração de metro; o forward (arredondado ao metro) aceita 4500 kg
+    const r = MTOW_TODA_Flaps1({ PA: 2000, OAT: 50, Wind: -10, slope: -2, TODA: 1000 });
+    assert.equal(r.status, "passed", r.debug.error);
+    assert.equal(r.result, 4500);
+    assert.equal(r.debug.step6Conservative.edge, "CHART_MIN_WEIGHT");
+});
+
+// ------------------------------------------------------------------
 // 4) Dados: nenhum erro e a mesma tabela de pesos que o módulo forward
 // ------------------------------------------------------------------
 

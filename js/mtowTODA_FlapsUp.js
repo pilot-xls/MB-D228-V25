@@ -582,14 +582,15 @@ const ENGINE = {
     return new Error(`${ctx}: grelha furada (faltam dados do AFM) para PA=[${paB.lo},${paB.hi}] Temp=[${tB.lo},${tB.hi}]`); // Buraco nos dados (não é fora do gráfico)
   },
 
-  _enforceTodLimitByDecrement(weight, { PA, OAT, wind, slope, TORA }) { // Garante que TOD calculada não excede a TODA disponível
+  _enforceTodLimitByDecrement(weight, { PA, OAT, wind, slope, TORA }, { floor = 1 } = {}) { // Garante que TOD calculada não excede a TODA disponível
     let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
+    // floor: menor peso a testar (por omissão desce até 1 kg, como antes)
     let lowestComputed = null; // Menor peso em que o forward calculou mas excedeu a distância disponível
     let lastError = null; // Último erro do forward (peso sem resultado no gráfico)
 
-    while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir TOD<=TODA
+    while (safeWeight >= floor && iter < MAX_ITER) { // Desce peso até cumprir TOD<=TODA
       const todr = TODR_FlapsUp({ PA, OAT, Weight: safeWeight, Wind: wind, slope }); // Recalcular TOD para o peso candidato
       if (todr?.status === "passed" && Number.isFinite(todr?.result)) { // TOD calculada para este peso
         if (Math.round(todr.result) <= TORA) { // Encontrou peso válido
@@ -657,17 +658,29 @@ const ENGINE = {
     const rowsHi = rowsAtSlope(sB.hi); // Tabela slope hi
     if (rowsLo.length === 0 || rowsHi.length === 0) throw new Error(`Step2: faltam linhas Slope ${sB.lo}/${sB.hi}`); // Validar
 
-    const pos = this._resolveNearestSectionByY( // Resolver secção+desvio no slope lo
+    // Tabela do slope pedido: cada secção interpolada entre o slope lo e o hi (é o que o forward faz).
+    // Procurar só na tabela lo tratava, p.ex., -1.2 % como -2 % e 0.5 % como 0 %.
+    const rowsAt = rowsLo.map(lo => { // Interpolar cada secção
+      const hi = rowsHi.find(r => r.Section === lo.Section); // Mesma secção no slope hi
+      if (!hi) return null; // Secção só existe num dos slopes
+      return { // Secção no slope pedido
+        Section: lo.Section, // Id
+        Y_Ref_Down: this._lerp(lo.Y_Ref_Down, hi.Y_Ref_Down, sB.t), // Down interpolado
+        Y_Ref_Up: this._lerp(lo.Y_Ref_Up, hi.Y_Ref_Up, sB.t) // Up interpolado
+      };
+    }).filter(Boolean); // Só secções que existem nos dois slopes
+
+    const pos = this._resolveNearestSectionByY( // Resolver secção+desvio no slope pedido
       y_afterSlope, // y actual
-      rowsLo, // Tabela slope lo
+      rowsAt, // Tabela interpolada
       "Y_Ref_Down", // Chave down
       "Y_Ref_Up", // Chave up
       "Section", // Id secção
-      "Step2(rowsLo)" // Contexto
+      "Step2(slope)" // Contexto
     );
 
     const sectionNum = pos.sectionId; // Secção encontrada
-    const deviation = pos.deviation; // Desvio encontrado (do slope lo)
+    const deviation = pos.deviation; // Desvio encontrado (no slope pedido)
 
     const loRow = rowsLo.find(r => r.Section === sectionNum) || null; // Linha slope lo da secção
     const hiRow = rowsHi.find(r => r.Section === sectionNum) || null; // Linha slope hi da secção
@@ -714,12 +727,20 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
   const rowsHi = rowsAtWind(wB.hi); // Tabela do vento hi (ordenada)
   if (rowsLo.length === 0 || rowsHi.length === 0) throw new Error(`Step3: faltam linhas Wind ${wB.lo}/${wB.hi}`); // Validar
 
-  const pos = this._resolveNearestIndexByY( // Resolver índice+desvio na tabela rowsLo
+  // Tabela do vento pedido: cada faixa interpolada entre o vento lo e o hi (é o que o forward faz).
+  // Procurar só na tabela lo tratava, p.ex., -5 kt (cauda) como -10 kt e 5 kt como 0 kt.
+  const nBands = Math.min(rowsLo.length, rowsHi.length); // Faixas que existem nos dois ventos
+  const rowsAt = rowsLo.slice(0, nBands).map((lo, i) => ({ // Interpolar cada faixa
+    Y_Ref_Down: this._lerp(lo.Y_Ref_Down, rowsHi[i].Y_Ref_Down, wB.t), // Down interpolado
+    Y_Ref_Up: this._lerp(lo.Y_Ref_Up, rowsHi[i].Y_Ref_Up, wB.t) // Up interpolado
+  }));
+
+  const pos = this._resolveNearestIndexByY( // Resolver índice+desvio no vento pedido
     y_afterWind, // y actual (com vento)
-    rowsLo, // Tabela do vento lo (ordenada)
+    rowsAt, // Tabela interpolada
     "Y_Ref_Down", // Chave down
     "Y_Ref_Up", // Chave up
-    "Step3(rowsLo)" // Contexto de erro/debug
+    "Step3(wind)" // Contexto de erro/debug
   ); // Executar resolução
 
   const sectionIndex = pos.index; // Índice da secção na tabela ordenada
@@ -933,6 +954,13 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
 
       if (s6.status === "failed") { // y_target acima do envelope: a distância não chega nem para o peso mínimo do gráfico
         const minW = s6.debug?.minWeight; // Peso mínimo do gráfico nesta secção
+        // Na fronteira o forward arredonda a distância ao metro e pode ainda aceitar o peso mínimo do gráfico:
+        // testa só esse peso antes de dizer que o MTOW fica abaixo do gráfico
+        const edge = Number.isFinite(minW) ? this._enforceTodLimitByDecrement(minW, { PA, OAT, wind, slope, TORA: TORA_used }, { floor: minW }) : null; // Forward no peso mínimo
+        if (edge && edge.safeWeight > 0) { // O peso mínimo cumpre a TODA
+          debug.step6Conservative = { ...edge.debug, edge: "CHART_MIN_WEIGHT" }; // Registar no debug
+          return { input: base.input, status: "passed", result: edge.safeWeight, debug }; // Peso mínimo do gráfico
+        }
         return this._fail(base, "step6", "y_target fora do envelope (section+deviation)", { ...debug }, { // Falha explícita
           input: "TODA", value: TORA, unit: "m", minWeight: minW, // Entrada e limite
           reason: `TODA ${this._fmt(TORA)} m: MTOW below chart minimum weight (${minW} kg)` // Motivo para a página
