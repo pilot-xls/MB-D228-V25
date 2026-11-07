@@ -44,7 +44,7 @@ import MTOW_TODA_FlapsUp from "./mtowTODA_FlapsUp.js";
 import MTOW_TODA_Flaps1 from "./mtowTODA_Flaps1.js";
 
 // Verificação do 2º/3º/4º segmento e procura do MTOW: o mesmo código para o TOW introduzido e para o MTOW
-import { evaluateSegments, findMaxTowAllSegments, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
+import { evaluateSegments, findMaxTowAllSegments, describeSegmentProblem, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
 
 // Continuam disponíveis a partir de performance.js (usados nos testes)
 export { describeThirdSegment, OUT_OF_CHART_TEXT } from "./cgMTOWSearch.js";
@@ -270,13 +270,18 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
 
     if (search.mtow == null) {
         const keys = search.limitedBy;
+        // Porque nem o peso mais baixo dos gráficos passa (ex.: obstáculo que exige > 7 %)
+        const bottom = search.atBottom;
+        const atBottom = bottom && bottom.failing && bottom.failing.length > 0
+            ? ". At " + search.bottom + " kg, " + bottom.failing.map(k => limitLabels([k]) + ": " + describeSegmentProblem(bottom[k])).join("; ")
+            : "";
         return {
             mtow: null,
             limitKey: null,
             limit: null,
             failedKeys: keys,
             outOfChart: keys.length > 0 && keys.every(k => search.atTop && search.atTop[k].state === "ooc"),
-            reason: "no weight up to " + cap + " kg meets " + limitLabels(keys)
+            reason: "no weight up to " + cap + " kg meets " + limitLabels(keys) + atBottom
         };
     }
 

@@ -948,9 +948,12 @@ getYBeforeWind(wind, y_afterWind) { // Remover efeito do vento para equivalente 
           debug.step6Conservative = { ...edge.debug, edge: "CHART_MIN_WEIGHT" }; // Registar no debug
           return { input: base.input, status: "passed", result: edge.safeWeight, debug }; // Peso mínimo do gráfico
         }
+        // Distância que o peso mínimo do gráfico precisa (mostra porque está fora do gráfico, ex.: "4500 kg needs 861 m")
+        const edgeLow = edge && edge.debug && edge.debug.lowestComputed; // Forward calculou no peso mínimo, mas excede a distância disponível
+        const edgeNeeds = edgeLow ? ` needs ${Math.round(edgeLow.result)} m` : ""; // Vazio se o forward não tiver resultado
         return this._fail(base, "step6", "y_target fora do envelope (section+deviation)", { ...debug }, { // Falha explícita
           input: "TORA", value: TORA, unit: "m", minWeight: minW, // Entrada e limite
-          reason: `TORA ${this._fmt(TORA)} m: MTOW below chart minimum weight (${minW} kg)` // Motivo para a página
+          reason: `TORA ${this._fmt(TORA)} m: MTOW below chart minimum weight (${minW} kg${edgeNeeds})` // Motivo para a página
         });
       }
 

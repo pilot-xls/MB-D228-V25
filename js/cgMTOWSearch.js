@@ -89,6 +89,14 @@ export function obstacleDistanceFromReferenceZero(obs, todr, toda) {
 }
 
 /**
+ * Texto curto de um obstáculo para os motivos (ex.: "Mastro 131 ft @ 750 m from DER").
+ */
+export function describeObstacle(obs) {
+  const name = obs.name ? obs.name + " " : "";
+  return name + obs.obstacle_ft + " ft @ " + obs.obstacle_dist + " m from DER";
+}
+
+/**
  * Sem TOD ou sem TODA não se sabe onde ficam os obstáculos em relação ao Reference Zero.
  * Devolve o texto do motivo, ou null se for possível posicionar os obstáculos.
  */
@@ -104,8 +112,8 @@ function cannotPlaceObstacles(todr, toda) {
 function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda }) {
   // Guarda o maior gradient required encontrado para este peso
   let required = 0;
-  // Algum obstáculo exige mais de 7 % (fora do gráfico): não pode ser ignorado
-  let aboveChart = false;
+  // Obstáculos que exigem mais de 7 % (fora do gráfico): não podem ser ignorados
+  const aboveChartObstacles = [];
 
   if (obstacles.length > 0) {
     const noPlace = cannotPlaceObstacles(todr, toda);
@@ -121,7 +129,7 @@ function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda 
       });
 
       if (requiredRes && requiredRes.aboveChart) {
-        aboveChart = true;
+        aboveChartObstacles.push(obs);
       } else if (requiredRes && requiredRes.result_CG_required != null) {
         required = Math.max(required, requiredRes.result_CG_required);
       }
@@ -135,8 +143,16 @@ function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda 
   const gradient = performed ? performed.gradient : null;
 
   // Required acima de 7 %: fora do gráfico do AFM, não verificável (não passa)
-  if (aboveChart) {
-    return { state: "ooc", required: null, gradient, text: "Req > 7% / " + fmt1(gradient) + "%" };
+  // detail: quais obstáculos (para explicar um MTOW não determinado)
+  if (aboveChartObstacles.length > 0) {
+    return {
+      state: "ooc",
+      required: null,
+      gradient,
+      text: "Req > 7% / " + fmt1(gradient) + "%",
+      aboveChartObstacles,
+      detail: "required > 7% (AFM chart max) for " + aboveChartObstacles.map(describeObstacle).join(", ")
+    };
   }
 
   return {
@@ -254,6 +270,8 @@ export function evaluateSegments({ flaps, pa, oat, tow, inlet, wind, slope, toda
  *  - mtow: peso encontrado, ou null se nenhum peso cumpre
  *  - limitedBy: segmentos que falham em mtow + 1 (vazio se mtow = maxWeight)
  *  - atTop: avaliação no peso de partida (para explicar porque nenhum peso cumpre)
+ *  - atBottom / bottom: só quando nenhum peso cumpre — avaliação no peso mais baixo
+ *    tentado (o mínimo dos gráficos): é aí que se vê porque nem descendo o peso passa
  */
 export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
   const top = Math.min(MAX_WEIGHT, Math.floor(maxWeight));
@@ -273,7 +291,16 @@ export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
     above = ev;
   }
 
-  return { mtow: null, limitedBy: atTop ? atTop.failing : [], atTop };
+  return { mtow: null, limitedBy: atTop ? atTop.failing : [], atTop, atBottom: above, bottom };
+}
+
+/**
+ * Motivo de um segmento que não passa num peso (ex.: "required > 7% (AFM chart max) for ...").
+ * Usa o detalhe do segmento quando existe; senão o texto required / calculado.
+ */
+export function describeSegmentProblem(segment) {
+  if (!segment) return "";
+  return segment.detail || segment.text || "";
 }
 
 /**
