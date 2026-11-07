@@ -579,9 +579,19 @@ input:disabled {
 .diagram .dg-grid { stroke: var(--line); stroke-width: 1; }
 .diagram .dg-ground { stroke: #8d6e63; stroke-width: 2; }
 .diagram .dg-ref { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
-.diagram .dg-path { fill: none; stroke-width: 3.5; stroke-linejoin: round; }
-.diagram .dg-path.ok { stroke: var(--ok); }
-.diagram .dg-path.bad { stroke: var(--bad); }
+.diagram .dg-path { fill: none; stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.diagram .dg-roll { stroke: #6b7280; }
+.diagram .dg-lift { stroke: #6b7280; stroke-dasharray: 2 5; }
+.diagram .dg-s2 { stroke: #0284c7; }
+.diagram .dg-s3 { stroke: #d97706; }
+.diagram .dg-s4 { stroke: #7c3aed; }
+.diagram .dg-dot { fill: var(--bg-tooltip); stroke: var(--text-main); stroke-width: 2; }
+.diagram .dg-seg-2nd { fill: #0284c7; }
+.diagram .dg-seg-3rd { fill: #d97706; }
+.diagram .dg-seg-4th { fill: #7c3aed; }
+.diagram .dg-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 4px; }
+.diagram .lg::before { content: ""; display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 5px; vertical-align: middle; background: currentColor; }
+.diagram .lg-ground { color: #6b7280; } .diagram .lg-lift { color: #6b7280; } .diagram .lg-s2 { color: #0284c7; } .diagram .lg-s3 { color: #d97706; } .diagram .lg-s4 { color: #7c3aed; }
 .diagram .dg-obs-bar { stroke: #777; stroke-width: 6; }
 .diagram .dg-obs-top { fill: #777; stroke: none; }
 .diagram .dg-obs.ok .dg-obs-bar { stroke: var(--ok); }
@@ -590,4 +600,4 @@ input:disabled {
 .diagram .dg-obs.bad .dg-obs-top { fill: var(--bad); }
 .diagram .dg-obs.ok .dg-margin { fill: var(--ok); }
 .diagram .dg-obs.bad .dg-margin { fill: var(--bad); }
-.diagram .dg-seg3 { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram .dg-seg3 { stroke: #d97706; stroke-width: 2; stroke-dasharray: 5 4; }

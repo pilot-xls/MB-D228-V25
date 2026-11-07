@@ -34,18 +34,21 @@ export function windComponents(wind, heading) {
  *  - 4º segmento: sobe com g4 (%) a partir daí
  * Devolve null se não houver dados para a desenhar.
  */
-export function buildFlightPath({ todr, g2, d3, g4 }) {
+export function buildFlightPath({ todr, tor, g2, d3, g4 }) {
   if (!Number.isFinite(todr) || !Number.isFinite(g2) || g2 <= 0) return null;
   const x400 = todr + ((SEG2_END_FT - REF_HEIGHT_FT) / (g2 / 100)) / FT_PER_M;
   const xLevelEnd = Number.isFinite(d3) && d3 > 0 ? Math.max(x400, todr + d3) : x400;
   const g4eff = Number.isFinite(g4) && g4 > 0 ? g4 : g2;
+  const torOk = Number.isFinite(tor) && tor > 0 && tor < todr;
+  const path_torOk = torOk;
   const heightAt = x => {
+    if (path_torOk && x >= tor && x < todr) return (REF_HEIGHT_FT * (x - tor)) / (todr - tor);
     if (x < todr) return null;
     if (x <= x400) return REF_HEIGHT_FT + (g2 / 100) * (x - todr) * FT_PER_M;
     if (x <= xLevelEnd) return SEG2_END_FT;
     return SEG2_END_FT + (g4eff / 100) * (x - xLevelEnd) * FT_PER_M;
   };
-  return { todr, x400, xLevelEnd, g2, g4: g4eff, hasLevel: xLevelEnd > x400, heightAt };
+  return { todr, tor: torOk ? tor : null, x400, xLevelEnd, g2, g4: g4eff, hasLevel: xLevelEnd > x400, heightAt };
 }
 
 /** PLANTA: pista horizontal (descolagem para a direita), setas de vento e WDI, tudo relativo ao heading. */
@@ -105,10 +108,10 @@ export function topInfoHtml({ rwy, heading, tora, toda, slope, wind }) {
 }
 
 /** PERFIL LATERAL: pista, obstáculos e flight path (2º/3º/4º segmento). obstacle_dist é medida a partir do fim da TODA. */
-export function buildSideViewSvg({ tora, toda, todr, obstacles, g2, d3, g4, width = 640 }) {
+export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4, width = 640 }) {
   const W = width, H = 262;
   const padL = 34, padR = 12, top = 30, base = 190;
-  const path = buildFlightPath({ todr, g2, d3, g4 });
+  const path = buildFlightPath({ todr, tor, g2, d3, g4 });
   const farthest = obstacles.reduce((m, o) => Math.max(m, toda + o.obstacle_dist), 0);
   const maxObs = obstacles.reduce((m, o) => Math.max(m, o.obstacle_ft), 0);
   const maxX = Math.max(toda + 600, farthest + 300, path ? path.xLevelEnd + 400 : 0);
@@ -116,27 +119,36 @@ export function buildSideViewSvg({ tora, toda, todr, obstacles, g2, d3, g4, widt
   const sx = x => padL + (x / maxX) * (W - padL - padR);
   const sy = h => base - (h / maxH) * (base - top);
 
-  // Pontos da trajetória: só os vértices (reta, nivelado, reta)
-  let pathPts = "";
+  // Trajetória em troços (cada um com a sua cor): rolagem, rotação até 35 ft, 2º, 3º e 4º segmento
+  let pathSvg = "";
   if (path) {
-    const endX = maxX;
-    const hEnd = path.heightAt(endX);
-    const pts = [[path.todr, REF_HEIGHT_FT], [path.x400, SEG2_END_FT]];
-    if (path.hasLevel) pts.push([path.xLevelEnd, SEG2_END_FT]);
-    if (hEnd > maxH) pts.push([path.xLevelEnd + ((maxH - SEG2_END_FT) / (path.g4 / 100)) / FT_PER_M, maxH]);
-    else pts.push([endX, hEnd]);
-    pathPts = pts.map(([x, h]) => `${f1(sx(x))},${f1(sy(Math.min(h, maxH)))}`).join(" ");
+    const P = (x, h) => `${f1(sx(x))},${f1(sy(Math.min(h, maxH)))}`;
+    const line = (cls, pts) => `<polyline points="${pts.join(" ")}" class="dg-path ${cls}"/>`;
+    const hEnd = path.heightAt(maxX);
+    const end4 = hEnd > maxH ? [path.xLevelEnd + ((maxH - SEG2_END_FT) / (path.g4 / 100)) / FT_PER_M, maxH] : [maxX, hEnd];
+    if (path.tor != null) {
+      pathSvg += line("dg-roll", [P(0, 0), P(path.tor, 0)]);
+      pathSvg += line("dg-lift", [P(path.tor, 0), P(path.todr, REF_HEIGHT_FT)]);
+    }
+    pathSvg += line("dg-s2", [P(path.todr, REF_HEIGHT_FT), P(path.x400, SEG2_END_FT)]);
+    if (path.hasLevel) pathSvg += line("dg-s3", [P(path.x400, SEG2_END_FT), P(path.xLevelEnd, SEG2_END_FT)]);
+    pathSvg += line("dg-s4", [P(path.hasLevel ? path.xLevelEnd : path.x400, SEG2_END_FT), P(end4[0], end4[1])]);
+    // Pontos de referência: lift-off, Reference Zero (35 ft) e fim do 2º segmento (400 ft)
+    const dot = (x, h) => `<circle cx="${f1(sx(x))}" cy="${f1(sy(h))}" r="3.5" class="dg-dot"/>`;
+    if (path.tor != null) pathSvg += dot(path.tor, 0);
+    pathSvg += dot(path.todr, REF_HEIGHT_FT) + dot(path.x400, SEG2_END_FT);
   }
 
   // Marcadores dos segmentos (2/3/4) junto à trajetória
   let segLabels = "";
   if (path) {
-    const lab = (x, h, t) => `<text x="${f1(sx(x))}" y="${f1(sy(h) - 9)}" text-anchor="middle" class="dg-seg dg-halo">${t}</text>`;
+    const lab = (x, h, t) => `<text x="${f1(sx(x))}" y="${f1(sy(h) - 9)}" text-anchor="middle" class="dg-seg dg-halo dg-seg-${t}">${t}</text>`;
     segLabels += lab((path.todr + path.x400) / 2 - 8, (REF_HEIGHT_FT + SEG2_END_FT) / 2, "2nd");
     if (path.hasLevel) segLabels += lab((path.x400 + path.xLevelEnd) / 2, SEG2_END_FT, "3rd");
     const x4 = Math.min(path.xLevelEnd + (maxX - path.xLevelEnd) * 0.55, maxX);
     const h4 = path.heightAt(x4);
     if (h4 <= maxH * 0.95 && sx(x4) < W - 30) segLabels += lab(x4, h4, "4th");
+    segLabels += `<text x="${f1(sx(path.x400) - 8)}" y="${f1(sy(SEG2_END_FT) - 6)}" text-anchor="end" class="dg-axis dg-halo">${SEG2_END_FT} ft</text>`;
   }
 
   // Fim do 3º segmento (distância do gráfico do AFM, a partir do Reference Zero)
@@ -192,7 +204,7 @@ export function buildSideViewSvg({ tora, toda, todr, obstacles, g2, d3, g4, widt
   <line x1="${padL}" y1="${base + 8}" x2="${W - padR}" y2="${base + 8}" class="dg-ground"/>
   <text x="${padL}" y="${base + 24}" class="dg-small">TORA ${tora} m${toda > tora ? ` · TODA ${toda} m` : ""}</text>
   ${path ? `<line x1="${f1(sx(path.todr))}" y1="${base}" x2="${f1(sx(path.todr))}" y2="${f1(sy(REF_HEIGHT_FT))}" class="dg-ref"/><text x="${f1(todX)}" y="${base + 40}" text-anchor="middle" class="dg-small">TOD ${todr} m</text>` : ""}
-  ${path ? `<polyline points="${pathPts}" class="dg-path ${anyBad ? "bad" : "ok"}"/>` : ""}
+  ${pathSvg}
   ${seg3Marker}
   ${segLabels}
   ${obs}
@@ -202,8 +214,8 @@ export function buildSideViewSvg({ tora, toda, todr, obstacles, g2, d3, g4, widt
 
 export function sideInfoHtml(segments) {
   const row = (name, s) => s && s.text ? `<div><span class="muted">${name}</span> <span class="mono ${s.state === "ok" ? "ok" : s.state === "bad" || s.state === "ooc" ? "bad" : ""}">${esc(s.text)}</span></div>` : "";
-  return `<div class="dg-info">${row("2nd seg req/calc", segments.SEG2)}${row("3rd seg obstacle/dist", segments.SEG3)}${row("4th seg req/calc", segments.SEG4)}
-  <div class="muted">Schematic only. Dashed blue line = end of the 3rd segment (AFM distance from Reference Zero). The Status above is the verdict.</div></div>`;
+  return `<div class="dg-info"><div class="dg-legend"><span class="lg lg-ground">Ground roll</span><span class="lg lg-lift">Lift-off → 35 ft</span><span class="lg lg-s2">2nd</span><span class="lg lg-s3">3rd</span><span class="lg lg-s4">4th</span></div>${row("2nd seg req/calc", segments.SEG2)}${row("3rd seg obstacle/dist", segments.SEG3)}${row("4th seg req/calc", segments.SEG4)}
+  <div class="muted">Schematic only. Dashed orange line = end of the 3rd segment (AFM distance from Reference Zero). The Status above is the verdict.</div></div>`;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -228,7 +240,7 @@ function draw() {
   topEl.innerHTML = buildTopViewSvg({ rwy: r.rwy, heading: r.heading, tora: r.tora, toda: r.toda, wind, width: w })
     + topInfoHtml({ rwy: r.rwy, heading: r.heading, tora: r.tora, toda: r.toda, slope: r.slope, wind });
   document.getElementById("diagramSide").innerHTML = buildSideViewSvg({
-    tora: r.tora, toda: r.toda, todr, obstacles: r.obstacles || [], width: w,
+    tora: r.tora, toda: r.toda, todr, tor: last.tor, obstacles: r.obstacles || [], width: w,
     g2: segments.SEG2 ? segments.SEG2.gradient : null,
     d3: segments.SEG3 ? segments.SEG3.distance : null,
     g4: segments.SEG4 ? segments.SEG4.gradient : null
@@ -263,12 +275,12 @@ function bind() {
 }
 
 /** Guarda os resultados do Calc e mostra o cartão (recolhido, ou aberto se o utilizador o deixou aberto). */
-export function renderPerformanceDiagrams({ runwayEntry, windRaw, todr, segments }) {
+export function renderPerformanceDiagrams({ runwayEntry, windRaw, todr, tor, segments }) {
   const card = document.getElementById("diagramCard");
   if (!card) return;
   const wind = parseWind(windRaw);
   if (!wind) { clearPerformanceDiagrams(); return; }
-  last = { runwayEntry, wind, todr, segments };
+  last = { runwayEntry, wind, todr, tor, segments };
   bind();
   card.hidden = false;
   setOpen(readOpen());

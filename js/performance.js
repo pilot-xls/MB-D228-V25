@@ -1184,6 +1184,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             runwayEntry,
             windRaw: document.getElementById("wind").value,
             todr: diagramTodr,
+            tor: parseFloat(document.getElementById("outTor").textContent),
             segments
         });
     }
