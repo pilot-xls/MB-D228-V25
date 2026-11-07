@@ -541,3 +541,64 @@ input:disabled {
     font-size: 14px;
     color: #666;
 }
+/* =========================================================
+   DESENHOS (planta + perfil) – cartão recolhível
+   ========================================================= */
+#diagramCard[hidden], #diagramBody[hidden] { display: none; }
+#diagramCard { margin-top: var(--gap); }
+#diagramCard h3 { margin: 0; }
+#diagramBody { margin-top: 10px; }
+.diagram-toggle { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer; font: inherit; font-weight: 800; color: inherit; min-height: 32px; }
+.diagram-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.diagram-chevron { font-size: 12px; font-weight: 600; color: var(--accent); }
+.diagram-grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
+@media (min-width: 980px) { .diagram-grid { grid-template-columns: 1fr 1fr; } }
+.diagram svg { width: 100%; height: auto; display: block; background: var(--bg-tooltip); border: 1px solid var(--line); border-radius: 12px; }
+.diagram .dg-info { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+.diagram .dg-info strong { color: var(--text-main); font-size: 13px; }
+.diagram .dg-info strong.bad { color: var(--bad); }
+.diagram .dg-title { font: 700 13px var(--font); fill: var(--text-main); }
+.diagram .dg-small { font: 12px var(--font); fill: var(--text-main); }
+.diagram .dg-axis { font: 11px var(--font); fill: var(--text-muted); }
+.diagram .dg-seg { font: 700 12px var(--font); fill: var(--text-main); }
+.diagram .dg-label { font: 700 13px var(--font); fill: var(--text-main); }
+.diagram .dg-label.ok { fill: var(--ok); }
+.diagram .dg-label.bad { fill: var(--bad); }
+.diagram .dg-halo { paint-order: stroke; stroke: var(--bg-tooltip); stroke-width: 4px; stroke-linejoin: round; }
+.diagram .dg-margin { font-weight: 700; }
+.diagram .dg-rwy { fill: #3a3f45; }
+.diagram .dg-clearway { fill: #9aa5ad; }
+.diagram .dg-centre { stroke: #fff; stroke-width: 3; stroke-dasharray: 18 12; }
+.diagram .dg-rwy-num { font: 700 16px var(--font); fill: #fff; }
+.diagram .dg-toarrow { stroke: var(--text-muted); stroke-width: 2; fill: none; }
+.diagram .dg-wind { stroke: var(--accent); stroke-width: 3; }
+.diagram .dg-wind-fill { fill: var(--accent); }
+.diagram .dg-pole { stroke: #555; stroke-width: 4; }
+.diagram .dg-sock { fill: #ff7a00; }
+.diagram .dg-stripe { stroke: #fff; stroke-width: 3; }
+.diagram .dg-grid { stroke: var(--line); stroke-width: 1; }
+.diagram .dg-ground { stroke: #8d6e63; stroke-width: 2; }
+.diagram .dg-ref { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.diagram .dg-path { fill: none; stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.diagram .dg-roll { stroke: #6b7280; }
+.diagram .dg-lift { stroke: #6b7280; stroke-dasharray: 2 5; }
+.diagram .dg-s2 { stroke: #0284c7; }
+.diagram .dg-s3 { stroke: #d97706; }
+.diagram .dg-s4 { stroke: #7c3aed; }
+.diagram .dg-dot { fill: var(--bg-tooltip); stroke: var(--text-main); stroke-width: 2; }
+.diagram .dg-seg-2nd { fill: #0284c7; }
+.diagram .dg-seg-3rd { fill: #d97706; }
+.diagram .dg-seg-4th { fill: #7c3aed; }
+.diagram .dg-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 4px; }
+.diagram .lg::before { content: ""; display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 5px; vertical-align: middle; background: currentColor; }
+.diagram .lg-ground { color: #6b7280; } .diagram .lg-lift { color: #6b7280; } .diagram .lg-s2 { color: #0284c7; } .diagram .lg-s3 { color: #d97706; } .diagram .lg-s4 { color: #7c3aed; }
+.diagram .dg-shape { fill: #777; stroke: #555; stroke-width: 1; fill-opacity: .85; }
+.diagram .dg-clear { stroke: #777; stroke-width: 2; }
+.diagram .dg-obs.ok .dg-shape { fill: var(--ok); stroke: var(--ok); }
+.diagram .dg-obs.ok .dg-clear { stroke: var(--ok); }
+.diagram .dg-obs.bad .dg-shape { fill: var(--bad); stroke: var(--bad); }
+.diagram .dg-obs.bad .dg-clear { stroke: var(--bad); }
+.diagram .dg-obs.ok .dg-margin { fill: var(--ok); }
+.diagram .dg-obs.bad .dg-margin { fill: var(--bad); }
+.diagram .dg-seg3 { stroke: #d97706; stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram .dg-pill { fill: var(--bg-tooltip); fill-opacity: .92; stroke: var(--line); stroke-width: 1; }

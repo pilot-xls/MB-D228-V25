@@ -44,7 +44,8 @@ import MTOW_TODA_FlapsUp from "./mtowTODA_FlapsUp.js";
 import MTOW_TODA_Flaps1 from "./mtowTODA_Flaps1.js";
 
 // Verificação do 2º/3º/4º segmento e procura do MTOW: o mesmo código para o TOW introduzido e para o MTOW
-import { evaluateSegments, findMaxTowAllSegments, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
+import { renderPerformanceDiagrams, clearPerformanceDiagrams } from "./performanceDiagram.js";
+import { evaluateSegments, findMaxTowAllSegments, getTodrForWeight, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
 
 // Continuam disponíveis a partir de performance.js (usados nos testes)
 export { describeThirdSegment, OUT_OF_CHART_TEXT } from "./cgMTOWSearch.js";
@@ -421,6 +422,9 @@ function clearPerformanceOutputs() {
         const el = document.getElementById(id);
         if (el) el.textContent = "";
     });
+
+    // Esconde os desenhos (planta/perfil)
+    clearPerformanceDiagrams();
 
     // O badge volta ao estado inicial do HTML
     const badge = document.getElementById("cgBadge");
@@ -1171,6 +1175,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         badge.classList.toggle("bad", status.state !== "ok");
         document.getElementById("cgText").textContent = status.text;
         document.getElementById("cgReason").textContent = status.reason;
+
+        // Desenhos: planta (pista + WDI + vento) e perfil lateral (obstáculos + flight path)
+        const diagramTodr = segments.todr != null
+            ? segments.todr
+            : getTodrForWeight({ flaps, pa, oat, tow, wind, slope: runwayEntry.slope });
+        renderPerformanceDiagrams({
+            runwayEntry,
+            windRaw: document.getElementById("wind").value,
+            todr: diagramTodr,
+            tor: parseFloat(document.getElementById("outTor").textContent),
+            segments
+        });
     }
 
     /**

@@ -197,7 +197,8 @@ function evaluate34Seg({ pa, oat, tow, inlet, wind, slope, obstacles, todr, toda
     inlet: inlet,
     obstacleDistance: obstacleDistance3Seg
   });
-  const seg3 = describeThirdSegment(thirdSegment, obstacleDistance3Seg, critical != null);
+  // distance: metros do 3º segmento (a partir do Reference Zero), usado pelo desenho do flight path
+  const seg3 = { ...describeThirdSegment(thirdSegment, obstacleDistance3Seg, critical != null), distance: thirdSegment ? thirdSegment.distance : null };
 
   // 4º segmento: gradiente disponível vs gradient required do obstáculo crítico
   const fourthSegment = Gradient_4segFlapsUp({
