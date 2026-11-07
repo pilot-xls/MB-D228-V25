@@ -107,6 +107,43 @@ export function topInfoHtml({ rwy, heading, tora, toda, slope, wind }) {
   <div>RWY ${esc(rwy)} (${String(heading).padStart(3, "0")}°) · TORA ${tora} m · TODA ${toda} m · slope ${slope > 0 ? "+" : ""}${slope}%</div></div>`;
 }
 
+/** Tipo de silhueta a partir do nome do obstáculo (sem acentos, minúsculas). */
+export function obstacleKind(name) {
+  const n = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/casa|house|edificio|building|predio|hangar|armazem/.test(n)) return "house";
+  if (/arvore|tree|pinhal|eucalipto|floresta|mata/.test(n)) return "tree";
+  if (/torre|antena|mast|tower|chamine|chimney|pilar|poste|cabo/.test(n)) return "tower";
+  if (/vale|colina|monte|serra|hill|mountain|montanha|cume|morro/.test(n)) return "hill";
+  return "block";
+}
+
+/** Silhueta do obstáculo, com o topo em (x0, y0) e a base a y0 + hPx. */
+function obstacleShape(kind, x0, y0, hPx) {
+  const base = y0 + hPx;
+  switch (kind) {
+    case "house": {
+      const w = 26, roof = Math.min(8, hPx * 0.4);
+      return `<rect x="${f1(x0 - w / 2)}" y="${f1(y0 + roof)}" width="${w}" height="${f1(hPx - roof)}" class="dg-shape"/>
+      <polygon points="${f1(x0 - w / 2 - 3)},${f1(y0 + roof)} ${f1(x0)},${f1(y0)} ${f1(x0 + w / 2 + 3)},${f1(y0 + roof)}" class="dg-shape"/>`;
+    }
+    case "tree": {
+      const r = clamp(hPx * 0.32, 6, 13);
+      return `<rect x="${f1(x0 - 2)}" y="${f1(y0 + r)}" width="4" height="${f1(Math.max(hPx - r, 2))}" class="dg-shape"/>
+      <circle cx="${f1(x0)}" cy="${f1(y0 + r)}" r="${f1(r)}" class="dg-shape"/>`;
+    }
+    case "tower": {
+      return `<rect x="${f1(x0 - 3)}" y="${f1(y0)}" width="6" height="${f1(hPx)}" class="dg-shape"/>
+      <polygon points="${f1(x0 - 9)},${f1(base)} ${f1(x0 + 9)},${f1(base)} ${f1(x0)},${f1(y0 + hPx * 0.55)}" class="dg-shape"/>`;
+    }
+    case "hill": {
+      const hw = 34;
+      return `<polygon points="${f1(x0 - hw)},${f1(base)} ${f1(x0 - hw * 0.35)},${f1(y0 + hPx * 0.2)} ${f1(x0)},${f1(y0)} ${f1(x0 + hw * 0.4)},${f1(y0 + hPx * 0.25)} ${f1(x0 + hw)},${f1(base)}" class="dg-shape"/>`;
+    }
+    default:
+      return `<rect x="${f1(x0 - 9)}" y="${f1(y0)}" width="18" height="${f1(hPx)}" class="dg-shape"/>`;
+  }
+}
+
 /** PERFIL LATERAL: pista, obstáculos e flight path (2º/3º/4º segmento). obstacle_dist é medida a partir do fim da TODA. */
 export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4, width = 640 }) {
   const W = width, H = 262;
@@ -143,15 +180,20 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
   let segLabels = "";
   if (path) {
     const lab = (x, h, t) => `<text x="${f1(sx(x))}" y="${f1(sy(h) - 9)}" text-anchor="middle" class="dg-seg dg-halo dg-seg-${t}">${t}</text>`;
-    segLabels += lab((path.todr + path.x400) / 2 - 8, (REF_HEIGHT_FT + SEG2_END_FT) / 2, "2nd");
-    if (path.hasLevel) segLabels += `<text x="${f1(sx((path.x400 + path.xLevelEnd) / 2))}" y="${f1(sy(SEG2_END_FT) - 9)}" text-anchor="middle" class="dg-seg dg-halo dg-seg-3rd">3rd · ${Math.round(d3)} m</text>`;
+    segLabels += lab(path.todr + (path.x400 - path.todr) * 0.78, REF_HEIGHT_FT + (SEG2_END_FT - REF_HEIGHT_FT) * 0.78 - 4, "2nd");
+    if (path.hasLevel) {
+      const t3 = `3rd · ${Math.round(d3)} m`;
+      const x3 = sx(path.x400) + 12;
+      const over = x3 + t3.length * 7.4 > W - 6;
+      segLabels += `<text x="${f1(over ? W - 6 : x3)}" y="${f1(sy(SEG2_END_FT) - 9)}" text-anchor="${over ? "end" : "start"}" class="dg-seg dg-halo dg-seg-3rd">${t3}</text>`;
+    }
     const x4 = Math.min(path.xLevelEnd + (maxX - path.xLevelEnd) * 0.55, maxX);
     const h4 = path.heightAt(x4);
     if (h4 <= maxH * 0.95 && sx(x4) < W - 30) segLabels += lab(x4, h4, "4th");
-    segLabels += `<text x="${f1(sx(path.x400) - 8)}" y="${f1(sy(SEG2_END_FT) - 6)}" text-anchor="end" class="dg-axis dg-halo">${SEG2_END_FT} ft</text>`;
+    segLabels += `<text x="${f1(sx(path.x400) - 10)}" y="${f1(sy(SEG2_END_FT) - 6)}" text-anchor="end" class="dg-axis dg-halo">${SEG2_END_FT} ft</text>`;
   }
 
-  // Obstáculos com etiquetas sem sobreposição
+  // Obstáculos como silhuetas (casa, árvore, colina, torre) com a margem vertical à flight path
   let anyBad = false;
   const boxes = [];
   const obs = obstacles.map(o => {
@@ -162,23 +204,44 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
     if (bad) anyBad = true;
     const cls = margin == null ? "dg-obs" : bad ? "dg-obs bad" : "dg-obs ok";
     const x0 = sx(x), y0 = sy(o.obstacle_ft);
-    const l1 = `${o.name || "obstacle"} ${o.obstacle_ft} ft · ${o.obstacle_dist} m`;
-    const l2 = margin == null ? "" : `${margin >= 0 ? "+" : ""}${Math.round(margin)} ft`;
-    const bw = Math.max(l1.length, l2.length) * 6.4 + 4;
-    const xl = clamp(x0 - bw / 2, 4, W - bw - 4);
-    let yt = y0 - 24;
-    for (let guard = 0; guard < 8; guard++) {
-      const hit = boxes.find(b => xl < b.x + b.w && xl + bw > b.x && yt < b.y + 28 && yt + 28 > b.y);
-      if (!hit) break;
-      yt = hit.y - 30;
+    const hPx = Math.max(base - y0, 6);
+    const kind = obstacleKind(o.name);
+    const shape = obstacleShape(kind, x0, y0, hPx);
+    const title = `${o.name || "obstacle"}: ${o.obstacle_ft} ft, ${o.obstacle_dist} m after TODA${margin == null ? "" : `, margin ${margin >= 0 ? "+" : ""}${Math.round(margin)} ft`}`;
+
+    // Linha de margem: do topo do obstáculo até à trajetória
+    let clear = "", labelY = y0;
+    if (h != null) {
+      const yp = sy(Math.min(h, maxH));
+      clear = `<line x1="${f1(x0)}" y1="${f1(y0)}" x2="${f1(x0)}" y2="${f1(yp)}" class="dg-clear"/><line x1="${f1(x0 - 5)}" y1="${f1(yp)}" x2="${f1(x0 + 5)}" y2="${f1(yp)}" class="dg-clear"/>`;
+      labelY = Math.min(y0, yp);
     }
-    yt = Math.max(yt, top - 4);
-    boxes.push({ x: xl, w: bw, y: yt });
-    return `<g class="${cls}"><line x1="${f1(x0)}" y1="${base}" x2="${f1(x0)}" y2="${f1(y0)}" class="dg-obs-bar"/>
-      <polygon points="${f1(x0 - 6)},${f1(y0 + 7)} ${f1(x0 + 6)},${f1(y0 + 7)} ${f1(x0)},${f1(y0 - 5)}" class="dg-obs-top"/>
-      <text x="${f1(xl)}" y="${f1(yt + 11)}" class="dg-small dg-halo">${esc(l1)}</text>
-      ${l2 ? `<text x="${f1(xl)}" y="${f1(yt + 24)}" class="dg-small dg-halo dg-margin">${l2}</text>` : ""}</g>`;
-  }).join("");
+    let label = "";
+    if (margin != null) {
+      const txt = `${margin >= 0 ? "+" : ""}${Math.round(margin)} ft`;
+      const bw = txt.length * 7 + 4;
+      const yp = sy(Math.min(h, maxH));
+      const tall = Math.abs(yp - y0) >= 24;
+      // Linha de margem alta: etiqueta ao lado, a meio; senão por cima do ponto mais alto
+      const left = x0 + 8 + bw > W - 4;
+      let xl = tall ? (left ? x0 - 8 - bw : x0 + 8) : clamp(x0 - bw / 2, 4, W - bw - 4);
+      let yt = tall ? (y0 + yp) / 2 - 8 : labelY - 24;
+      for (let guard = 0; guard < 8; guard++) {
+        const hit = boxes.find(bx => xl < bx.x + bx.w && xl + bw > bx.x && yt < bx.y + 16 && yt + 16 > bx.y);
+        if (!hit) break;
+        yt = hit.y - 17;
+      }
+      yt = Math.max(yt, top - 6);
+      boxes.push({ x: xl, w: bw, y: yt });
+      label = `<rect x="${f1(xl - 3)}" y="${f1(yt - 1)}" width="${f1(bw + 2)}" height="17" rx="4" class="dg-pill"/><text x="${f1(xl)}" y="${f1(yt + 12)}" class="dg-small dg-margin">${txt}</text>`;
+    }
+    return {
+      body: `<g class="${cls}"><title>${esc(title)}</title>${shape}${clear}</g>`,
+      label: `<g class="${cls}">${label}</g>`
+    };
+  });
+  // Etiquetas por cima de todas as silhuetas
+  const obsSvg = obs.map(o => o.body).join("") + obs.map(o => o.label).join("");
 
   const verdict = !path ? "Flight path unavailable (out of AFM chart)"
     : obstacles.length === 0 ? "No obstacle in database"
@@ -197,7 +260,7 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
   ${path ? `<line x1="${f1(sx(path.todr))}" y1="${base}" x2="${f1(sx(path.todr))}" y2="${f1(sy(REF_HEIGHT_FT))}" class="dg-ref"/><text x="${f1(todX)}" y="${base + 40}" text-anchor="middle" class="dg-small">TOD ${todr} m</text>` : ""}
   ${pathSvg}
   ${segLabels}
-  ${obs}
+  ${obsSvg}
   <text x="12" y="${H - 8}" class="dg-label ${anyBad || !path ? "bad" : "ok"}">${verdict}</text>
 </svg>`;
 }

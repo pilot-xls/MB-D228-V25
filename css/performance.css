@@ -592,12 +592,13 @@ input:disabled {
 .diagram .dg-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 4px; }
 .diagram .lg::before { content: ""; display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 5px; vertical-align: middle; background: currentColor; }
 .diagram .lg-ground { color: #6b7280; } .diagram .lg-lift { color: #6b7280; } .diagram .lg-s2 { color: #0284c7; } .diagram .lg-s3 { color: #d97706; } .diagram .lg-s4 { color: #7c3aed; }
-.diagram .dg-obs-bar { stroke: #777; stroke-width: 6; }
-.diagram .dg-obs-top { fill: #777; stroke: none; }
-.diagram .dg-obs.ok .dg-obs-bar { stroke: var(--ok); }
-.diagram .dg-obs.ok .dg-obs-top { fill: var(--ok); }
-.diagram .dg-obs.bad .dg-obs-bar { stroke: var(--bad); }
-.diagram .dg-obs.bad .dg-obs-top { fill: var(--bad); }
+.diagram .dg-shape { fill: #777; stroke: #555; stroke-width: 1; fill-opacity: .85; }
+.diagram .dg-clear { stroke: #777; stroke-width: 2; }
+.diagram .dg-obs.ok .dg-shape { fill: var(--ok); stroke: var(--ok); }
+.diagram .dg-obs.ok .dg-clear { stroke: var(--ok); }
+.diagram .dg-obs.bad .dg-shape { fill: var(--bad); stroke: var(--bad); }
+.diagram .dg-obs.bad .dg-clear { stroke: var(--bad); }
 .diagram .dg-obs.ok .dg-margin { fill: var(--ok); }
 .diagram .dg-obs.bad .dg-margin { fill: var(--bad); }
 .diagram .dg-seg3 { stroke: #d97706; stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram .dg-pill { fill: var(--bg-tooltip); fill-opacity: .92; stroke: var(--line); stroke-width: 1; }
