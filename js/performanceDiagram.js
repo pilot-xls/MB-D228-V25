@@ -107,41 +107,22 @@ export function topInfoHtml({ rwy, heading, tora, toda, slope, wind }) {
   <div>RWY ${esc(rwy)} (${String(heading).padStart(3, "0")}°) · TORA ${tora} m · TODA ${toda} m · slope ${slope > 0 ? "+" : ""}${slope}%</div></div>`;
 }
 
-/** Tipo de silhueta a partir do nome do obstáculo (sem acentos, minúsculas). */
+/** Silhueta do obstáculo: antena (mastro, torre, chaminé…) ou monte (tudo o resto). */
 export function obstacleKind(name) {
   const n = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (/casa|house|edificio|building|predio|hangar|armazem/.test(n)) return "house";
-  if (/arvore|tree|pinhal|eucalipto|floresta|mata/.test(n)) return "tree";
-  if (/torre|antena|mast|tower|chamine|chimney|pilar|poste|cabo/.test(n)) return "tower";
-  if (/vale|colina|monte|serra|hill|mountain|montanha|cume|morro/.test(n)) return "hill";
-  return "block";
+  return /torre|antena|mast|tower|chamine|chimney|pilar|poste|cabo/.test(n) ? "tower" : "hill";
 }
 
 /** Silhueta do obstáculo, com o topo em (x0, y0) e a base a y0 + hPx. */
 function obstacleShape(kind, x0, y0, hPx) {
   const base = y0 + hPx;
-  switch (kind) {
-    case "house": {
-      const w = 26, roof = Math.min(8, hPx * 0.4);
-      return `<rect x="${f1(x0 - w / 2)}" y="${f1(y0 + roof)}" width="${w}" height="${f1(hPx - roof)}" class="dg-shape"/>
-      <polygon points="${f1(x0 - w / 2 - 3)},${f1(y0 + roof)} ${f1(x0)},${f1(y0)} ${f1(x0 + w / 2 + 3)},${f1(y0 + roof)}" class="dg-shape"/>`;
-    }
-    case "tree": {
-      const r = clamp(hPx * 0.32, 6, 13);
-      return `<rect x="${f1(x0 - 2)}" y="${f1(y0 + r)}" width="4" height="${f1(Math.max(hPx - r, 2))}" class="dg-shape"/>
-      <circle cx="${f1(x0)}" cy="${f1(y0 + r)}" r="${f1(r)}" class="dg-shape"/>`;
-    }
-    case "tower": {
-      return `<rect x="${f1(x0 - 3)}" y="${f1(y0)}" width="6" height="${f1(hPx)}" class="dg-shape"/>
-      <polygon points="${f1(x0 - 9)},${f1(base)} ${f1(x0 + 9)},${f1(base)} ${f1(x0)},${f1(y0 + hPx * 0.55)}" class="dg-shape"/>`;
-    }
-    case "hill": {
-      const hw = 34;
-      return `<polygon points="${f1(x0 - hw)},${f1(base)} ${f1(x0 - hw * 0.35)},${f1(y0 + hPx * 0.2)} ${f1(x0)},${f1(y0)} ${f1(x0 + hw * 0.4)},${f1(y0 + hPx * 0.25)} ${f1(x0 + hw)},${f1(base)}" class="dg-shape"/>`;
-    }
-    default:
-      return `<rect x="${f1(x0 - 9)}" y="${f1(y0)}" width="18" height="${f1(hPx)}" class="dg-shape"/>`;
+  if (kind === "tower") {
+    return `<rect x="${f1(x0 - 2.5)}" y="${f1(y0)}" width="5" height="${f1(hPx)}" class="dg-shape"/>
+      <polygon points="${f1(x0 - 9)},${f1(base)} ${f1(x0 + 9)},${f1(base)} ${f1(x0)},${f1(y0 + hPx * 0.5)}" class="dg-shape"/>
+      <circle cx="${f1(x0)}" cy="${f1(y0)}" r="3" class="dg-shape"/>`;
   }
+  const hw = clamp(hPx * 1.1, 16, 34);
+  return `<polygon points="${f1(x0 - hw)},${f1(base)} ${f1(x0 - hw * 0.35)},${f1(y0 + hPx * 0.2)} ${f1(x0)},${f1(y0)} ${f1(x0 + hw * 0.4)},${f1(y0 + hPx * 0.25)} ${f1(x0 + hw)},${f1(base)}" class="dg-shape"/>`;
 }
 
 /** PERFIL LATERAL: pista, obstáculos e flight path (2º/3º/4º segmento). obstacle_dist é medida a partir do fim da TODA. */
@@ -182,7 +163,7 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
     const lab = (x, h, t) => `<text x="${f1(sx(x))}" y="${f1(sy(h) - 9)}" text-anchor="middle" class="dg-seg dg-halo dg-seg-${t}">${t}</text>`;
     segLabels += lab(path.todr + (path.x400 - path.todr) * 0.78, REF_HEIGHT_FT + (SEG2_END_FT - REF_HEIGHT_FT) * 0.78 - 4, "2nd");
     if (path.hasLevel) {
-      const t3 = `3rd · ${Math.round(d3)} m`;
+      const t3 = "3rd";
       const x3 = sx(path.x400) + 12;
       const over = x3 + t3.length * 7.4 > W - 6;
       segLabels += `<text x="${f1(over ? W - 6 : x3)}" y="${f1(sy(SEG2_END_FT) - 9)}" text-anchor="${over ? "end" : "start"}" class="dg-seg dg-halo dg-seg-3rd">${t3}</text>`;
