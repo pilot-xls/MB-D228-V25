@@ -579,14 +579,15 @@ const TO_ENGINE_MTOW = {
     return new Error(`${ctx}: grelha furada (faltam dados do AFM) para PA=[${paB.lo},${paB.hi}] Temp=[${tB.lo},${tB.hi}]`); // Buraco nos dados (não é fora do gráfico)
   }, // Separador de métodos
 
-  _enforceAsdrLimitByDecrement(weight, { PA, OAT, wind, runway_conditions, ASDA }) { // Garante que ASDR calculada não excede a ASDA disponível
+  _enforceAsdrLimitByDecrement(weight, { PA, OAT, wind, runway_conditions, ASDA }, { floor = 1 } = {}) { // Garante que ASDR calculada não excede a ASDA disponível
     let safeWeight = Math.ceil(weight); // Trabalhar com peso inteiro
     let iter = 0; // Proteção contra loops infinitos
     const MAX_ITER = 3000; // Limite de iterações suficiente para todo o envelope
+    // floor: menor peso a testar (por omissão desce até 1 kg, como antes)
     let lowestComputed = null; // Menor peso em que o forward calculou mas excedeu a distância disponível
     let lastError = null; // Último erro do forward (peso sem resultado no gráfico)
 
-    while (safeWeight > 0 && iter < MAX_ITER) { // Desce peso até cumprir ASDR<=ASDA
+    while (safeWeight >= floor && iter < MAX_ITER) { // Desce peso até cumprir ASDR<=ASDA
       const asdr = ASDR_FlapsUp({ PA, OAT, Weight: safeWeight, Wind: wind, runway: runway_conditions }); // Recalcular ASDR para o peso candidato
       if (asdr?.status === "passed" && Number.isFinite(asdr?.result)) { // ASDR calculada para este peso
         if (Math.round(asdr.result) <= ASDA) { // Encontrou peso válido
@@ -693,12 +694,20 @@ const TO_ENGINE_MTOW = {
     const rowsHi = rowsAtWind(wB.hi); // Linhas hi ordenadas
     if (rowsLo.length === 0 || rowsHi.length === 0) throw new Error(`Step3: faltam linhas Wind ${wB.lo}/${wB.hi}`); // Validar
 
-    const pos = this._resolveNearestIndexByY( // Resolver índice+desvio em rowsLo
+    // Tabela do vento pedido: cada faixa interpolada entre o vento lo e o hi (é o que o forward faz).
+    // Procurar só na tabela lo tratava, p.ex., -5 kt (cauda) como -10 kt e 5 kt como 0 kt.
+    const nBands = Math.min(rowsLo.length, rowsHi.length); // Faixas que existem nos dois ventos
+    const rowsAt = rowsLo.slice(0, nBands).map((lo, i) => ({ // Interpolar cada faixa
+      Y_Ref_Down: this._lerp(lo.Y_Ref_Down, rowsHi[i].Y_Ref_Down, wB.t), // Down interpolado
+      Y_Ref_Up: this._lerp(lo.Y_Ref_Up, rowsHi[i].Y_Ref_Up, wB.t) // Up interpolado
+    }));
+
+    const pos = this._resolveNearestIndexByY( // Resolver índice+desvio no vento pedido
       y_afterWind, // y actual
-      rowsLo, // Tabela lo
+      rowsAt, // Tabela interpolada
       "Y_Ref_Down", // Down
       "Y_Ref_Up", // Up
-      "Step3(rowsLo)" // Contexto
+      "Step3(wind)" // Contexto
     ); // Fechar chamada
 
     const sectionIndex = pos.index; // Índice na tabela ordenada
@@ -938,6 +947,13 @@ const TO_ENGINE_MTOW = {
 
       if (s6.status === "failed") { // Se Step6 falhou (acima do envelope): a ASDA não chega nem para o peso mínimo do gráfico
         const minW = s6.debug?.minWeight; // Peso mínimo do gráfico nesta secção
+        // Na fronteira o forward arredonda a distância ao metro e pode ainda aceitar o peso mínimo do gráfico:
+        // testa só esse peso antes de dizer que o MTOW fica abaixo do gráfico
+        const edge = Number.isFinite(minW) ? this._enforceAsdrLimitByDecrement(minW, { PA, OAT, wind, runway_conditions, ASDA: ASDA_used }, { floor: minW }) : null; // Forward no peso mínimo
+        if (edge && edge.safeWeight > 0) { // O peso mínimo cumpre a ASDA
+          debug.step6Conservative = { ...edge.debug, edge: "CHART_MIN_WEIGHT" }; // Registar no debug
+          return { input: base.input, status: "passed", result: edge.safeWeight, debug }; // Peso mínimo do gráfico
+        }
         return this._fail(base, "step6", "y_target acima do envelope (section+deviation)", { ...debug }, { // Falha explícita
           input: "ASDA", value: ASDA, unit: "m", minWeight: minW, // Entrada e limite
           reason: `ASDA ${this._fmt(ASDA)} m: MTOW below chart minimum weight (${minW} kg)` // Motivo para a página
