@@ -248,8 +248,7 @@ export function buildSideViewSvg({ tora, toda, todr, tor, obstacles, g2, d3, g4,
 
 export function sideInfoHtml(segments) {
   const row = (name, s) => s && s.text ? `<div><span class="muted">${name}</span> <span class="mono ${s.state === "ok" ? "ok" : s.state === "bad" || s.state === "ooc" ? "bad" : ""}">${esc(s.text)}</span></div>` : "";
-  return `<div class="dg-info"><div class="dg-legend"><span class="lg lg-ground">Ground roll</span><span class="lg lg-lift">Lift-off → 35 ft</span><span class="lg lg-s2">2nd</span><span class="lg lg-s3">3rd</span><span class="lg lg-s4">4th</span></div>${row("2nd seg req/calc", segments.SEG2)}${row("3rd seg obstacle/dist", segments.SEG3)}${row("4th seg req/calc", segments.SEG4)}
-  <div class="muted">Schematic only: 3rd segment drawn level at 400 ft with the AFM distance. The Status above is the verdict.</div></div>`;
+  return `<div class="dg-info"><div class="dg-legend"><span class="lg lg-ground">Ground roll</span><span class="lg lg-lift">Lift-off → 35 ft</span><span class="lg lg-s2">2nd</span><span class="lg lg-s3">3rd</span><span class="lg lg-s4">4th</span></div>${row("2nd seg req/calc", segments.SEG2)}${row("3rd seg obstacle/dist", segments.SEG3)}${row("4th seg req/calc", segments.SEG4)}</div>`;
 }
 
 // ---------------------------------------------------------------------------------------------
