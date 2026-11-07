@@ -80,6 +80,7 @@ const ASSETS = [
   './js/mtowTORA_FlapsUp.js',
   './js/netGradient_CSATH.js',
   './js/performance.js',
+  './js/performanceDiagram.js',
   './js/popup-TLoad.js',
   './js/rotas.js',
   './js/settings.js',
