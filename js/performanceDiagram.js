@@ -7,7 +7,6 @@ const NS = "http://www.w3.org/2000/svg";
 const REF_HEIGHT_FT = 35; // altura do Reference Zero (fim do TOD)
 const SEG2_END_FT = 400; // o 2º segmento acaba aos 400 ft; segue-se o 3º (nivelado)
 const FT_PER_M = 3.28084;
-const STORAGE_KEY = "perfDiagramOpen";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -257,13 +256,6 @@ export function sideInfoHtml(segments) {
 let last = null; // últimos dados, para redesenhar no resize/abrir
 let bound = false;
 
-function readOpen() {
-  try { return localStorage.getItem(STORAGE_KEY) === "1"; } catch { return false; }
-}
-function writeOpen(v) {
-  try { localStorage.setItem(STORAGE_KEY, v ? "1" : "0"); } catch { /* sem storage: ignora */ }
-}
-
 function draw() {
   const body = document.getElementById("diagramBody");
   if (!last || !body || body.hidden) return;
@@ -298,7 +290,6 @@ function bind() {
   bound = true;
   btn.addEventListener("click", () => {
     const open = document.getElementById("diagramBody").hidden;
-    writeOpen(open);
     setOpen(open);
   });
   if (typeof window !== "undefined" && window.addEventListener) {
@@ -307,7 +298,7 @@ function bind() {
   }
 }
 
-/** Guarda os resultados do Calc e mostra o cartão (recolhido, ou aberto se o utilizador o deixou aberto). */
+/** Guarda os resultados do Calc e mostra o cartão sempre recolhido (Hide). */
 export function renderPerformanceDiagrams({ runwayEntry, windRaw, todr, tor, segments }) {
   const card = document.getElementById("diagramCard");
   if (!card) return;
@@ -316,7 +307,7 @@ export function renderPerformanceDiagrams({ runwayEntry, windRaw, todr, tor, seg
   last = { runwayEntry, wind, todr, tor, segments };
   bind();
   card.hidden = false;
-  setOpen(readOpen());
+  setOpen(false); // estado normal: escondido; só abre quando o utilizador tocar em Show
 }
 
 export function clearPerformanceDiagrams() {
