@@ -1,14 +1,17 @@
 // performanceDiagram.js
 // Desenhos SVG da página Performance: planta (pista + WDI + vento) e perfil lateral
-// (obstáculos + flight path). Funções puras: recebem dados já calculados e devolvem SVG.
+// (obstáculos + flight path com 2º, 3º e 4º segmentos). Os desenhos ficam escondidos
+// até o utilizador os abrir (botão no cabeçalho do cartão) e adaptam-se à largura do ecrã.
 
 const NS = "http://www.w3.org/2000/svg";
 const REF_HEIGHT_FT = 35; // altura do Reference Zero (fim do TOD)
-const SEG2_END_FT = 400;
+const SEG2_END_FT = 400; // o 2º segmento acaba aos 400 ft; segue-se o 3º (nivelado)
 const FT_PER_M = 3.28084;
+const STORAGE_KEY = "perfDiagramOpen";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const num = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : "—");
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const f1 = v => v.toFixed(1);
 
 /** Parse "270/15" → { dir, speed } ou null. */
 export function parseWind(raw) {
@@ -18,192 +21,261 @@ export function parseWind(raw) {
   return Number.isFinite(dir) && Number.isFinite(speed) ? { dir, speed } : null;
 }
 
-/** Componentes de vento (kt) em relação ao heading da pista. headwind<0 = tailwind; cross>0 = da direita. */
+/** Componentes de vento (kt) em relação ao heading da pista. head<0 = tailwind; cross>0 = da direita. */
 export function windComponents(wind, heading) {
   const rad = ((wind.dir - heading) * Math.PI) / 180;
   return { head: wind.speed * Math.cos(rad), cross: wind.speed * Math.sin(rad) };
 }
 
 /**
- * PLANTA: pista na horizontal com a direção de descolagem para a direita (norte rodado),
- * WDI e setas de vento. Tudo desenhado em relação ao heading da pista.
+ * Trajetória (flight path) em segmentos, com x em metros desde o início da pista:
+ *  - 2º segmento: sobe com g2 (%) do Reference Zero (35 ft) até 400 ft
+ *  - 3º segmento: nivelado a 400 ft até x = Reference Zero + d3 (distância do gráfico do AFM)
+ *  - 4º segmento: sobe com g4 (%) a partir daí
+ * Devolve null se não houver dados para a desenhar.
  */
-export function buildTopViewSvg({ rwy, heading, tora, toda, slope, wind }) {
-  const W = 640, H = 230;
-  const rx = 40, ry = 105, rw = 470, rh = 44;
-  const clearwayLen = Math.max(0, toda - tora);
-  const cwW = Math.min(60, (clearwayLen / Math.max(tora, 1)) * rw);
-  const comp = windComponents(wind, heading);
+export function buildFlightPath({ todr, g2, d3, g4 }) {
+  if (!Number.isFinite(todr) || !Number.isFinite(g2) || g2 <= 0) return null;
+  const x400 = todr + ((SEG2_END_FT - REF_HEIGHT_FT) / (g2 / 100)) / FT_PER_M;
+  const xLevelEnd = Number.isFinite(d3) && d3 > 0 ? Math.max(x400, todr + d3) : x400;
+  const g4eff = Number.isFinite(g4) && g4 > 0 ? g4 : g2;
+  const heightAt = x => {
+    if (x < todr) return null;
+    if (x <= x400) return REF_HEIGHT_FT + (g2 / 100) * (x - todr) * FT_PER_M;
+    if (x <= xLevelEnd) return SEG2_END_FT;
+    return SEG2_END_FT + (g4eff / 100) * (x - xLevelEnd) * FT_PER_M;
+  };
+  return { todr, x400, xLevelEnd, g2, g4: g4eff, hasLevel: xLevelEnd > x400, heightAt };
+}
 
-  // Ângulo do vento relativo ao eixo da pista (0° = vento de frente, vem da direita do desenho)
-  // Direção "de onde vem" rodada: vento de frente → seta aponta para a esquerda (contra a descolagem).
-  const rel = wind.dir - heading; // graus, sentido horário
-  // vetor de movimento do ar (para onde vai) no sistema do desenho (x → direção de descolagem, y → baixo = direita da pista)
-  const toRad = ((rel + 180) * Math.PI) / 180;
+/** PLANTA: pista horizontal (descolagem para a direita), setas de vento e WDI, tudo relativo ao heading. */
+export function buildTopViewSvg({ rwy, heading, tora, toda, wind, width = 640 }) {
+  const W = width, H = 222;
+  const rx = 12, ry = 92, rh = 42;
+  const rw0 = W - 24;
+  const clearway = Math.max(0, toda - tora);
+  const cwW = clearway > 0 ? clamp((clearway / (tora + clearway)) * rw0, 10, 45) : 0;
+  const rw = rw0 - cwW;
+
+  // Direção para onde o ar se move, no sistema do desenho (x = descolagem, y = para baixo = direita da pista)
+  const toRad = ((wind.dir - heading + 180) * Math.PI) / 180;
   const vx = Math.cos(toRad), vy = Math.sin(toRad);
-  const len = 30 + Math.min(wind.speed, 40) * 1.2;
 
-  // Setas de vento (3) por cima da pista
-  const arrows = [0, 1, 2].map(i => {
-    const cx = 120 + i * 110, cy = 45 + (i % 2) * 14;
-    const x1 = cx - (vx * len) / 2, y1 = cy - (vy * len) / 2;
-    const x2 = cx + (vx * len) / 2, y2 = cy + (vy * len) / 2;
-    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="dg-wind" marker-end="url(#dgArrow)"/>`;
+  const arrowLen = 26 + Math.min(wind.speed, 40) * 0.9;
+  const arrows = [0.14, 0.4, 0.66].map((fx, i) => {
+    const cx = W * fx, cy = 48 + (i % 2) * 12;
+    return `<line x1="${f1(cx - (vx * arrowLen) / 2)}" y1="${f1(cy - (vy * arrowLen) / 2)}" x2="${f1(cx + (vx * arrowLen) / 2)}" y2="${f1(cy + (vy * arrowLen) / 2)}" class="dg-wind" marker-end="url(#dgArrow)"/>`;
   }).join("");
 
-  // WDI: pólo fixo à direita da pista; a manga aponta para onde o ar vai
-  const px = 560, py = 175;
-  const sockLen = 28 + Math.min(wind.speed, 30) * 1.3;
-  const droop = Math.max(0, 1 - wind.speed / 15) * 18; // com pouco vento a manga cai
+  // WDI numa zona livre por baixo da pista; com pouco vento a manga cai
+  const px = W - 70, py = 182;
+  const sockLen = 22 + Math.min(wind.speed, 30) * 0.9;
+  const droop = Math.max(0, 1 - wind.speed / 15) * 14;
   const sx = px + vx * sockLen, sy = py + vy * sockLen + droop;
-  const nx = -vy, ny = vx, wBase = 9, wTip = 4;
-  const ptsSock = [
-    [px + nx * wBase, py + ny * wBase], [sx + nx * wTip, sy + ny * wTip],
-    [sx - nx * wTip, sy - ny * wTip], [px - nx * wBase, py - ny * wBase]
-  ].map(p => p.map(n => n.toFixed(1)).join(",")).join(" ");
-
-  const tail = comp.head < -0.5;
-  const headTxt = tail ? `Tailwind ${Math.round(-comp.head)} kt` : `Headwind ${Math.round(comp.head)} kt`;
-  const crossTxt = `Crosswind ${Math.round(Math.abs(comp.cross))} kt ${comp.cross >= 0 ? "(R)" : "(L)"}`;
+  const nx = -vy, ny = vx;
+  const at = (t, w) => `${f1(px + (sx - px) * t + nx * w)},${f1(py + (sy - py) * t + ny * w)}`;
+  const sock = `${at(0, 9)} ${at(1, 4)} ${at(1, -4)} ${at(0, -9)}`;
+  const stripe = t => `<line x1="${at(t, 7).split(",")[0]}" y1="${at(t, 7).split(",")[1]}" x2="${at(t, -7).split(",")[0]}" y2="${at(t, -7).split(",")[1]}" class="dg-stripe"/>`;
 
   return `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Runway top view with wind">
-  <defs><marker id="dgArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-wind-fill"/></marker></defs>
-  <text x="14" y="20" class="dg-title">Top view</text>
-  <text x="${W - 14}" y="20" class="dg-title" text-anchor="end">Wind ${String(wind.dir).padStart(3, "0")}/${wind.speed}</text>
+  <defs><marker id="dgArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-wind-fill"/></marker></defs>
+  <text x="12" y="20" class="dg-title">Top view</text>
+  <text x="${W - 12}" y="20" class="dg-title" text-anchor="end">Wind ${String(wind.dir).padStart(3, "0")}/${wind.speed}</text>
   ${arrows}
-  <rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" class="dg-rwy"/>
-  ${cwW > 0 ? `<rect x="${rx + rw}" y="${ry + 8}" width="${cwW.toFixed(1)}" height="${rh - 16}" class="dg-clearway"/>` : ""}
-  <line x1="${rx + 36}" y1="${ry + rh / 2}" x2="${rx + rw - 36}" y2="${ry + rh / 2}" class="dg-centre"/>
-  <text x="${rx + 8}" y="${ry + rh / 2 + 5}" class="dg-rwy-num">${esc(rwy)}</text>
-  <path d="M${rx + rw - 70} ${ry - 12} h50 m-8 -6 l8 6 l-8 6" class="dg-toarrow"/>
-  <text x="${rx + rw - 70}" y="${ry - 20}" class="dg-small">Take-off</text>
-  <line x1="${px}" y1="${py + 25}" x2="${px}" y2="${py}" class="dg-pole"/>
-  <polygon points="${ptsSock}" class="dg-sock"/>
-  <line x1="${(px + (sx - px) * 0.4 + nx * 7).toFixed(1)}" y1="${(py + (sy - py) * 0.4 + ny * 7).toFixed(1)}" x2="${(px + (sx - px) * 0.4 - nx * 7).toFixed(1)}" y2="${(py + (sy - py) * 0.4 - ny * 7).toFixed(1)}" class="dg-stripe"/>
-  <line x1="${(px + (sx - px) * 0.7 + nx * 6).toFixed(1)}" y1="${(py + (sy - py) * 0.7 + ny * 6).toFixed(1)}" x2="${(px + (sx - px) * 0.7 - nx * 6).toFixed(1)}" y2="${(py + (sy - py) * 0.7 - ny * 6).toFixed(1)}" class="dg-stripe"/>
-  <text x="${px + 12}" y="${py + 40}" class="dg-small">WDI</text>
-  <text x="14" y="${H - 38}" class="dg-label ${tail ? "bad" : ""}">${headTxt} · ${crossTxt}</text>
-  <text x="14" y="${H - 16}" class="dg-small">RWY ${esc(rwy)} (${String(heading).padStart(3, "0")}°) · TORA ${tora} m · TODA ${toda} m · slope ${slope > 0 ? "+" : ""}${slope}%</text>
+  <rect x="${rx}" y="${ry}" width="${f1(rw)}" height="${rh}" class="dg-rwy"/>
+  ${cwW > 0 ? `<rect x="${f1(rx + rw)}" y="${ry + 8}" width="${f1(cwW)}" height="${rh - 16}" class="dg-clearway"/>` : ""}
+  <line x1="${rx + 40}" y1="${ry + rh / 2}" x2="${f1(rx + rw - 14)}" y2="${ry + rh / 2}" class="dg-centre"/>
+  <text x="${rx + 8}" y="${ry + rh / 2 + 6}" class="dg-rwy-num">${esc(rwy)}</text>
+  <path d="M${f1(rx + rw - 70)} ${ry - 10} h54 m-8 -6 l8 6 l-8 6" class="dg-toarrow"/>
+  <text x="${f1(rx + rw - 70)}" y="${ry - 20}" class="dg-small">Take-off</text>
+  <line x1="${px}" y1="${py + 26}" x2="${px}" y2="${py}" class="dg-pole"/>
+  <polygon points="${sock}" class="dg-sock"/>
+  ${stripe(0.4)}${stripe(0.72)}
+  <text x="${px + 10}" y="${py + 30}" class="dg-small">WDI</text>
 </svg>`;
 }
 
-/**
- * Altura (ft) da trajetória a uma distância x (m) do início da pista.
- * 2º segmento até 400 ft, depois 4º segmento (o nivelamento do 3º segmento não é desenhado).
- */
-export function pathHeightFt(x, { todr, g2, g4 }) {
-  if (!Number.isFinite(todr) || !Number.isFinite(g2) || x < todr) return null;
-  const dx = (x - todr) * FT_PER_M; // ft horizontais
-  const dxTo400 = ((SEG2_END_FT - REF_HEIGHT_FT) / Math.max(g2, 0.01)) * 100;
-  if (dx <= dxTo400) return REF_HEIGHT_FT + (g2 / 100) * dx;
-  const g = Number.isFinite(g4) ? g4 : g2;
-  return SEG2_END_FT + (g / 100) * (dx - dxTo400);
+export function topInfoHtml({ rwy, heading, tora, toda, slope, wind }) {
+  const comp = windComponents(wind, heading);
+  const tail = comp.head < -0.5;
+  const headTxt = tail ? `Tailwind ${Math.round(-comp.head)} kt` : `Headwind ${Math.round(comp.head)} kt`;
+  const crossTxt = `Crosswind ${Math.round(Math.abs(comp.cross))} kt ${comp.cross >= 0 ? "(R)" : "(L)"}`;
+  return `<div class="dg-info"><strong class="${tail ? "bad" : ""}">${headTxt} · ${crossTxt}</strong>
+  <div>RWY ${esc(rwy)} (${String(heading).padStart(3, "0")}°) · TORA ${tora} m · TODA ${toda} m · slope ${slope > 0 ? "+" : ""}${slope}%</div></div>`;
 }
 
-/**
- * PERFIL LATERAL: pista, clearway, obstáculos (verde/vermelho consoante a trajetória) e flight path.
- * obstacles: distância medida a partir do fim da TODA (como no airportsList.json).
- */
-export function buildSideViewSvg({ tora, toda, todr, obstacles, g2, g4, req2 }) {
-  const W = 640, H = 270;
-  const padL = 40, padR = 20, top = 34, base = 210;
+/** PERFIL LATERAL: pista, obstáculos e flight path (2º/3º/4º segmento). obstacle_dist é medida a partir do fim da TODA. */
+export function buildSideViewSvg({ tora, toda, todr, obstacles, g2, d3, g4, width = 640 }) {
+  const W = width, H = 262;
+  const padL = 34, padR = 12, top = 30, base = 190;
+  const path = buildFlightPath({ todr, g2, d3, g4 });
   const farthest = obstacles.reduce((m, o) => Math.max(m, toda + o.obstacle_dist), 0);
-  const maxX = Math.max(toda + 600, farthest + 300, (todr || 0) + 600);
   const maxObs = obstacles.reduce((m, o) => Math.max(m, o.obstacle_ft), 0);
-  const havePath = Number.isFinite(todr) && Number.isFinite(g2);
-  const pathAtEnd = havePath ? pathHeightFt(maxX, { todr, g2, g4 }) : 0;
-  const maxH = Math.max(150, maxObs * 1.2, Math.min(pathAtEnd || 0, 1500) * 1.05, SEG2_END_FT * 0.5);
+  const maxX = Math.max(toda + 600, farthest + 300, path ? path.xLevelEnd + 400 : 0);
+  const maxH = Math.max(500, maxObs * 1.15);
   const sx = x => padL + (x / maxX) * (W - padL - padR);
   const sy = h => base - (h / maxH) * (base - top);
 
-  // Trajetória como polyline (amostrada)
+  // Pontos da trajetória: só os vértices (reta, nivelado, reta)
   let pathPts = "";
-  if (havePath) {
-    const pts = [];
-    pts.push(`${sx(todr).toFixed(1)},${sy(REF_HEIGHT_FT).toFixed(1)}`);
-    for (let x = todr; x <= maxX; x += maxX / 120) {
-      const h = pathHeightFt(x, { todr, g2, g4 });
-      if (h == null || h > maxH) break;
-      pts.push(`${sx(x).toFixed(1)},${sy(h).toFixed(1)}`);
-    }
-    pathPts = pts.join(" ");
+  if (path) {
+    const endX = maxX;
+    const hEnd = path.heightAt(endX);
+    const pts = [[path.todr, REF_HEIGHT_FT], [path.x400, SEG2_END_FT]];
+    if (path.hasLevel) pts.push([path.xLevelEnd, SEG2_END_FT]);
+    if (hEnd > maxH) pts.push([path.xLevelEnd + ((maxH - SEG2_END_FT) / (path.g4 / 100)) / FT_PER_M, maxH]);
+    else pts.push([endX, hEnd]);
+    pathPts = pts.map(([x, h]) => `${f1(sx(x))},${f1(sy(Math.min(h, maxH)))}`).join(" ");
   }
 
-  // Linha do gradiente requerido (2º seg) a partir do Reference Zero
-  let reqLine = "";
-  if (havePath && Number.isFinite(req2) && req2 > 0) {
-    const hEnd = REF_HEIGHT_FT + (req2 / 100) * (maxX - todr) * FT_PER_M;
-    const xEnd = hEnd > maxH ? todr + ((maxH - REF_HEIGHT_FT) / (req2 / 100)) / FT_PER_M : maxX;
-    const yEnd = Math.min(hEnd, maxH);
-    reqLine = `<line x1="${sx(todr).toFixed(1)}" y1="${sy(REF_HEIGHT_FT).toFixed(1)}" x2="${sx(xEnd).toFixed(1)}" y2="${sy(yEnd).toFixed(1)}" class="dg-req"/>`;
+  // Marcadores dos segmentos (2/3/4) junto à trajetória
+  let segLabels = "";
+  if (path) {
+    const lab = (x, h, t) => `<text x="${f1(sx(x))}" y="${f1(sy(h) - 9)}" text-anchor="middle" class="dg-seg dg-halo">${t}</text>`;
+    segLabels += lab((path.todr + path.x400) / 2 - 8, (REF_HEIGHT_FT + SEG2_END_FT) / 2, "2nd");
+    if (path.hasLevel) segLabels += lab((path.x400 + path.xLevelEnd) / 2, SEG2_END_FT, "3rd");
+    const x4 = Math.min(path.xLevelEnd + (maxX - path.xLevelEnd) * 0.55, maxX);
+    const h4 = path.heightAt(x4);
+    if (h4 <= maxH * 0.95 && sx(x4) < W - 30) segLabels += lab(x4, h4, "4th");
   }
 
+  // Fim do 3º segmento (distância do gráfico do AFM, a partir do Reference Zero)
+  let seg3Marker = "";
+  if (path && Number.isFinite(d3) && d3 > 0) {
+    const xm = sx(path.todr + d3);
+    const right = xm < W / 2;
+    seg3Marker = `<line x1="${f1(xm)}" y1="${base}" x2="${f1(xm)}" y2="${f1(sy(SEG2_END_FT))}" class="dg-seg3"/>
+  <text x="${f1(xm + (right ? 5 : -5))}" y="${f1(sy(SEG2_END_FT) + 14)}" text-anchor="${right ? "start" : "end"}" class="dg-small dg-halo">3rd seg ends ${Math.round(d3)} m</text>`;
+  }
+
+  // Obstáculos com etiquetas sem sobreposição
   let anyBad = false;
+  const boxes = [];
   const obs = obstacles.map(o => {
     const x = toda + o.obstacle_dist;
-    const h = havePath ? pathHeightFt(x, { todr, g2, g4 }) : null;
+    const h = path ? path.heightAt(x) : null;
     const margin = h == null ? null : h - o.obstacle_ft;
     const bad = margin != null && margin < 0;
     if (bad) anyBad = true;
     const cls = margin == null ? "dg-obs" : bad ? "dg-obs bad" : "dg-obs ok";
     const x0 = sx(x), y0 = sy(o.obstacle_ft);
-    const label = `${esc(o.name || "obstacle")} ${o.obstacle_ft} ft @ ${o.obstacle_dist} m`;
-    const mtxt = margin == null ? "" : ` (${margin >= 0 ? "+" : ""}${Math.round(margin)} ft)`;
-    const anchor = x0 > W - 170 ? "end" : "start";
-    const tx = anchor === "end" ? x0 - 6 : x0 + 6;
-    return `<g class="${cls}"><line x1="${x0.toFixed(1)}" y1="${base}" x2="${x0.toFixed(1)}" y2="${y0.toFixed(1)}" class="dg-obs-bar"/>
-      <polygon points="${(x0 - 6).toFixed(1)},${(y0 + 8).toFixed(1)} ${(x0 + 6).toFixed(1)},${(y0 + 8).toFixed(1)} ${x0.toFixed(1)},${(y0 - 4).toFixed(1)}" class="dg-obs-top"/>
-      <text x="${tx.toFixed(1)}" y="${(y0 - 8).toFixed(1)}" text-anchor="${anchor}" class="dg-small">${label}${mtxt}</text></g>`;
+    const l1 = `${o.name || "obstacle"} ${o.obstacle_ft} ft · ${o.obstacle_dist} m`;
+    const l2 = margin == null ? "" : `${margin >= 0 ? "+" : ""}${Math.round(margin)} ft`;
+    const bw = Math.max(l1.length, l2.length) * 6.4 + 4;
+    const xl = clamp(x0 - bw / 2, 4, W - bw - 4);
+    let yt = y0 - 24;
+    for (let guard = 0; guard < 8; guard++) {
+      const hit = boxes.find(b => xl < b.x + b.w && xl + bw > b.x && yt < b.y + 28 && yt + 28 > b.y);
+      if (!hit) break;
+      yt = hit.y - 30;
+    }
+    yt = Math.max(yt, top - 4);
+    boxes.push({ x: xl, w: bw, y: yt });
+    return `<g class="${cls}"><line x1="${f1(x0)}" y1="${base}" x2="${f1(x0)}" y2="${f1(y0)}" class="dg-obs-bar"/>
+      <polygon points="${f1(x0 - 6)},${f1(y0 + 7)} ${f1(x0 + 6)},${f1(y0 + 7)} ${f1(x0)},${f1(y0 - 5)}" class="dg-obs-top"/>
+      <text x="${f1(xl)}" y="${f1(yt + 11)}" class="dg-small dg-halo">${esc(l1)}</text>
+      ${l2 ? `<text x="${f1(xl)}" y="${f1(yt + 24)}" class="dg-small dg-halo dg-margin">${l2}</text>` : ""}</g>`;
   }).join("");
 
-  const noObsTxt = obstacles.length === 0 ? `<text x="${W / 2}" y="${top + 30}" text-anchor="middle" class="dg-small">No obstacles in database for this runway</text>` : "";
-  const verdict = !havePath ? "Flight path not available (TOD / gradient out of AFM chart)"
-    : obstacles.length === 0 ? "No obstacle to clear"
-      : anyBad ? "Flight path below at least one obstacle" : "Flight path clears all obstacles";
-
+  const verdict = !path ? "Flight path unavailable (out of AFM chart)"
+    : obstacles.length === 0 ? "No obstacle in database"
+      : anyBad ? "Flight path below an obstacle" : "Flight path clears all obstacles";
   const gridFt = [0, 100, 200, 300, 400, 500, 1000, 1500].filter(v => v <= maxH);
+  const todX = path ? clamp(sx(path.todr), padL + 36, W - 40) : 0;
 
   return `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Side view with obstacles and flight path">
-  <text x="14" y="20" class="dg-title">Side view (distance from start of TORA)</text>
-  ${gridFt.map(v => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" class="dg-grid"/><text x="${padL - 4}" y="${(sy(v) + 3).toFixed(1)}" text-anchor="end" class="dg-axis">${v}</text>`).join("")}
-  <text x="6" y="${top - 8}" class="dg-axis">ft</text>
-  <rect x="${sx(0).toFixed(1)}" y="${base}" width="${(sx(tora) - sx(0)).toFixed(1)}" height="8" class="dg-rwy"/>
-  ${toda > tora ? `<rect x="${sx(tora).toFixed(1)}" y="${base}" width="${(sx(toda) - sx(tora)).toFixed(1)}" height="8" class="dg-clearway"/>` : ""}
+  <text x="12" y="18" class="dg-title">Side view</text>
+  <text x="${W - 12}" y="18" class="dg-axis" text-anchor="end">ft · m from start of TORA</text>
+  ${gridFt.map(v => `<line x1="${padL}" y1="${f1(sy(v))}" x2="${W - padR}" y2="${f1(sy(v))}" class="dg-grid"/><text x="${padL - 4}" y="${f1(sy(v) + 4)}" text-anchor="end" class="dg-axis">${v}</text>`).join("")}
+  <rect x="${f1(sx(0))}" y="${base}" width="${f1(sx(tora) - sx(0))}" height="8" class="dg-rwy"/>
+  ${toda > tora ? `<rect x="${f1(sx(tora))}" y="${base}" width="${f1(sx(toda) - sx(tora))}" height="8" class="dg-clearway"/>` : ""}
   <line x1="${padL}" y1="${base + 8}" x2="${W - padR}" y2="${base + 8}" class="dg-ground"/>
-  <text x="${sx(0)}" y="${base + 24}" class="dg-small">TORA ${tora} m</text>
-  ${toda > tora ? `<text x="${sx(toda)}" y="${base + 24}" text-anchor="end" class="dg-small">TODA ${toda} m</text>` : ""}
-  ${havePath ? `<line x1="${sx(todr).toFixed(1)}" y1="${base}" x2="${sx(todr).toFixed(1)}" y2="${sy(REF_HEIGHT_FT).toFixed(1)}" class="dg-ref"/><text x="${sx(todr).toFixed(1)}" y="${base + 38}" text-anchor="middle" class="dg-small">TOD ${todr} m</text>` : ""}
-  ${reqLine}
-  ${havePath ? `<polyline points="${pathPts}" class="dg-path ${anyBad ? "bad" : "ok"}"/>` : ""}
+  <text x="${padL}" y="${base + 24}" class="dg-small">TORA ${tora} m${toda > tora ? ` · TODA ${toda} m` : ""}</text>
+  ${path ? `<line x1="${f1(sx(path.todr))}" y1="${base}" x2="${f1(sx(path.todr))}" y2="${f1(sy(REF_HEIGHT_FT))}" class="dg-ref"/><text x="${f1(todX)}" y="${base + 40}" text-anchor="middle" class="dg-small">TOD ${todr} m</text>` : ""}
+  ${path ? `<polyline points="${pathPts}" class="dg-path ${anyBad ? "bad" : "ok"}"/>` : ""}
+  ${seg3Marker}
+  ${segLabels}
   ${obs}
-  ${noObsTxt}
-  <text x="14" y="${H - 8}" class="dg-label ${anyBad || !havePath ? "bad" : "ok"}">${verdict}</text>
-  <text x="${W - 14}" y="${H - 8}" text-anchor="end" class="dg-small">${havePath ? `2nd seg ${num(g2)}%${Number.isFinite(req2) ? ` (req ${num(req2)}%)` : ""} · 4th seg ${num(g4)}% · schematic` : ""}</text>
+  <text x="12" y="${H - 8}" class="dg-label ${anyBad || !path ? "bad" : "ok"}">${verdict}</text>
 </svg>`;
 }
 
-/** Renderiza os dois desenhos no cartão #diagramCard. */
+export function sideInfoHtml(segments) {
+  const row = (name, s) => s && s.text ? `<div><span class="muted">${name}</span> <span class="mono ${s.state === "ok" ? "ok" : s.state === "bad" || s.state === "ooc" ? "bad" : ""}">${esc(s.text)}</span></div>` : "";
+  return `<div class="dg-info">${row("2nd seg req/calc", segments.SEG2)}${row("3rd seg obstacle/dist", segments.SEG3)}${row("4th seg req/calc", segments.SEG4)}
+  <div class="muted">Schematic only. Dashed blue line = end of the 3rd segment (AFM distance from Reference Zero). The Status above is the verdict.</div></div>`;
+}
+
+// ---------------------------------------------------------------------------------------------
+// UI: cartão recolhido por defeito; abre/fecha com o botão e redesenha à largura disponível.
+// ---------------------------------------------------------------------------------------------
+let last = null; // últimos dados, para redesenhar no resize/abrir
+let bound = false;
+
+function readOpen() {
+  try { return localStorage.getItem(STORAGE_KEY) === "1"; } catch { return false; }
+}
+function writeOpen(v) {
+  try { localStorage.setItem(STORAGE_KEY, v ? "1" : "0"); } catch { /* sem storage: ignora */ }
+}
+
+function draw() {
+  const body = document.getElementById("diagramBody");
+  if (!last || !body || body.hidden) return;
+  const topEl = document.getElementById("diagramTop");
+  const w = clamp(Math.round(Number(topEl.clientWidth)) || 640, 280, 720);
+  const { runwayEntry: r, wind, todr, segments } = last;
+  topEl.innerHTML = buildTopViewSvg({ rwy: r.rwy, heading: r.heading, tora: r.tora, toda: r.toda, wind, width: w })
+    + topInfoHtml({ rwy: r.rwy, heading: r.heading, tora: r.tora, toda: r.toda, slope: r.slope, wind });
+  document.getElementById("diagramSide").innerHTML = buildSideViewSvg({
+    tora: r.tora, toda: r.toda, todr, obstacles: r.obstacles || [], width: w,
+    g2: segments.SEG2 ? segments.SEG2.gradient : null,
+    d3: segments.SEG3 ? segments.SEG3.distance : null,
+    g4: segments.SEG4 ? segments.SEG4.gradient : null
+  }) + sideInfoHtml(segments);
+}
+
+function setOpen(open) {
+  const body = document.getElementById("diagramBody");
+  const btn = document.getElementById("diagramToggle");
+  const label = document.getElementById("diagramChevron");
+  if (!body || !btn) return;
+  body.hidden = !open;
+  btn.setAttribute("aria-expanded", String(open));
+  if (label) label.textContent = open ? "Hide ▴" : "Show ▾";
+  if (open) draw();
+}
+
+function bind() {
+  if (bound) return;
+  const btn = document.getElementById("diagramToggle");
+  if (!btn || typeof btn.addEventListener !== "function") return;
+  bound = true;
+  btn.addEventListener("click", () => {
+    const open = document.getElementById("diagramBody").hidden;
+    writeOpen(open);
+    setOpen(open);
+  });
+  if (typeof window !== "undefined" && window.addEventListener) {
+    let timer = null;
+    window.addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(draw, 150); });
+  }
+}
+
+/** Guarda os resultados do Calc e mostra o cartão (recolhido, ou aberto se o utilizador o deixou aberto). */
 export function renderPerformanceDiagrams({ runwayEntry, windRaw, todr, segments }) {
   const card = document.getElementById("diagramCard");
   if (!card) return;
   const wind = parseWind(windRaw);
   if (!wind) { clearPerformanceDiagrams(); return; }
-
-  document.getElementById("diagramTop").innerHTML = buildTopViewSvg({
-    rwy: runwayEntry.rwy, heading: runwayEntry.heading, tora: runwayEntry.tora,
-    toda: runwayEntry.toda, slope: runwayEntry.slope, wind
-  });
-  document.getElementById("diagramSide").innerHTML = buildSideViewSvg({
-    tora: runwayEntry.tora, toda: runwayEntry.toda, todr,
-    obstacles: runwayEntry.obstacles || [],
-    g2: segments && segments.SEG2 ? segments.SEG2.gradient : null,
-    g4: segments && segments.SEG4 ? segments.SEG4.gradient : null,
-    req2: segments && segments.SEG2 ? segments.SEG2.required : null
-  });
+  last = { runwayEntry, wind, todr, segments };
+  bind();
   card.hidden = false;
+  setOpen(readOpen());
 }
 
 export function clearPerformanceDiagrams() {
+  last = null;
   const card = document.getElementById("diagramCard");
   if (!card) return;
   card.hidden = true;
