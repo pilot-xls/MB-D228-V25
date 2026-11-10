@@ -45,7 +45,7 @@ import MTOW_TODA_Flaps1 from "./mtowTODA_Flaps1.js";
 
 // Verificação do 2º/3º/4º segmento e procura do MTOW: o mesmo código para o TOW introduzido e para o MTOW
 import { renderPerformanceDiagrams, clearPerformanceDiagrams } from "./performanceDiagram.js";
-import { evaluateSegments, findMaxTowAllSegments, getTodrForWeight, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
+import { evaluateSegments, findMaxTowAllSegments, getTodrForWeight, splitObstacles, OUT_OF_CHART_TEXT, SEGMENT_KEYS } from "./cgMTOWSearch.js";
 
 // Continuam disponíveis a partir de performance.js (usados nos testes)
 export { describeThirdSegment, OUT_OF_CHART_TEXT } from "./cgMTOWSearch.js";
@@ -209,13 +209,15 @@ export function getPressureAltitude(qnh, runwayEntry) {
 }
 
 // Fatores que podem limitar o MTOW e o código correspondente na folha de performance
-// (10 = WAT, 3 = comprimento de pista, 2 = 2º segmento, 4 = obstáculos 3º/4º seg, 7 = peso máximo do avião)
+// (10 = WAT, 3 = comprimento de pista, 2 = 2º segmento sem obstáculos (gradiente mínimo do avião),
+//  4 = obstáculos: 2º seg limitado por obstáculos (até 400 ft) e 3º/4º seg, 7 = peso máximo do avião)
 export const MTOW_LIMITS = {
     WAT: { label: "WAT", code: 10 },
     ASDA: { label: "ASDA", code: 3 },
     TORA: { label: "TORA", code: 3 },
     TODA: { label: "TODA", code: 3 },
     SEG2: { label: "2nd seg", code: 2 },
+    SEG2_OBS: { label: "2nd seg obstacles", code: 4 },
     SEG3: { label: "3rd seg", code: 4 },
     SEG4: { label: "4th seg", code: 4 },
     STRUCT: { label: "aircraft max weight", code: 7 },
@@ -231,6 +233,15 @@ function limitLabels(keys) {
 }
 
 /**
+ * Chave do limitante mostrada para um segmento: o 2.º segmento que não passa por causa dos
+ * obstáculos (SEG2.obstacleLimited na avaliação ev) conta como obstáculos ("SEG2_OBS", code 4);
+ * sem obstáculos a limitar fica "SEG2" (code 2, gradiente mínimo do avião).
+ */
+export function segmentLimitKey(key, ev) {
+    return key === "SEG2" && ev && ev.SEG2 && ev.SEG2.obstacleLimited ? "SEG2_OBS" : key;
+}
+
+/**
  * MTOW final e fator que o limita (fluxograma do AFM: o menor de todos os limites).
  *
  * limits: { WAT, ASDA, TORA, TODA, STRUCT } em kg (null/0/NaN = não calculável)
@@ -243,6 +254,23 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
     // Algum limite direto não calculável: não há MTOW
     const invalid = DIRECT_LIMIT_KEYS.filter(k => !(Number(limits[k]) > 0));
     if (invalid.length > 0) {
+        // ASDA/TORA/TODA que não chegam nem para o peso mínimo do gráfico: o MTOW fica abaixo desse
+        // peso, sejam quais forem os outros limites (limite real do gráfico, não falta de dados)
+        const below = invalid.filter(k => problems[k] && Number.isFinite(problems[k].belowWeight));
+        if (below.length > 0) {
+            const belowWeight = Math.min(...below.map(k => problems[k].belowWeight));
+            const limitKey = below.find(k => problems[k].belowWeight === belowWeight);
+            return {
+                mtow: null,
+                belowWeight,
+                limitKey,
+                limit: MTOW_LIMITS[limitKey],
+                failedKeys: below,
+                outOfChart: true,
+                reason: below.map(k => limitLabels([k]) + ": " + problems[k].reason).join("; ")
+            };
+        }
+
         // Agrupa os limites com o mesmo motivo (ex.: "ASDA, TORA, TODA: no chart result")
         const byReason = new Map();
         for (const k of invalid) {
@@ -271,19 +299,38 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
 
     if (search.mtow == null) {
         const keys = search.limitedBy;
+        // Chaves mostradas (2.º seg limitado por obstáculos → "2nd seg obstacles", code 4)
+        const shown = keys.map(k => segmentLimitKey(k, search.limitingEval));
+
+        // Todos os pesos, do mínimo dos gráficos até ao cap, falham de certeza: MTOW abaixo desse mínimo
+        if (Number.isFinite(search.belowWeight)) {
+            const limitKey = shown[0] || "CHART";
+            return {
+                mtow: null,
+                belowWeight: search.belowWeight,
+                limitKey,
+                limit: MTOW_LIMITS[limitKey],
+                failedKeys: shown,
+                outOfChart: true,
+                reason: limitLabels(shown) + " not met at any weight from " + search.belowWeight + " to " + cap + " kg"
+            };
+        }
+
+        const u = search.undetermined;
         return {
             mtow: null,
             limitKey: null,
             limit: null,
-            failedKeys: keys,
-            outOfChart: keys.length > 0 && keys.every(k => search.atTop && search.atTop[k].state === "ooc"),
-            reason: "no weight up to " + cap + " kg meets " + limitLabels(keys)
+            failedKeys: shown,
+            // Algum peso não verificável (fora do gráfico): o MTOW não está no gráfico do AFM
+            outOfChart: u ? true : keys.length > 0 && keys.every(k => search.atTop && search.atTop[k].state === "ooc"),
+            reason: "no weight up to " + cap + " kg meets " + limitLabels(shown) + describeUndetermined(u, cap)
         };
     }
 
     // Um segmento obrigou a descer abaixo do menor limite direto
     if (search.mtow < cap) {
-        const limitKey = search.limitedBy[0] || "CHART";
+        const limitKey = segmentLimitKey(search.limitedBy[0], search.limitingEval) || "CHART";
         return { mtow: search.mtow, limitKey, limit: MTOW_LIMITS[limitKey], failedKeys: [], outOfChart: false, reason: "" };
     }
 
@@ -291,24 +338,50 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
 }
 
 /**
+ * Explica porque é que a procura não encontrou MTOW quando há pesos não verificáveis, com o que
+ * fica fora do gráfico no peso mais baixo e o peso acima do qual falha de certeza, ex.:
+ * " — 2nd seg required gradient above 7 % (AFM chart max) at 4500 kg for Elevação natural (fails above 5242 kg)"
+ */
+function describeUndetermined(u, cap) {
+    if (!u) return "";
+    const parts = u.failing.map(k => {
+        const s = u.segments[k] || {};
+        if (s.aboveChartObstacles && s.aboveChartObstacles.length > 0) {
+            return MTOW_LIMITS[k].label + " required gradient above 7 % (AFM chart max) at " + u.lowestTow + " kg for " + s.aboveChartObstacles.join(", ");
+        }
+        return MTOW_LIMITS[k].label + ": " + s.text;
+    });
+    return " — " + parts.join("; ") + (u.tow < cap ? " (fails above " + u.tow + " kg)" : "");
+}
+
+/**
  * Motivo de um limite MTOW (ASDA/TORA/TODA) sem resultado, a partir do debug do módulo.
  * - Entrada fora do gráfico do AFM: { outOfChart: true, reason: "OAT 45 °C above chart at PA 2547 ft (max 40 °C at 4000 ft)" }
+ * - Distância que não chega nem para o peso mínimo do gráfico: também belowWeight (ex.: 4500):
+ *   o MTOW fica abaixo desse peso (limite real, não falta de dados)
  * - Outro erro (ex.: dados do gráfico): { outOfChart: false, reason: "no chart result (step6: <erro do módulo>)" }
  */
 export function describeMtowChartProblem(res) {
     const d = (res && res.debug) || {};
     if (d.outOfChart && d.outOfChart.reason) {
-        return { outOfChart: true, reason: d.outOfChart.reason };
+        const o = d.outOfChart;
+        const problem = { outOfChart: true, reason: o.reason };
+        if (["ASDA", "TORA", "TODA"].includes(o.input) && Number.isFinite(o.minWeight)) {
+            problem.belowWeight = o.minWeight;
+        }
+        return problem;
     }
     const detail = d.error || d.reason || (res && res.status) || "unknown error";
     return { outOfChart: false, reason: "no chart result (" + (d.failedAtStep ? d.failedAtStep + ": " : "") + detail + ")" };
 }
 
 /**
- * Texto do MTOW (ex.: "6016 kg", "failed" ou "out of AFM chart").
+ * Texto do MTOW (ex.: "6016 kg", "< 4500 kg", "failed" ou "out of AFM chart").
+ * "< 4500 kg": o limite já falha no peso mínimo dos gráficos (o valor exato fica abaixo do gráfico).
  */
 export function formatMtow(mtowResult) {
     if (mtowResult.mtow != null) return mtowResult.mtow + " kg";
+    if (Number.isFinite(mtowResult.belowWeight)) return "< " + mtowResult.belowWeight + " kg";
     return mtowResult.outOfChart ? OUT_OF_CHART_TEXT : "failed";
 }
 
@@ -319,6 +392,11 @@ export function formatMtow(mtowResult) {
  */
 export function formatMtowLimit(mtowResult, watColdCap = false) {
     if (mtowResult.mtow == null) {
+        // MTOW abaixo do peso mínimo dos gráficos: o limitante é conhecido, mostra-se o código
+        if (Number.isFinite(mtowResult.belowWeight) && mtowResult.limit) {
+            const { label, code } = mtowResult.limit;
+            return "(" + label + (code != null ? " · code " + code : "") + ")";
+        }
         return mtowResult.failedKeys && mtowResult.failedKeys.length > 0 ? "(" + limitLabels(mtowResult.failedKeys) + ")" : "";
     }
 
@@ -337,6 +415,26 @@ export function formatMtowLimit(mtowResult, watColdCap = false) {
  */
 export function evaluateTakeoffStatus({ tow, mtowResult, segments }) {
     if (mtowResult.mtow == null) {
+        // MTOW abaixo do peso mínimo dos gráficos: um TOW igual ou acima desse peso falha de certeza
+        if (Number.isFinite(mtowResult.belowWeight) && tow >= mtowResult.belowWeight) {
+            const label = mtowResult.limit ? mtowResult.limit.label : limitLabels(mtowResult.failedKeys || []);
+            return {
+                state: "bad",
+                text: "Failed",
+                reason: "TOW above MTOW (limit: " + label + ", MTOW < " + mtowResult.belowWeight + " kg) — " + mtowResult.reason
+            };
+        }
+
+        // Sem MTOW, mas o TOW falha um segmento de certeza (ex.: required > 7 % e performed <= 7 %)
+        const failedAtTow = SEGMENT_KEYS.filter(k => segments[k].state === "bad");
+        if (failedAtTow.length > 0) {
+            return {
+                state: "bad",
+                text: "Failed",
+                reason: "Climb gradient not met: " + limitLabels(failedAtTow) + " — MTOW not determined — " + mtowResult.reason
+            };
+        }
+
         return {
             state: mtowResult.outOfChart ? "ooc" : "bad",
             text: mtowResult.outOfChart ? "Out of AFM chart" : "Failed",
@@ -1124,12 +1222,8 @@ document.addEventListener("DOMContentLoaded", async () => {
          * Climb gradient: 2º segmento, 3º segmento (distância horizontal) e 4º segmento,
          * para o TOW introduzido. É a mesma função usada na procura do MTOW.
          */
-        // Obstáculos do 2º segmento
-        // (o gráfico do 2.º segmento vai até 400 ft inclusive; acima disso é o 3.º/4.º segmento)
-        const obstacles2Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft <= 400 && o.obstacle_dist < 5000);
-
-        // Obstáculos do 3º/4º segmento (acima de 400 ft e dentro de 2500 m)
-        const obstacles34Seg = runwayEntry.obstacles.filter(o => o.obstacle_ft > 400 && o.obstacle_dist < 2500);
+        // Obstáculos por segmento: até 400 ft no 2.º segmento (< 5000 m), acima de 400 ft no 3.º/4.º (< 2500 m)
+        const { obstacles2Seg, obstacles34Seg } = splitObstacles(runwayEntry.obstacles);
 
         // obstacle_dist é medida a partir do fim da TODA: a distância ao Reference Zero é (TODA - TOD) + obstacle_dist
         const segmentParams = { flaps, pa, oat, inlet, wind, slope: runwayEntry.slope, toda: runwayEntry.toda, obstacles2Seg, obstacles34Seg };
