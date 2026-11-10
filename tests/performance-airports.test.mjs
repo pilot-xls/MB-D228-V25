@@ -7,7 +7,8 @@
 //     agora "< 4500 kg (ASDA · code 3)" e Failed para TOW >= 4500 kg
 //   - 2.º seg (LPPM 11): required > 7 % (topo do gráfico do required) → limite real; falha certa
 //     quando o performed é <= 7 %, não verificável quando o performed passa de 7 %
-// Problema 2: obstáculos <= 400 ft entram só no 2.º segmento (code 2) por desenho
+// Problema 2: obstáculos <= 400 ft entram só no 2.º segmento por desenho; MTOW limitado por eles → code 4
+//             (code 2 fica para o 2.º segmento sem obstáculos: gradiente mínimo do avião)
 // Problema 3: o piso molhado entra só na ASDA; na LPPM 11 o 2.º seg limita sempre mais
 
 import { test } from "node:test";
@@ -19,7 +20,8 @@ import { loadPerformancePage } from "./helpers/performanceDom.mjs";
 console.warn = () => {};
 
 const page = await loadPerformancePage();
-const { computeMtow, evaluateTakeoffStatus, formatMtow, formatMtowLimit, describeMtowChartProblem } = page.module;
+const { computeMtow, evaluateTakeoffStatus, formatMtow, formatMtowLimit, describeMtowChartProblem, segmentLimitKey, MTOW_LIMITS } = page.module;
+const { getWAT, WAT_OUT_OF_CHART } = await import("../js/ToWAT.js");
 const {
     evaluateSegments, findMaxTowAllSegments, getMaxTow2Seg, getMaxTow3Seg, getMaxTow4Seg,
     getTodrForWeight, obstacleDistanceFromReferenceZero, splitObstacles
@@ -52,7 +54,7 @@ test("airportsList: obstáculos em obstacles[] com name / obstacle_ft / obstacle
     }
 });
 
-test("por desenho: obstáculos até 400 ft só entram no 2.º segmento (code 2); 3.º/4.º só acima de 400 ft", () => {
+test("por desenho: obstáculos até 400 ft só entram no 2.º segmento; 3.º/4.º só acima de 400 ft", () => {
     for (const [icao, rwy] of [["LPPM", "11"], ["LPVZ", "36"]]) {
         const { obstacles2Seg, obstacles34Seg } = splitObstacles(runway(icao, rwy).obstacles);
         assert.equal(obstacles2Seg.length, runway(icao, rwy).obstacles.length, `${icao} ${rwy}`);
@@ -66,7 +68,7 @@ test("por desenho: obstáculos até 400 ft só entram no 2.º segmento (code 2);
     assert.deepEqual(s.obstacles34Seg, [{ obstacle_ft: 401, obstacle_dist: 2499 }]);
 });
 
-test("LPVZ 36, QNH 1013, OAT 15, vento 0: Mastro 131 ft a 750 m do fim da TODA → MTOW 5975 kg (2nd seg · code 2)", async () => {
+test("LPVZ 36, QNH 1013, OAT 15, vento 0: Mastro 131 ft a 750 m do fim da TODA → MTOW 5975 kg (2nd seg obstacles · code 4)", async () => {
     const e = runway("LPVZ", "36");
     const params = { flaps: "1", pa: paOf(e, 1013), oat: 15, inlet: "off", wind: 0, slope: e.slope, toda: e.toda };
     const { obstacles2Seg, obstacles34Seg } = splitObstacles(e.obstacles);
@@ -88,10 +90,54 @@ test("LPVZ 36, QNH 1013, OAT 15, vento 0: Mastro 131 ft a 750 m do fim da TODA �
 
     const r = await page.calc({ airport: "LPVZ", runway: "36", wind: "000/00", oat: "15", qnh: "1013", tow: "5975" });
     assert.equal(r.mtow, "5975 kg");
-    assert.equal(r.limit, "(2nd seg · code 2)");
+    assert.equal(r.limit, "(2nd seg obstacles · code 4)");
     assert.equal(r.badgeText, "Passed");
     assert.equal(r.cg2, "3.7% / 3.7%");
     assert.equal(r.cg4, "0.0% / 3.1%");
+});
+
+test("code 4: o 2.º seg que falha por causa do obstáculo marca obstacleLimited (sem o obstáculo passaria)", () => {
+    const e = runway("LPVZ", "36");
+    const params = { flaps: "1", pa: paOf(e, 1013), oat: 15, inlet: "off", wind: 0, slope: e.slope, toda: e.toda, obstacles34Seg: [] };
+    const withMast = evaluateSegments({ ...params, tow: 5976, obstacles2Seg: e.obstacles });
+    assert.equal(withMast.SEG2.state, "bad");
+    assert.equal(withMast.SEG2.obstacleLimited, true);
+    assert.equal(segmentLimitKey("SEG2", withMast), "SEG2_OBS");
+    // O mesmo peso sem o Mastro passa o 2.º segmento
+    assert.equal(evaluateSegments({ ...params, tow: 5976, obstacles2Seg: [] }).SEG2.state, "ok");
+    // Required > 7 % (LPPM 11) também é limite por obstáculo
+    const lppm = evaluateSegments({ ...lppm11(1003, 5, -10), tow: 5500 });
+    assert.equal(lppm.SEG2.obstacleLimited, true);
+    // Outros segmentos não mudam de chave
+    assert.equal(segmentLimitKey("SEG4", withMast), "SEG4");
+    assert.deepEqual(MTOW_LIMITS.SEG2_OBS, { label: "2nd seg obstacles", code: 4 });
+});
+
+test("code 2 fica para o 2.º seg sem obstáculos a limitar (gradiente mínimo do avião)", () => {
+    const LIM = { WAT: 6200, ASDA: 6500, TORA: 6500, TODA: 6500, STRUCT: 6400 };
+    const search = obstacleLimited => () => ({ mtow: 6100, limitedBy: ["SEG2"], limitingEval: { SEG2: { state: "bad", obstacleLimited } } });
+    assert.equal(formatMtowLimit(computeMtow({ limits: LIM, searchSegments: search(false) })), "(2nd seg · code 2)");
+    assert.equal(formatMtowLimit(computeMtow({ limits: LIM, searchSegments: search(true) })), "(2nd seg obstacles · code 4)");
+    // Sem avaliação (ex.: procura simulada antiga) continua code 2
+    assert.equal(formatMtowLimit(computeMtow({ limits: LIM, searchSegments: () => ({ mtow: 6100, limitedBy: ["SEG2"] }) })), "(2nd seg · code 2)");
+});
+
+test("sem obstáculos o 2.º seg nunca falha até ao WAT (por isso o code 2 não aparece nas pistas sem obstáculos)", () => {
+    // O WAT garante o gradiente mínimo do 2.º segmento: no peso do WAT (ou 6400 kg) e a 4500 kg nunca há "bad"
+    let checked = 0;
+    for (const flaps of ["1", "up"]) for (const inlet of ["off", "on"]) {
+        for (let pa = 0; pa <= 10000; pa += 1000) for (let oat = -20; oat <= 50; oat += 10) {
+            const wat = getWAT(flaps, pa, oat, 6400);
+            if (wat.status === WAT_OUT_OF_CHART) continue;
+            const cap = Math.min(6400, wat.wat - (inlet === "on" ? 250 : 0));
+            for (const tow of [4500, Math.floor(cap)]) {
+                const s = evaluateSegments({ flaps, pa, oat, tow, inlet, wind: 0, slope: 0, toda: 2000 }).SEG2;
+                assert.notEqual(s.state, "bad", `${flaps}/${inlet} PA ${pa} OAT ${oat} TOW ${tow}: ${s.text}`);
+                checked++;
+            }
+        }
+    }
+    assert.ok(checked > 200, String(checked));
 });
 
 // ------------------------------------------------------------------
@@ -181,10 +227,10 @@ test("LPPM 11 (QNH 1003, OAT 5, cauda 10 kt): required > 7 % é o topo do gráfi
 
 test("UI LPPM 11 (QNH 1003, OAT 5, cauda 10 kt): MTOW out of AFM chart com o obstáculo no motivo; TOW 5500 Failed, TOW 5000 Out of AFM chart", async () => {
     const cond = { airport: "LPPM", runway: "11", wind: "290/10", oat: "5", qnh: "1003" };
-    const why = "no weight up to 5722 kg meets 2nd seg — 2nd seg required gradient above 7 % (AFM chart max) at 4500 kg for Elevação natural (fails above 5242 kg)";
+    const why = "no weight up to 5722 kg meets 2nd seg obstacles — 2nd seg required gradient above 7 % (AFM chart max) at 4500 kg for Elevação natural (fails above 5242 kg)";
 
     const heavy = await page.calc({ ...cond, tow: "5500" });
-    assert.deepEqual([heavy.mtow, heavy.limit, heavy.badgeText], ["out of AFM chart", "(2nd seg)", "Failed"]);
+    assert.deepEqual([heavy.mtow, heavy.limit, heavy.badgeText], ["out of AFM chart", "(2nd seg obstacles)", "Failed"]);
     assert.equal(heavy.reason, "Climb gradient not met: 2nd seg — MTOW not determined — " + why);
     assert.equal(heavy.cg2, "Req > 7% / 5.9%");
 
@@ -193,7 +239,7 @@ test("UI LPPM 11 (QNH 1003, OAT 5, cauda 10 kt): MTOW out of AFM chart com o obs
     assert.equal(light.reason, "MTOW not determined — " + why);
 });
 
-test("2.º seg: todos os pesos falham de certeza → '< 4500 kg (2nd seg · code 2)' e Failed", () => {
+test("2.º seg: todos os pesos falham de certeza por obstáculo → '< 4500 kg (2nd seg obstacles · code 4)' e Failed", () => {
     // PA 4000, OAT 40: performed 4.6 % a 4500 kg; antena de 400 ft a ~100 m do Reference Zero exige > 7 %
     const base = { flaps: "1", pa: 4000, oat: 40, inlet: "off", wind: 0, slope: 0 };
     const toda = getTodrForWeight({ ...base, tow: 4600 });
@@ -203,8 +249,8 @@ test("2.º seg: todos os pesos falham de certeza → '< 4500 kg (2nd seg · code
     assert.deepEqual([s.mtow, s.belowWeight, s.undetermined], [null, 4500, null]);
 
     const r = computeMtow({ limits: { WAT: 6000, ASDA: 4600, TORA: 6000, TODA: 6000, STRUCT: 6400 }, searchSegments: cap => findMaxTowAllSegments(params, cap) });
-    assert.deepEqual([formatMtow(r), formatMtowLimit(r)], ["< 4500 kg", "(2nd seg · code 2)"]);
-    assert.equal(r.reason, "2nd seg not met at any weight from 4500 to 4600 kg");
+    assert.deepEqual([formatMtow(r), formatMtowLimit(r)], ["< 4500 kg", "(2nd seg obstacles · code 4)"]);
+    assert.equal(r.reason, "2nd seg obstacles not met at any weight from 4500 to 4600 kg");
     const status = evaluateTakeoffStatus({ tow: 4550, mtowResult: r, segments: evaluateSegments({ ...params, tow: 4550 }) });
     assert.equal(status.text, "Failed");
 });
@@ -239,8 +285,8 @@ test("LPPM 11: WET entra na ASDA (que baixa), mas o 2.º seg limita mais → MTO
             const dry = await page.calc({ ...cond, surface: "dry" });
             const wet = await page.calc({ ...cond, surface: "wet" });
             assert.equal(wet.mtow, dry.mtow, `OAT ${oat} ${wind}`);
-            assert.equal(dry.limit, "(2nd seg · code 2)", `OAT ${oat} ${wind}`);
-            assert.equal(wet.limit, "(2nd seg · code 2)", `OAT ${oat} ${wind}`);
+            assert.equal(dry.limit, "(2nd seg obstacles · code 4)", `OAT ${oat} ${wind}`);
+            assert.equal(wet.limit, "(2nd seg obstacles · code 4)", `OAT ${oat} ${wind}`);
         }
     }
 });

@@ -117,6 +117,10 @@ function cannotPlaceObstacles(todr, toda) {
 
 /**
  * 2º segmento para um peso: gradient required (obstáculo mais exigente) vs gradient performed.
+ *
+ * obstacleLimited: true quando não passa POR CAUSA dos obstáculos, i.e. sem eles (required 0)
+ * o performed passaria (gradiente >= 0). O MTOW limitado assim é "2nd seg obstacles" (code 4);
+ * sem obstáculos a limitar fica "2nd seg" (code 2, gradiente mínimo do avião).
  */
 function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda }) {
   // Guarda o maior gradient required encontrado para este peso
@@ -168,14 +172,17 @@ function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda 
       required: null,
       gradient,
       aboveChartObstacles,
+      obstacleLimited: gradient >= 0,
       text: "Req > 7% / " + fmt1(gradient) + "%"
     };
   }
 
+  const passed = performed.status === "PASSED";
   return {
-    state: performed.status === "PASSED" ? "ok" : "bad",
+    state: passed ? "ok" : "bad",
     required,
     gradient,
+    obstacleLimited: !passed && required > 0 && gradient >= 0,
     text: fmt1(required) + "% / " + fmt1(gradient) + "%"
   };
 }
@@ -289,6 +296,8 @@ export function evaluateSegments({ flaps, pa, oat, tow, inlet, wind, slope, toda
  * Devolve:
  *  - mtow: peso encontrado, ou null se nenhum peso cumpre
  *  - limitedBy: segmentos que falham em mtow + 1 (vazio se mtow = maxWeight)
+ *  - limitingEval: avaliação onde se leem os segmentos de limitedBy (em mtow + 1; sem MTOW, no
+ *    peso de partida), ex.: SEG2.obstacleLimited para o code 4
  *  - atTop: avaliação no peso de partida (para explicar porque nenhum peso cumpre)
  * Quando nenhum peso cumpre (mtow null):
  *  - undetermined: pesos em que todos os segmentos falhados estão fora do gráfico ("ooc": não
@@ -310,7 +319,7 @@ export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
     if (tow === top) atTop = ev;
 
     if (ev.passed) {
-      return { mtow: tow, limitedBy: above ? above.failing : [], atTop };
+      return { mtow: tow, limitedBy: above ? above.failing : [], limitingEval: above, atTop };
     }
 
     // Peso não verificável: os segmentos que não passam estão todos fora do gráfico.
@@ -328,7 +337,7 @@ export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
     above = ev;
   }
 
-  const result = { mtow: null, limitedBy: atTop ? atTop.failing : [], atTop, undetermined };
+  const result = { mtow: null, limitedBy: atTop ? atTop.failing : [], limitingEval: atTop, atTop, undetermined };
   if (!undetermined && atTop) result.belowWeight = bottom;
   return result;
 }

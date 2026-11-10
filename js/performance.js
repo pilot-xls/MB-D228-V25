@@ -209,13 +209,15 @@ export function getPressureAltitude(qnh, runwayEntry) {
 }
 
 // Fatores que podem limitar o MTOW e o código correspondente na folha de performance
-// (10 = WAT, 3 = comprimento de pista, 2 = 2º segmento, 4 = obstáculos 3º/4º seg, 7 = peso máximo do avião)
+// (10 = WAT, 3 = comprimento de pista, 2 = 2º segmento sem obstáculos (gradiente mínimo do avião),
+//  4 = obstáculos: 2º seg limitado por obstáculos (até 400 ft) e 3º/4º seg, 7 = peso máximo do avião)
 export const MTOW_LIMITS = {
     WAT: { label: "WAT", code: 10 },
     ASDA: { label: "ASDA", code: 3 },
     TORA: { label: "TORA", code: 3 },
     TODA: { label: "TODA", code: 3 },
     SEG2: { label: "2nd seg", code: 2 },
+    SEG2_OBS: { label: "2nd seg obstacles", code: 4 },
     SEG3: { label: "3rd seg", code: 4 },
     SEG4: { label: "4th seg", code: 4 },
     STRUCT: { label: "aircraft max weight", code: 7 },
@@ -228,6 +230,15 @@ export const DIRECT_LIMIT_KEYS = ["WAT", "ASDA", "TORA", "TODA", "STRUCT"];
 
 function limitLabels(keys) {
     return keys.map(k => (MTOW_LIMITS[k] ? MTOW_LIMITS[k].label : k)).join(", ");
+}
+
+/**
+ * Chave do limitante mostrada para um segmento: o 2.º segmento que não passa por causa dos
+ * obstáculos (SEG2.obstacleLimited na avaliação ev) conta como obstáculos ("SEG2_OBS", code 4);
+ * sem obstáculos a limitar fica "SEG2" (code 2, gradiente mínimo do avião).
+ */
+export function segmentLimitKey(key, ev) {
+    return key === "SEG2" && ev && ev.SEG2 && ev.SEG2.obstacleLimited ? "SEG2_OBS" : key;
 }
 
 /**
@@ -288,18 +299,20 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
 
     if (search.mtow == null) {
         const keys = search.limitedBy;
+        // Chaves mostradas (2.º seg limitado por obstáculos → "2nd seg obstacles", code 4)
+        const shown = keys.map(k => segmentLimitKey(k, search.limitingEval));
 
         // Todos os pesos, do mínimo dos gráficos até ao cap, falham de certeza: MTOW abaixo desse mínimo
         if (Number.isFinite(search.belowWeight)) {
-            const limitKey = keys[0] || "CHART";
+            const limitKey = shown[0] || "CHART";
             return {
                 mtow: null,
                 belowWeight: search.belowWeight,
                 limitKey,
                 limit: MTOW_LIMITS[limitKey],
-                failedKeys: keys,
+                failedKeys: shown,
                 outOfChart: true,
-                reason: limitLabels(keys) + " not met at any weight from " + search.belowWeight + " to " + cap + " kg"
+                reason: limitLabels(shown) + " not met at any weight from " + search.belowWeight + " to " + cap + " kg"
             };
         }
 
@@ -308,16 +321,16 @@ export function computeMtow({ limits, problems = {}, searchSegments }) {
             mtow: null,
             limitKey: null,
             limit: null,
-            failedKeys: keys,
+            failedKeys: shown,
             // Algum peso não verificável (fora do gráfico): o MTOW não está no gráfico do AFM
             outOfChart: u ? true : keys.length > 0 && keys.every(k => search.atTop && search.atTop[k].state === "ooc"),
-            reason: "no weight up to " + cap + " kg meets " + limitLabels(keys) + describeUndetermined(u, cap)
+            reason: "no weight up to " + cap + " kg meets " + limitLabels(shown) + describeUndetermined(u, cap)
         };
     }
 
     // Um segmento obrigou a descer abaixo do menor limite direto
     if (search.mtow < cap) {
-        const limitKey = search.limitedBy[0] || "CHART";
+        const limitKey = segmentLimitKey(search.limitedBy[0], search.limitingEval) || "CHART";
         return { mtow: search.mtow, limitKey, limit: MTOW_LIMITS[limitKey], failedKeys: [], outOfChart: false, reason: "" };
     }
 
