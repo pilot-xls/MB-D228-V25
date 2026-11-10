@@ -23,6 +23,9 @@ export const OUT_OF_CHART_TEXT = "out of AFM chart";
 // Segmentos avaliados, pela ordem em que são reportados
 export const SEGMENT_KEYS = ["SEG2", "SEG3", "SEG4"];
 
+// Topo do gráfico do gradient required do 2.º segmento (AFM): acima disto não há linhas
+export const REQUIRED_2SEG_CHART_MAX = 7;
+
 /**
  * Um segmento conta como cumprido se passou ("ok") ou se não há nada a comparar ("na").
  * "bad" = falhou a comparação; "ooc" = fora do gráfico do AFM (não verificável, não passa).
@@ -80,6 +83,20 @@ export function describeThirdSegment(result, obstacleDistance, hasObstacle) {
 }
 
 /**
+ * Divide os obstáculos da pista pelos segmentos (por desenho):
+ * - 2.º segmento: até 400 ft inclusive (o gráfico do required do 2.º seg tem linhas de 50 a 400 ft)
+ *   e a menos de 5000 m do fim da TODA
+ * - 3.º/4.º segmento: acima de 400 ft e a menos de 2500 m do fim da TODA
+ * Um obstáculo de 400 ft ou menos limita sempre como "2nd seg" (code 2), nunca como 3rd/4th seg (code 4).
+ */
+export function splitObstacles(obstacles = []) {
+  return {
+    obstacles2Seg: obstacles.filter(o => o.obstacle_ft <= 400 && o.obstacle_dist < 5000),
+    obstacles34Seg: obstacles.filter(o => o.obstacle_ft > 400 && o.obstacle_dist < 2500)
+  };
+}
+
+/**
  * Distância (m) de um obstáculo ao Reference Zero (fim do TOD).
  * obstacle_dist é medida a partir do fim da TODA (DER), como nas cartas de obstáculos:
  * do Reference Zero ao fim da TODA vão (TODA - TOD) metros.
@@ -104,8 +121,8 @@ function cannotPlaceObstacles(todr, toda) {
 function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda }) {
   // Guarda o maior gradient required encontrado para este peso
   let required = 0;
-  // Algum obstáculo exige mais de 7 % (fora do gráfico): não pode ser ignorado
-  let aboveChart = false;
+  // Obstáculos que exigem mais de 7 % (fora do gráfico): não podem ser ignorados
+  const aboveChartObstacles = [];
 
   if (obstacles.length > 0) {
     const noPlace = cannotPlaceObstacles(todr, toda);
@@ -121,7 +138,7 @@ function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda 
       });
 
       if (requiredRes && requiredRes.aboveChart) {
-        aboveChart = true;
+        aboveChartObstacles.push(obs.name || obs.obstacle_ft + " ft @ " + obs.obstacle_dist + " m");
       } else if (requiredRes && requiredRes.result_CG_required != null) {
         required = Math.max(required, requiredRes.result_CG_required);
       }
@@ -132,15 +149,31 @@ function evaluate2Seg({ flaps, pa, oat, tow, inlet, wind, obstacles, todr, toda 
   // Calcula o performed do 2º segmento para este mesmo peso
   const params = { pressureAltitude: pa, oat: oat, tow: tow, inlet: inlet, gradientRequired: required };
   const performed = flaps === "up" ? Gradient_2segFlapsUp(params) : Gradient_2segFlaps1(params);
-  const gradient = performed ? performed.gradient : null;
 
-  // Required acima de 7 %: fora do gráfico do AFM, não verificável (não passa)
-  if (aboveChart) {
-    return { state: "ooc", required: null, gradient, text: "Req > 7% / " + fmt1(gradient) + "%" };
+  // O gráfico do performed não tem valor para este PA/OAT/peso: não verificável (não é falha da comparação)
+  if (!performed || performed.outOfChart) {
+    const req = aboveChartObstacles.length > 0 ? "Req > 7%" : fmt1(required) + "%";
+    return { state: "ooc", required: aboveChartObstacles.length > 0 ? null : required, gradient: null, aboveChartObstacles, text: req + " / " + OUT_OF_CHART_TEXT };
+  }
+  const gradient = performed.gradient;
+
+  // Required acima de 7 % (topo do gráfico do AFM): o valor exato não está no gráfico.
+  // - performed <= 7 %: falha de certeza (required > 7 % >= performed) → "bad"
+  // - performed > 7 %: o gráfico não permite dizer se passa → "ooc" (não verificável, não passa)
+  // Não se inventa nenhum required acima de 7 %.
+  if (aboveChartObstacles.length > 0) {
+    const definite = gradient <= REQUIRED_2SEG_CHART_MAX;
+    return {
+      state: definite ? "bad" : "ooc",
+      required: null,
+      gradient,
+      aboveChartObstacles,
+      text: "Req > 7% / " + fmt1(gradient) + "%"
+    };
   }
 
   return {
-    state: performed && performed.status === "PASSED" ? "ok" : "bad",
+    state: performed.status === "PASSED" ? "ok" : "bad",
     required,
     gradient,
     text: fmt1(required) + "% / " + fmt1(gradient) + "%"
@@ -208,13 +241,15 @@ function evaluate34Seg({ pa, oat, tow, inlet, wind, slope, obstacles, todr, toda
     inlet: inlet,
     gradientRequired: requiredGradient4Seg
   });
-  const gradient4 = fourthSegment ? fourthSegment.gradient : null;
-  const seg4 = {
-    state: fourthSegment && fourthSegment.status === "PASSED" ? "ok" : "bad",
-    required: requiredGradient4Seg,
-    gradient: gradient4,
-    text: fmt1(requiredGradient4Seg) + "% / " + fmt1(gradient4) + "%"
-  };
+  // Gráfico do 4.º segmento sem valor para este PA/OAT/peso: não verificável (não é falha da comparação)
+  const seg4 = !fourthSegment || fourthSegment.outOfChart
+    ? { state: "ooc", required: requiredGradient4Seg, gradient: null, text: fmt1(requiredGradient4Seg) + "% / " + OUT_OF_CHART_TEXT }
+    : {
+      state: fourthSegment.status === "PASSED" ? "ok" : "bad",
+      required: requiredGradient4Seg,
+      gradient: fourthSegment.gradient,
+      text: fmt1(requiredGradient4Seg) + "% / " + fmt1(fourthSegment.gradient) + "%"
+    };
 
   return { seg3, seg4 };
 }
@@ -255,6 +290,12 @@ export function evaluateSegments({ flaps, pa, oat, tow, inlet, wind, slope, toda
  *  - mtow: peso encontrado, ou null se nenhum peso cumpre
  *  - limitedBy: segmentos que falham em mtow + 1 (vazio se mtow = maxWeight)
  *  - atTop: avaliação no peso de partida (para explicar porque nenhum peso cumpre)
+ * Quando nenhum peso cumpre (mtow null):
+ *  - undetermined: pesos em que todos os segmentos falhados estão fora do gráfico ("ooc": não
+ *    verificável). tow = o maior (acima dele falha de certeza); lowestTow, failing e segments = o
+ *    menor (o que fica fora do gráfico mesmo no peso mais baixo). null se não houver.
+ *  - belowWeight: peso mínimo da procura quando TODOS os pesos falham de certeza ("bad"):
+ *    o MTOW fica abaixo do peso mínimo dos gráficos (limite real, sem inventar valores).
  */
 export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
   const top = Math.min(MAX_WEIGHT, Math.floor(maxWeight));
@@ -262,6 +303,7 @@ export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
 
   let atTop = null;
   let above = null;
+  let undetermined = null;
 
   for (let tow = top; tow >= bottom; tow--) {
     const ev = evaluateSegments({ ...params, tow });
@@ -271,10 +313,24 @@ export function findMaxTowAllSegments(params, maxWeight = MAX_WEIGHT) {
       return { mtow: tow, limitedBy: above ? above.failing : [], atTop };
     }
 
+    // Peso não verificável: os segmentos que não passam estão todos fora do gráfico.
+    // tow = maior peso nessa situação (acima dele falha de certeza); failing/segments = os do
+    // menor peso nessa situação (o que continua fora do gráfico mesmo no peso mais baixo).
+    if (ev.failing.every(k => ev[k].state === "ooc")) {
+      undetermined = {
+        tow: undetermined ? undetermined.tow : tow,
+        lowestTow: tow,
+        failing: ev.failing,
+        segments: { SEG2: ev.SEG2, SEG3: ev.SEG3, SEG4: ev.SEG4 }
+      };
+    }
+
     above = ev;
   }
 
-  return { mtow: null, limitedBy: atTop ? atTop.failing : [], atTop };
+  const result = { mtow: null, limitedBy: atTop ? atTop.failing : [], atTop, undetermined };
+  if (!undetermined && atTop) result.belowWeight = bottom;
+  return result;
 }
 
 /**

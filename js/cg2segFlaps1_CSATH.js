@@ -740,19 +740,21 @@ export function CLIMB_GRADIENTE_2SEG_Flaps1({ pressureAltitude, oat, tow, inlet,
   DEBUG_REPORT = []; // limpar relatório
 	// STEP 1 — y_ref via PA/OAT
   const yRef = getYRefFromPAOAT(pressureAltitude, oat);
-  if (yRef == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
+  // outOfChart: true → o gráfico do AFM não tem valor para esta entrada (PA/OAT/peso fora do
+  // envelope). É diferente de "gradiente abaixo do required" (falha real da comparação).
+  if (yRef == null) return { gradient: 0, status: "FAILED", outOfChart: true, report: DEBUG_REPORT };
   
 	// STEP 2/3 — ajustar via sections de referência + peso
   const yAfterWeight = mapYThroughWeight(yRef, tow);
-  if (yAfterWeight == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
+  if (yAfterWeight == null) return { gradient: 0, status: "FAILED", outOfChart: true, report: DEBUG_REPORT };
   
   // STEP 4 — inlet ON/OFF
   const yAfterInlet = mapYThroughInlet(yAfterWeight, inlet);
-  if (yAfterInlet == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
+  if (yAfterInlet == null) return { gradient: 0, status: "FAILED", outOfChart: true, report: DEBUG_REPORT };
   
 	// STEP 5 — resultado final
   const gradient = getClimbGradientFromY(yAfterInlet);
-  if (gradient == null) return { gradient: 0, status: "FAILED", report: DEBUG_REPORT };
+  if (gradient == null) return { gradient: 0, status: "FAILED", outOfChart: true, report: DEBUG_REPORT };
   
 
   //const rounded = Math.round((gradient-0.5) * 10) / 10;

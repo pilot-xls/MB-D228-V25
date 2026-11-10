@@ -251,12 +251,23 @@ test("segmentos: distância ao Reference Zero = (TODA - TOD) + obstacle_dist (me
 
 const seg2Params = { flaps: "1", pa: 0, oat: 15, tow: 6000, inlet: "off", wind: 0, slope: 0, obstacles34Seg: [] };
 
-test("2.º segmento: obstáculo que exige mais de 7 % não passa (fora do gráfico)", () => {
-    // 200 ft a 50 m do fim de uma TODA de 1000 m: muito perto do Reference Zero
-    const e = evaluateSegments({ ...seg2Params, toda: 1000, obstacles2Seg: [{ obstacle_ft: 200, obstacle_dist: 50 }] });
-    assert.equal(e.SEG2.state, "ooc");
-    assert.match(e.SEG2.text, /Req > 7%/);
-    assert.equal(e.passed, false);
+test("2.º segmento: obstáculo que exige mais de 7 % nunca passa (falha certa ou fora do gráfico)", () => {
+    // 200 ft a 50 m do fim de uma TODA de 1000 m: muito perto do Reference Zero (required > 7 % em todos os pesos)
+    const params = { ...seg2Params, toda: 1000, obstacles2Seg: [{ name: "Torre", obstacle_ft: 200, obstacle_dist: 50 }] };
+
+    // 6000 kg: performed 4.1 % <= 7 % < required → falha de certeza (antes "ooc")
+    const heavy = evaluateSegments(params);
+    assert.equal(heavy.SEG2.state, "bad");
+    assert.ok(heavy.SEG2.gradient <= 7, String(heavy.SEG2.gradient));
+    assert.match(heavy.SEG2.text, /Req > 7%/);
+    assert.deepEqual(heavy.SEG2.aboveChartObstacles, ["Torre"]);
+    assert.equal(heavy.passed, false);
+
+    // 4500 kg: performed 8.5 % > 7 % → o gráfico não diz se passa: continua "ooc" (não verificável)
+    const light = evaluateSegments({ ...params, tow: 4500 });
+    assert.equal(light.SEG2.state, "ooc");
+    assert.ok(light.SEG2.gradient > 7, String(light.SEG2.gradient));
+    assert.equal(light.passed, false);
 });
 
 test("2.º segmento: com obstáculos e sem TODA não se ignora nada (fora do gráfico)", () => {
